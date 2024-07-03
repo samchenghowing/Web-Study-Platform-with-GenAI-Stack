@@ -220,7 +220,7 @@ services:
 
   front-end:
     build:
-      context: .
+      context: front-end
       dockerfile: front-end.Dockerfile
     x-develop:
       watch:
