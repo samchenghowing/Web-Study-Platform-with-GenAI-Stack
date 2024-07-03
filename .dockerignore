@@ -1,6 +1,6 @@
 *
-!*.py
-!requirements.txt
-!images/*
+!backend/*.py
+!backend/requirements.txt
+!backend/images/*
 !front-end/*
 front-end/node_modules/*
