@@ -86,7 +86,7 @@ services:
             - ./backend/bot.py
             - ./backend/pdf_bot.py
             - ./backend/api.py
-            - front-end/
+            - frontend/
     ports:
       - 8081:8080
       - 8502:8502
@@ -129,7 +129,7 @@ services:
             - ./backend/loader.py
             - ./backend/pdf_bot.py
             - ./backend/api.py
-            - front-end/
+            - frontend/
     ports:
       - 8501:8501
 
@@ -168,7 +168,7 @@ services:
             - ./backend/loader.py
             - ./backend/bot.py
             - ./backend/api.py
-            - front-end/
+            - frontend/
     ports:
       - 8503:8503
 
@@ -209,7 +209,7 @@ services:
             - ./backend/loader.py
             - ./backend/bot.py
             - ./backend/pdf_bot.py
-            - front-end/
+            - frontend/
     ports:
       - 8504:8504
     healthcheck:
@@ -218,19 +218,18 @@ services:
       timeout: 3s
       retries: 5
 
-  front-end:
+  frontend:
     build:
-      context: front-end
-      dockerfile: front-end.Dockerfile
+      context: frontend
     x-develop:
       watch:
         - action: sync
-          path: ./front-end
+          path: ./frontend
           target: /app
           ignore:
-            - ./front-end/node_modules/
+            - ./frontend/node_modules/
         - action: rebuild
-          path: ./front-end/package.json
+          path: ./frontend/package.json
     depends_on:
       api:
         condition: service_healthy
