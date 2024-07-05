@@ -4,3 +4,5 @@
 !backend/images/*
 !frontend/*
 frontend/node_modules/*
+!front-end/*
+front-end/node_modules/*

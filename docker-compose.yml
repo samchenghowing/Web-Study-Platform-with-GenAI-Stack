@@ -87,6 +87,7 @@ services:
             - ./backend/pdf_bot.py
             - ./backend/api.py
             - frontend/
+            - front-end/
     ports:
       - 8081:8080
       - 8502:8502
@@ -130,6 +131,7 @@ services:
             - ./backend/pdf_bot.py
             - ./backend/api.py
             - frontend/
+            - front-end/
     ports:
       - 8501:8501
 
@@ -169,6 +171,7 @@ services:
             - ./backend/bot.py
             - ./backend/api.py
             - frontend/
+            - front-end/
     ports:
       - 8503:8503
 
@@ -210,6 +213,7 @@ services:
             - ./backend/bot.py
             - ./backend/pdf_bot.py
             - frontend/
+            - front-end/
     ports:
       - 8504:8504
     healthcheck:
@@ -237,6 +241,27 @@ services:
       - net
     ports:
       - 8505:8505
+
+  frontend-old:
+    build:
+      context: front-end
+      dockerfile: front-end.Dockerfile
+    x-develop:
+      watch:
+        - action: sync
+          path: ./front-end
+          target: /app
+          ignore:
+            - ./front-end/node_modules/
+        - action: rebuild
+          path: ./front-end/package.json
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - net
+    ports:
+      - 8506:8506
 
 networks:
   net:
