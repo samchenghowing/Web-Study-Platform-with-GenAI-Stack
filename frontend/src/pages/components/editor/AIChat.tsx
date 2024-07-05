@@ -12,6 +12,8 @@ import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 
+const API_ENDPOINT = "http://localhost:8504/query-stream";
+
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
     ...theme.typography.body2,
@@ -81,7 +83,7 @@ interface AIChatProps {
 }
 
 export default function AIChat(props: AIChatProps) {
-    const [userPrompt, setUserPrompt] = React.useState("");
+    const [userQuestion, setUserQuestion] = React.useState("");
     const [cardContent, setCardContent] = React.useState([
         {
             id: 1,
@@ -95,14 +97,14 @@ export default function AIChat(props: AIChatProps) {
     const cardRef = React.useRef<HTMLDivElement>(null);
 
     const handleClick = async () => {
-        if (userPrompt.trim()) { // Check if the prompt is not empty
+        if (userQuestion.trim()) { // Check if the prompt is not empty
             const newCardId = Date.now();
             setCardContent(prevCardContent => [
                 ...prevCardContent,
                 {
                     id: newCardId,
                     role: "user",
-                    content: userPrompt,
+                    content: userQuestion,
                     question: "",
                     task: "",
                     solution: ""
@@ -117,73 +119,39 @@ export default function AIChat(props: AIChatProps) {
                     solution: ""
                 }
             ]);
-            setUserPrompt(""); // Clear the input field
-
-            // cardContent is not updated here since useState is async
-            // console.log(cardContent);
-            var messages = cardContent.map(({ role, content }) => {
-                let doc = { role, content };
-                return doc;
-            });
-            messages.push({ role: "user", content: userPrompt })
-            console.log(messages)
 
             try {
-                const response = await fetch('api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        "model": "deepseek-coder-v2:16b",
-                        "messages": messages
-                    })
-                });
-
-                const reader = response.body!.getReader();
-                if (reader == null) console.log("error connection to gen ai")
-
-                const readStream = async () => {
-                    let { done, value } = await reader.read();
-                    if (done) {
-                        console.log('Stream complete');
-                        return;
-                    }
-
-                    // Decode the stream chunk to a string
-                    const chunk = new TextDecoder('utf-8').decode(value);
-                    // Split the chunk by newlines, as each JSON object ends with a newline
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    jsonStrings.forEach(jsonString => {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            console.log(jsonChunk);
-                            // Update the content of the new card with the received chunk
-                            setCardContent(prevCardContent => prevCardContent.map(card => {
-                                if (card.id === newCardId + 1) {
-                                    return {
-                                        ...card,
-                                        content: card.content + jsonChunk.message.content,
-                                        // TODO: get below from formatted response from AI
-                                        question: "Fix the problem below such that it will output \"hello world\" in console.",
-                                        task: "console.log'hello world!",
-                                        solution: "console.log('hello world!');"
-                                    };
-                                }
-                                return card;
-                            }));
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
+                const evt = new EventSource(`${API_ENDPOINT}?text=${encodeURI(userQuestion)}&rag=${false}`);
+                setUserQuestion("");
+                evt.onmessage = (e) => {
+                    if (e.data) {
+                        const data = JSON.parse(e.data);
+                        if (data.init) {
+                            console.log('Stream begin');
+                            return;
                         }
-                    });
-                    // Read the next chunk
-                    readStream();
+                        setCardContent(prevCardContent => prevCardContent.map(card => {
+                            if (card.id === newCardId + 1) {
+                                return {
+                                    ...card,
+                                    content: card.content + data.token,
+                                    // TODO: get below from formatted response from AI
+                                    question: "Fix the problem below such that it will output \"hello world\" in console.",
+                                    task: "console.log'hello world!",
+                                    solution: "console.log('hello world!');"
+                                };
+                            }
+                            return card;
+                        }));
+                    }
                 };
-                // Start reading the stream
-                readStream();
+                evt.onerror = (e) => {
+                    // Stream will end with an error
+                    // and we want to close the connection on end (otherwise it will keep reconnecting)
+                    evt.close();
+                };
             } catch (error) {
-                console.error('There was an error!', error);
+                console.error('Stream end with error', error);
             }
         }
     };
@@ -205,9 +173,9 @@ export default function AIChat(props: AIChatProps) {
                 multiline
                 id="user-prompt"
                 placeholder="How to print hello world in javascript?"
-                value={userPrompt}
+                value={userQuestion}
                 onChange={e => {
-                    setUserPrompt(e.target.value)
+                    setUserQuestion(e.target.value)
                 }}
                 onKeyDown={e => {
                     if (e.key === "Enter") handleClick();
