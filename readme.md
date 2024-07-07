@@ -3,6 +3,8 @@ The GenAI Stack will get you started building your own GenAI application in no t
 The demo applications can serve as inspiration or as a starting point.
 Learn more about the details in the [technical blog post](https://neo4j.com/developer-blog/genai-app-how-to-build/).
 
+[Original source](https://github.com/docker/genai-stack)
+
 # Configure
 
 Create a `.env` file from the environment template file `env.example`
@@ -75,7 +77,6 @@ Here's what's in this repo:
 
 | Name | Main files | Compose name | URLs | Description |
 |---|---|---|---|---|
-| Support Bot | `bot.py` | `bot` | http://localhost:8501 | Main usecase. Fullstack Python application. |
 | Stack Overflow Loader | `loader.py` | `loader` | http://localhost:8502 | Load SO data into the database (create vector embeddings etc). Fullstack Python application. |
 | PDF Reader | `pdf_bot.py` | `pdf_bot` | http://localhost:8503 | Read local PDF and ask it questions. Fullstack Python application. |
 | Standalone Bot API | `api.py` | `api` | http://localhost:8504 | Standalone HTTP API streaming (SSE) + non-streaming endpoints Python. |
@@ -83,29 +84,7 @@ Here's what's in this repo:
 
 The database can be explored at http://localhost:7474.
 
-## App 1 - Support Agent Bot
-
-UI: http://localhost:8501
-DB client: http://localhost:7474
-
-- answer support question based on recent entries
-- provide summarized answers with sources
-- demonstrate difference between
-    - RAG Disabled (pure LLM response)
-    - RAG Enabled (vector + knowledge graph context)
-- allow to generate a high quality support ticket for the current conversation based on the style of highly rated questions in the database.
-
-![](.github/media/app1-rag-selector.png)
-*(Chat input + RAG mode selector)*
-
-|  |  |
-|---|---|
-| ![](.github/media/app1-generate.png) | ![](.github/media/app1-ticket.png) |
-| *(CTA to auto generate support ticket draft)* | *(UI of the auto generated support ticket draft)* |
-
----
-
-##  App 2 - Loader
+##  App 1 - Loader
 
 UI: http://localhost:8502
 DB client: http://localhost:7474
@@ -122,7 +101,7 @@ DB client: http://localhost:7474
 |---|---|
 | ![](.github/media/app2-ui-1.png) | ![](.github/media/app2-model.png) |
 
-## App 3 Question / Answer with a local PDF
+## App 2 - Question / Answer with a local PDF
 UI: http://localhost:8503  
 DB client: http://localhost:7474
 
@@ -133,7 +112,7 @@ search.
 
 ![](.github/media/app3-ui.png)
 
-## App 4 Standalone HTTP API
+## App 3 - Standalone HTTP API
 Endpoints: 
   - http://localhost:8504/query?text=hello&rag=false (non streaming)
   - http://localhost:8504/query-stream?text=hello&rag=false (SSE streaming)
@@ -146,10 +125,17 @@ curl http://localhost:8504/query-stream\?text\=minimal%20hello%20world%20in%20py
 Exposes the functionality to answer questions in the same way as App 1 above. Uses
 same code and prompts.
 
-## App 5 Static front-end
+## App 4 - Static front-end
 UI: http://localhost:8505
+DB client: http://localhost:7474
 
-This application has the same features as App 1, but is built separate from
-the back-end code using modern best practices (Vite, Svelte, Tailwind).  
+- answer support question based on recent entries
+- provide summarized answers with sources
+- demonstrate difference between
+    - RAG Disabled (pure LLM response)
+    - RAG Enabled (vector + knowledge graph context)
+- allow to generate a high quality support ticket for the current conversation based on the style of highly rated questions in the database.
+
+This application built separate from the back-end code using React.
 The auto-reload on changes are instant using the Docker watch `sync` config.  
 ![](.github/media/app5-ui.png)
