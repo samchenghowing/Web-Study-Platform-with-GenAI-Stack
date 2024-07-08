@@ -1,5 +1,6 @@
 
 from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.embeddings import BedrockEmbeddings
 from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
@@ -9,7 +10,6 @@ from langchain_community.chat_models import ChatOllama
 from langchain_community.chat_models import BedrockChat
 
 from langchain_community.graphs import Neo4jGraph
-
 from langchain_community.vectorstores import Neo4jVector
 
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -23,7 +23,6 @@ from langchain.prompts import (
 
 from typing import List, Any
 from utils import BaseLogger, extract_title_and_question
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):

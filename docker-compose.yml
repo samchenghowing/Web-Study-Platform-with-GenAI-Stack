@@ -78,7 +78,7 @@ services:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
-    x-develop:
+    develop:
       watch:
         - action: rebuild
           path: ./backend
@@ -86,7 +86,6 @@ services:
             - ./backend/pdf_bot.py
             - ./backend/api.py
             - frontend/
-            - front-end/
     ports:
       - 8081:8080
       - 8502:8502
@@ -119,7 +118,7 @@ services:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
-    x-develop:
+    develop:
       watch:
         - action: rebuild
           path: ./backend
@@ -127,7 +126,6 @@ services:
             - ./backend/loader.py
             - ./backend/api.py
             - frontend/
-            - front-end/
     ports:
       - 8503:8503
 
@@ -160,7 +158,7 @@ services:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
-    x-develop:
+    develop:
       watch:
         - action: rebuild
           path: ./backend
@@ -168,7 +166,6 @@ services:
             - ./backend/loader.py
             - ./backend/pdf_bot.py
             - frontend/
-            - front-end/
     ports:
       - 8504:8504
     healthcheck:
@@ -180,7 +177,7 @@ services:
   frontend:
     build:
       context: frontend
-    x-develop:
+    develop:
       watch:
         - action: sync
           path: ./frontend
@@ -196,27 +193,6 @@ services:
       - net
     ports:
       - 8505:8505
-
-  frontend-old:
-    build:
-      context: front-end
-      dockerfile: front-end.Dockerfile
-    x-develop:
-      watch:
-        - action: sync
-          path: ./front-end
-          target: /app
-          ignore:
-            - ./front-end/node_modules/
-        - action: rebuild
-          path: ./front-end/package.json
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - net
-    ports:
-      - 8506:8506
 
 networks:
   net:
