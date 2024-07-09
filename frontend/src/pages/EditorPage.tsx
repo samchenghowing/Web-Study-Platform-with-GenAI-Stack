@@ -22,29 +22,43 @@ export default () => {
 	};
 
 	// code editor
-	const [editorMode, setEditorMode] = React.useState("js");
-	const [autoRun, setAutoRun] = React.useState(false);
-	const [value, setValue] = React.useState("console.log('You can learn anything');");
+	const [editorConfig, setEditorConfig] = React.useState({
+		language: "js",
+		autoRun: false,
+	});
+	const [editorDoc, setEditorDoc] = React.useState("Goodbye world");
 
-	// AIChat, TODO: generate the question, task and solution by AIChat
+	// AIChat
+	// TODO: generate the question, task and solution by AIChat
 	// Motivation:
 	// Instead of asking GenAI to craft a possibliy incorrect question, or 
 	// if we can't guarntee the correctness of solution from GenAI, why don't 
 	// we create a wrong question and it's corresponing accepted answer pair? 
 	const [question, setQuestion] = React.useState("No question assigned yet... Chat with AI to get your tailored task!");
-	const [task, setTask] = React.useState("Goodbye world");
-	const [solution, setSolution] = React.useState("Hello world!");
-
+	const [task, setTask] = React.useState("console.log('You can learn anything');");
 
 	function handleCodeSubmit() {
 		console.log('Function ran in EditorConfig');
 		// TODO: show loading and send to AI for verification (test cases??)
+		// result = getSubmittionResultFromApi()
 	}
 
-	function handleTaskAccepted() {
-		console.log('Function ran in AIChat');
-		setValue(task); // update code in EditorView
+	const getSubmittionResultFromApi = () => {
+		return fetch('http://localhost:8504/submit')
+			.then(response => response.json())
+			.then(json => {
+				return json.result;
+			})
+			.catch(error => {
+				console.error(error);
+			});
 	}
+
+	React.useEffect(() => {
+		// when receive new task from AIChat, update code in EditorView
+		setEditorDoc(task);
+		// setEditorDoc(task.title);
+	}, [task]);
 
 	return (
 		<ThemeProvider theme={LPtheme}>
@@ -61,27 +75,21 @@ export default () => {
 							question={question}
 							setQuestion={setQuestion}
 							task={task}
-							setTask={setTask}
-							solution={solution}
-							setSolution={setSolution}
-							handleTaskAccepted={handleTaskAccepted} />
+							setTask={setTask} />
 					</Grid>
 					<Grid xs={8}>
 						<EditorConfig
-							editorMode={editorMode}
-							setEditorMode={setEditorMode}
-							autoRun={autoRun}
-							setAutoRun={setAutoRun}
+							editorConfig={editorConfig}
+							setEditorConfig={setEditorConfig}
 							handleCodeSubmit={handleCodeSubmit} />
 						<EditorView
-							value={value}
-							onChange={setValue}
-							editorMode={''}
-							autoRun={false} />
+							editorConfig={editorConfig}
+							editorDoc={editorDoc}
+							onChange={setEditorDoc} />
 					</Grid>
 					<Grid xs={12}>
 						{/* <iframe
-							srcDoc={`<html><body><script>${value}</script></body></html>`}
+							srcDoc={`<html><body><script>${editorDoc}</script></body></html>`}
 							title="Preview"
 							width="100%"
 							height="100px"

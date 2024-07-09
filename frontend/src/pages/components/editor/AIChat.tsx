@@ -52,8 +52,6 @@ function InfoCard({ data, AIChatprops }) {
                     // TODO: get below from formatted response from ollama
                     AIChatprops.setQuestion(data.question);
                     AIChatprops.setTask(data.task);
-                    AIChatprops.setSolution(data.solution);
-                    AIChatprops.handleTaskAccepted();
                 }}>
                     Take this task!
                 </Button>
@@ -67,7 +65,6 @@ function InfoCard({ data, AIChatprops }) {
 // {
 //     question: "Fix the problem below such that it will output \"hello world\" in console.",
 //     task: "console.log'hello world!';",
-//     solution: "console.log('hello world!');",
 // },
 // https://github.com/ollama/ollama/blob/main/docs/api.md#request-json-mode
 
@@ -76,10 +73,6 @@ interface AIChatProps {
     setQuestion: (mode: string) => void;
     task: string;
     setTask: (mode: string) => void;
-    solution: string;
-    setSolution: (mode: string) => void;
-
-    handleTaskAccepted: () => void;
 }
 
 export default function AIChat(props: AIChatProps) {
@@ -88,10 +81,9 @@ export default function AIChat(props: AIChatProps) {
         {
             id: 1,
             role: "assistant",
-            content: "Challenger! I prepared the following task for thou! Lets' see if you can fix it!",
+            content: "Hi! I prepared the following task for you! Lets' see if you can fix it!",
             question: "Fix the problem below such that it will output \"hello world\" in console.",
             task: "console.log'hello world!",
-            solution: "console.log('hello world!');"
         },
     ]);
     const cardRef = React.useRef<HTMLDivElement>(null);
@@ -107,7 +99,6 @@ export default function AIChat(props: AIChatProps) {
                     content: userQuestion,
                     question: "",
                     task: "",
-                    solution: ""
                 },
                 {
                     id: newCardId + 1,
@@ -116,7 +107,6 @@ export default function AIChat(props: AIChatProps) {
                     // TODO: get below from formatted response from AI
                     question: "",
                     task: "",
-                    solution: ""
                 }
             ]);
 
@@ -138,7 +128,6 @@ export default function AIChat(props: AIChatProps) {
                                     // TODO: get below from formatted response from AI
                                     question: "Fix the problem below such that it will output \"hello world\" in console.",
                                     task: "console.log'hello world!",
-                                    solution: "console.log('hello world!');"
                                 };
                             }
                             return card;

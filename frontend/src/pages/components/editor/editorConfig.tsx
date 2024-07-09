@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { SetStateAction, Dispatch } from 'react';
 
 import { saveAs } from "file-saver"
 
@@ -18,10 +19,8 @@ import Switch from '@mui/material/Switch';
 
 
 interface EditorConfigProps {
-    editorMode: string;
-    setEditorMode: (mode: string) => void;
-    autoRun: boolean;
-    setAutoRun: (autoRun: boolean) => void;
+    editorConfig: { language: string; autoRun: boolean };
+    setEditorConfig: Dispatch<SetStateAction<{ language: string; autoRun: boolean }>>;
 
     handleCodeSubmit: () => void;
 }
@@ -64,17 +63,23 @@ const EditorConfig = React.forwardRef(function EditorConfig(props: EditorConfigP
                         aria-label="text alignment"
                     >
                         <Tooltip title="JS Editor">
-                            <ToggleButton value="js" onClick={() => props.setEditorMode("js")}>
+                            <ToggleButton value="js" onClick={() => props.setEditorConfig(previousState => {
+                                return { ...previousState, language: "js" }
+                            })}>
                                 <JavascriptIcon />
                             </ToggleButton>
                         </Tooltip>
                         <Tooltip title="Html Editor">
-                            <ToggleButton value="html" onClick={() => props.setEditorMode("html")}>
+                            <ToggleButton value="html" onClick={() => props.setEditorConfig(previousState => {
+                                return { ...previousState, language: "html" }
+                            })}>
                                 <HtmlIcon />
                             </ToggleButton>
                         </Tooltip>
                         <Tooltip title="Css Editor">
-                            <ToggleButton value="css" onClick={() => props.setEditorMode("css")}>
+                            <ToggleButton value="css" onClick={() => props.setEditorConfig(previousState => {
+                                return { ...previousState, language: "css" }
+                            })}>
                                 <CssIcon />
                             </ToggleButton>
                         </Tooltip>
