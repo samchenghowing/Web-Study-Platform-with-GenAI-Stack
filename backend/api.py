@@ -1,7 +1,7 @@
 import os
+import json
 
 from langchain_community.graphs import Neo4jGraph
-from dotenv import load_dotenv
 from utils import (
     create_vector_index,
     BaseLogger,
@@ -19,9 +19,9 @@ from langchain.callbacks.base import BaseCallbackHandler
 from threading import Thread
 from queue import Queue, Empty
 from collections.abc import Generator
-from sse_starlette.sse import EventSourceResponse
 from fastapi.middleware.cors import CORSMiddleware
-import json
+from fastapi.responses import StreamingResponse
+from dotenv import load_dotenv
 
 load_dotenv(".env")
 
@@ -109,34 +109,35 @@ async def root():
 
 
 class Question(BaseModel):
-    text: str
-    rag: bool = False
+    model: str
+    messages: list
 
 
 class BaseTicket(BaseModel):
     text: str
 
 
-@app.get("/query-stream")
-def qstream(question: Question = Depends()):
+@app.post("/query-stream")
+async def qstream(question: Question):
     output_function = llm_chain
-    if question.rag:
+    if question.model == "rag":
         output_function = rag_chain
 
     q = Queue()
 
     def cb():
+        chat_history = [msg['content'] for msg in question.messages if msg['role'] != 'user']
+        user_input = question.messages[-1]['content']
         output_function(
-            {"question": question.text, "chat_history": []},
-            callbacks=[QueueCallback(q)],
+            user_input, chat_history, callbacks=[QueueCallback(q)]
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": llm_name})
+        yield json.dumps({"init": True, "model": question.model})
         for token, _ in stream(cb, q):
             yield json.dumps({"token": token})
 
-    return EventSourceResponse(generate(), media_type="text/event-stream")
+    return StreamingResponse(generate(), media_type="application/json")
 
 
 @app.get("/query")

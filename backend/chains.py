@@ -1,4 +1,3 @@
-
 from langchain_openai import OpenAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
@@ -23,7 +22,6 @@ from langchain.prompts import (
 
 from typing import List, Any
 from utils import BaseLogger, extract_title_and_question
-
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
@@ -54,7 +52,6 @@ def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config=
         logger.info("Embedding: Using SentenceTransformer")
     return embeddings, dimension
 
-
 def load_llm(llm_name: str, logger=BaseLogger(), config={}):
     if llm_name == "gpt-4":
         logger.info("LLM: Using GPT-4")
@@ -84,7 +81,6 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
     logger.info("LLM: Using GPT-3.5")
     return ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", streaming=True)
 
-
 def configure_llm_only_chain(llm):
     # LLM only response
     template = """
@@ -99,16 +95,19 @@ def configure_llm_only_chain(llm):
     )
 
     def generate_llm_output(
-        user_input: str, callbacks: List[Any], prompt=chat_prompt
+        user_input: str, chat_history: List[str], callbacks: List[Any], prompt=chat_prompt
     ) -> str:
+        # Combine chat history into a single string
+        history = "\n".join(chat_history)
+        # Update the prompt to include chat history
+        full_prompt = f"{history}\n{user_input}"
         chain = prompt | llm
         answer = chain.invoke(
-            {"question": user_input}, config={"callbacks": callbacks}
+            {"question": full_prompt}, config={"callbacks": callbacks}
         ).content
         return {"answer": answer}
 
     return generate_llm_output
-
 
 def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password):
     # RAG response

@@ -110,35 +110,69 @@ export default function AIChat(props: AIChatProps) {
                 }
             ]);
 
+            var messages = cardContent.map(({ role, content }) => {
+                let doc = { role, content };
+                return doc;
+            });
+            messages.push({ role: "user", content: userQuestion });
+            console.log(messages);
+            setUserQuestion("");
+
             try {
-                const evt = new EventSource(`${API_ENDPOINT}?text=${encodeURI(userQuestion)}&rag=${false}`);
-                setUserQuestion("");
-                evt.onmessage = (e) => {
-                    if (e.data) {
-                        const data = JSON.parse(e.data);
-                        if (data.init) {
-                            console.log('Stream begin');
-                            return;
-                        }
-                        setCardContent(prevCardContent => prevCardContent.map(card => {
-                            if (card.id === newCardId + 1) {
-                                return {
-                                    ...card,
-                                    content: card.content + data.token,
-                                    // TODO: get below from formatted response from AI
-                                    question: "Fix the problem below such that it will output \"hello world\" in console.",
-                                    task: "console.log'hello world!",
-                                };
-                            }
-                            return card;
-                        }));
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        "model": "deepseek-coder-v2:16b",
+                        "messages": messages
+                    })
+                });
+
+                const reader = response.body!.getReader();
+                if (reader == null) console.log("error connection to gen ai");
+
+                const readStream = async () => {
+                    let { done, value } = await reader.read();
+                    if (done) {
+                        console.log('Stream complete');
+                        return;
                     }
+
+                    // Decode the stream chunk to a string
+                    const chunk = new TextDecoder('utf-8').decode(value);
+                    // Split the chunk by newlines, as each JSON object ends with a newline
+                    const jsonStrings = chunk.split('\n').filter(Boolean);
+
+                    jsonStrings.forEach(jsonString => {
+                        try {
+                            const jsonChunk = JSON.parse(jsonString);
+                            console.log(jsonChunk);
+                            // Update the content of the new card with the received chunk
+                            setCardContent(prevCardContent => prevCardContent.map(card => {
+                                if (card.id === newCardId + 1) {
+                                    return {
+                                        ...card,
+                                        content: card.content + jsonChunk.message.content,
+                                        // TODO: get below from formatted response from AI
+                                        question: "Fix the problem below such that it will output \"hello world\" in console.",
+                                        task: "console.log'hello world!",
+                                        solution: "console.log('hello world!');"
+                                    };
+                                }
+                                return card;
+                            }));
+                        } catch (error) {
+                            console.error('Error parsing JSON chunk', error);
+                        }
+                    });
+                    // Read the next chunk
+                    readStream();
                 };
-                evt.onerror = (e) => {
-                    // Stream will end with an error
-                    // and we want to close the connection on end (otherwise it will keep reconnecting)
-                    evt.close();
-                };
+                // Start reading the stream
+                readStream();
+
             } catch (error) {
                 console.error('Stream end with error', error);
             }
