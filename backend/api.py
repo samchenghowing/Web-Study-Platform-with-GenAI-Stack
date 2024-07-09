@@ -111,6 +111,7 @@ async def root():
 class Question(BaseModel):
     model: str
     messages: list
+    rag: bool = False
 
 
 class BaseTicket(BaseModel):
@@ -120,7 +121,7 @@ class BaseTicket(BaseModel):
 @app.post("/query-stream")
 async def qstream(question: Question):
     output_function = llm_chain
-    if question.model == "rag":
+    if question.rag:
         output_function = rag_chain
 
     q = Queue()
@@ -133,7 +134,7 @@ async def qstream(question: Question):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": question.model})
+        yield json.dumps({"init": True, "model": llm_name})
         for token, _ in stream(cb, q):
             yield json.dumps({"token": token})
 

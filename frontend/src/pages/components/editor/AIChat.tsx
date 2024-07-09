@@ -154,7 +154,7 @@ export default function AIChat(props: AIChatProps) {
                                 if (card.id === newCardId + 1) {
                                     return {
                                         ...card,
-                                        content: card.content + jsonChunk.message.content,
+                                        content: card.content + jsonChunk.token,
                                         // TODO: get below from formatted response from AI
                                         question: "Fix the problem below such that it will output \"hello world\" in console.",
                                         task: "console.log'hello world!",
