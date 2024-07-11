@@ -127,10 +127,10 @@ async def qstream(question: Question):
     q = Queue()
 
     def cb():
-        chat_history = [msg['content'] for msg in question.messages if msg['role'] != 'user']
-        user_input = question.messages[-1]['content']
+        chat_history = json.dumps(question.messages)
+
         output_function(
-            user_input, chat_history, callbacks=[QueueCallback(q)]
+            chat_history, callbacks=[QueueCallback(q)]
         )
 
     def generate():

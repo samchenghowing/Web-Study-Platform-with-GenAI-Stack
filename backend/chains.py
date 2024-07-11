@@ -19,6 +19,7 @@ from langchain.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate
 )
+from langchain_core.messages.base import BaseMessage
 
 from typing import List, Any
 from utils import BaseLogger, extract_title_and_question
@@ -88,22 +89,24 @@ def configure_llm_only_chain(llm):
     If you don't know the answer, just say that you don't know, you must not make up an answer.
     """
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-    human_template = "{question}"
-    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [system_message_prompt, human_message_prompt]
-    )
+    # human_template = "{question}"
+    # human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+    chat_prompt = ChatPromptTemplate.from_messages([
+        system_message_prompt,
+        ("placeholder", "{conversation}")
+        # human_message_prompt
+    ])
 
     def generate_llm_output(
-        user_input: str, chat_history: List[str], callbacks: List[Any], prompt=chat_prompt
+        chat_history: List[dict], callbacks: List[Any], prompt=chat_prompt
     ) -> str:
-        # Combine chat history into a single string
-        history = "\n".join(chat_history)
-        # Update the prompt to include chat history
-        full_prompt = f"{history}\n{user_input}"
+        formatted_chat_history = [
+            BaseMessage(role=message['role'], content=message['content'])
+            for message in chat_history
+        ]
         chain = prompt | llm
         answer = chain.invoke(
-            {"question": full_prompt}, config={"callbacks": callbacks}
+            {"conversation": formatted_chat_history}, config={"callbacks": callbacks}
         ).content
         return {"answer": answer}
 

@@ -23,7 +23,7 @@ const BackgroundPaper = styled(Paper)(({ theme }) => ({
 
 function InfoCard({ data, AIChatprops }) {
     const StyledCard = styled(Card)(({ theme }) => ({
-        backgroundColor: data.role === 'user' ? '#3f50b5' : '#fff',
+        backgroundColor: data.role === 'human' ? '#3f50b5' : '#fff',
         ...theme.typography.body2,
         padding: theme.spacing(1),
         color: theme.palette.text.secondary,
@@ -33,13 +33,13 @@ function InfoCard({ data, AIChatprops }) {
     return (
         <StyledCard sx={{ minWidth: 275, marginBottom: 2 }}>
             <CardContent>
-                <Typography sx={{ fontSize: 14 }} color={data.role === 'user' ? '#fff' : '#000'} gutterBottom>
+                <Typography sx={{ fontSize: 14 }} color={data.role === 'human' ? '#fff' : '#000'} gutterBottom>
                     {data.role}
                 </Typography>
-                <Typography color={data.role === 'user' ? '#fff' : '#000'} component={'span'} variant="h5">
+                <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant="h5">
                     <Markdown>{data.content}</Markdown>
                 </Typography>
-                <Typography sx={{ mb: 1.5 }} color={data.role === 'user' ? '#fff' : '#000'}>
+                <Typography sx={{ mb: 1.5 }} color={data.role === 'human' ? '#fff' : '#000'}>
                     {data.question}
                 </Typography>
                 <Typography variant="body2">
@@ -80,7 +80,7 @@ export default function AIChat(props: AIChatProps) {
     const [cardContent, setCardContent] = React.useState([
         {
             id: 1,
-            role: "assistant",
+            role: "ai",
             content: "Hi! I prepared the following task for you! Lets' see if you can fix it!",
             question: "Fix the problem below such that it will output \"hello world\" in console.",
             task: "console.log'hello world!",
@@ -95,14 +95,14 @@ export default function AIChat(props: AIChatProps) {
                 ...prevCardContent,
                 {
                     id: newCardId,
-                    role: "user",
+                    role: "human",
                     content: userQuestion,
                     question: "",
                     task: "",
                 },
                 {
                     id: newCardId + 1,
-                    role: "assistant",
+                    role: "ai",
                     content: "",
                     // TODO: get below from formatted response from AI
                     question: "",
@@ -114,7 +114,7 @@ export default function AIChat(props: AIChatProps) {
                 let doc = { role, content };
                 return doc;
             });
-            messages.push({ role: "user", content: userQuestion });
+            messages.push({ role: "human", content: userQuestion });
             console.log(messages);
             setUserQuestion("");
 
@@ -126,7 +126,8 @@ export default function AIChat(props: AIChatProps) {
                     },
                     body: JSON.stringify({
                         "model": "deepseek-coder-v2:16b",
-                        "messages": messages
+                        "messages": messages,
+                        "rag": false
                     })
                 });
 
