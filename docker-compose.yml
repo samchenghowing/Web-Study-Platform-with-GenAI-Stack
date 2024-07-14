@@ -18,7 +18,6 @@ services:
               capabilities: [gpu]
 
   pull-model:
-    image: genai-stack/pull-model:latest
     build:
       context: backend
       dockerfile: pull_model.Dockerfile

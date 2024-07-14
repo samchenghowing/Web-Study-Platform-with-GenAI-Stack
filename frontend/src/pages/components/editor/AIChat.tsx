@@ -115,7 +115,6 @@ export default function AIChat(props: AIChatProps) {
                 return doc;
             });
             messages.push({ role: "human", content: userQuestion });
-            console.log(messages);
             setUserQuestion("");
 
             try {
@@ -125,12 +124,15 @@ export default function AIChat(props: AIChatProps) {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        "model": "deepseek-coder-v2:16b",
                         "messages": messages,
                         "rag": false
                     })
                 });
 
+                console.log(JSON.stringify({
+                    "messages": messages,
+                    "rag": false
+                }));
                 const reader = response.body!.getReader();
                 if (reader == null) console.log("error connection to gen ai");
 

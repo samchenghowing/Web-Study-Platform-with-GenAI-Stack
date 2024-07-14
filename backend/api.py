@@ -1,5 +1,6 @@
 import os
 import json
+from typing import List
 
 from langchain_community.graphs import Neo4jGraph
 from utils import (
@@ -108,10 +109,13 @@ async def root():
     return {"message": "Hello World"}
 
 
+class Messages(BaseModel):
+    role: str
+    content: str
+
 class Question(BaseModel):
-    model: str
-    messages: list
-    rag: bool = False
+    messages: List[Messages] | None = None
+    rag: bool | None = False 
 
 
 class BaseTicket(BaseModel):
@@ -121,13 +125,14 @@ class BaseTicket(BaseModel):
 @app.post("/query-stream")
 async def qstream(question: Question):
     output_function = llm_chain
+
     if question.rag:
         output_function = rag_chain
 
     q = Queue()
 
     def cb():
-        chat_history = json.dumps(question.messages)
+        chat_history = question.messages
 
         output_function(
             chat_history, callbacks=[QueueCallback(q)]
