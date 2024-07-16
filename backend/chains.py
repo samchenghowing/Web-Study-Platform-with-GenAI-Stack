@@ -88,6 +88,17 @@ def configure_llm_only_chain(llm):
     You are a helpful assistant that helps a support agent with answering programming questions.
     If you don't know the answer, just say that you don't know, you must not make up an answer.
     """
+    
+    # from vzcode
+    # template = """
+    # You are an expert programmer.
+    # Your task is to output ONLY the code that replaces <FILL_ME> correctly.
+    # Do not add any markdown around.
+    # Do not duplicate the code before or after <FILL_ME>.
+    # Do not make any changes outside of <FILL_ME>.
+    # Do not enclose the output with backticks.
+    # If any additional instructions are required, they will be provided in comments.
+    # """
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     # human_template = "{question}"
     # human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)

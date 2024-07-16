@@ -8,10 +8,11 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 
-import AppAppBar from './components/AppAppBar';
+import AppAppBar from './components/Header';
 import AIChat from './components/editor/AIChat'
 import EditorView from './components/editor/EditorView'
 import EditorConfig from './components/editor/editorConfig';
+import Preview from './components/editor/Preview';
 
 export default () => {
 	// theme and css layout
@@ -88,13 +89,8 @@ export default () => {
 							onChange={setEditorDoc} />
 					</Grid>
 					<Grid xs={12}>
-						{/* <iframe
-							srcDoc={`<html><body><script>${editorDoc}</script></body></html>`}
-							title="Preview"
-							width="100%"
-							height="100px"
-							style={{ border: "1px solid #ccc" }}
-						></iframe> */}
+						<Preview
+							editorDoc={editorDoc} />
 					</Grid>
 				</Grid>
 			</Stack>
