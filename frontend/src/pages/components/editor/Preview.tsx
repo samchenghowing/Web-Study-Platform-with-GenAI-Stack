@@ -1,5 +1,4 @@
 import * as React from 'react';
-import parse from 'html-react-parser';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import AppBar from '@mui/material/AppBar';
@@ -20,7 +19,7 @@ const Transition = React.forwardRef(function Transition(
 });
 
 interface PreviewProps {
-    editorDoc: string;
+    editorDoc: { jsDoc: string; htmlDoc: string; cssDoc: string };
 }
 
 export default function Preview(props: PreviewProps) {
@@ -34,8 +33,7 @@ export default function Preview(props: PreviewProps) {
         setOpen(false);
     };
 
-    const html = `<html><body><h1>Hello world<h1/><script>${props.editorDoc}</script></body></html>`;
-    const reactElement = parse(html);
+    const html = `<html><body><h1>${props.editorDoc.htmlDoc}<h1/><script>${props.editorDoc.jsDoc}</script></body></html>`;
 
     return (
         <React.Fragment>
@@ -63,14 +61,12 @@ export default function Preview(props: PreviewProps) {
                         </Typography>
                     </Toolbar>
                 </AppBar>
-                {/* <iframe
-                    srcDoc={`<html><body><script>${editorDoc}</script></body></html>`}
+                <iframe
+                    srcDoc={html}
                     title="Preview"
                     width="100%"
                     height="100px"
-                    style={{ border: "1px solid #ccc" }}
-                ></iframe> */}
-                {reactElement}
+                ></iframe>
             </Dialog>
         </React.Fragment>
 

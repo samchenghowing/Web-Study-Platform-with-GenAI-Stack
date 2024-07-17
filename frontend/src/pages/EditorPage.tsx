@@ -24,10 +24,14 @@ export default () => {
 
 	// code editor
 	const [editorConfig, setEditorConfig] = React.useState({
-		language: "js",
+		language: 'js',
 		autoRun: false,
 	});
-	const [editorDoc, setEditorDoc] = React.useState("Goodbye world");
+	const [editorDoc, setEditorDoc] = React.useState({
+		jsDoc: 'Goodbye world',
+		htmlDoc: 'Hello world',
+		cssDoc: '',
+	});
 
 	// AIChat
 	// TODO: generate the question, task and solution by AIChat
@@ -35,8 +39,12 @@ export default () => {
 	// Instead of asking GenAI to craft a possibliy incorrect question, or 
 	// if we can't guarntee the correctness of solution from GenAI, why don't 
 	// we create a wrong question and it's corresponing accepted answer pair? 
-	const [question, setQuestion] = React.useState("No question assigned yet... Chat with AI to get your tailored task!");
-	const [task, setTask] = React.useState("console.log('You can learn anything');");
+	const [question, setQuestion] = React.useState('No question assigned yet... Chat with AI to get your tailored task!');
+	const [task, setTask] = React.useState({
+		jsDoc: 'console.log(\'You can learn anything\');',
+		htmlDoc: 'Hello world',
+		cssDoc: '',
+	});
 
 	function handleCodeSubmit() {
 		console.log('Function ran in EditorConfig');
@@ -58,7 +66,6 @@ export default () => {
 	React.useEffect(() => {
 		// when receive new task from AIChat, update code in EditorView
 		setEditorDoc(task);
-		// setEditorDoc(task.title);
 	}, [task]);
 
 	return (
@@ -66,7 +73,7 @@ export default () => {
 			<CssBaseline />
 			<Stack sx={{ width: '100%' }} spacing={2}>
 				{/* <AppAppBar mode={mode} toggleColorMode={toggleColorMode} /> */}
-				<Alert severity="info">
+				<Alert severity='info'>
 					<AlertTitle>Current task</AlertTitle>
 					{question}
 				</Alert>
@@ -86,7 +93,7 @@ export default () => {
 						<EditorView
 							editorConfig={editorConfig}
 							editorDoc={editorDoc}
-							onChange={setEditorDoc} />
+							setEditorDoc={setEditorDoc} />
 					</Grid>
 					<Grid xs={12}>
 						<Preview

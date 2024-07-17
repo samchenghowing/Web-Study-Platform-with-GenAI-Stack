@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { SetStateAction, Dispatch } from 'react';
 import { styled } from '@mui/material/styles';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
@@ -43,7 +44,7 @@ function InfoCard({ data, AIChatprops }) {
                     {data.question}
                 </Typography>
                 <Typography variant="body2">
-                    {data.task}
+                    {data.task.jsDoc}
                 </Typography>
 
             </CardContent>
@@ -71,8 +72,8 @@ function InfoCard({ data, AIChatprops }) {
 interface AIChatProps {
     question: string;
     setQuestion: (mode: string) => void;
-    task: string;
-    setTask: (mode: string) => void;
+    task: { jsDoc: string; htmlDoc: string; cssDoc: string };
+    setTask: Dispatch<SetStateAction<{ jsDoc: string; htmlDoc: string; cssDoc: string }>>;
 }
 
 export default function AIChat(props: AIChatProps) {
@@ -83,7 +84,11 @@ export default function AIChat(props: AIChatProps) {
             role: "ai",
             content: "Hi! I prepared the following task for you! Lets' see if you can fix it!",
             question: "Fix the problem below such that it will output \"hello world\" in console.",
-            task: "console.log'hello world!",
+            task: {
+                jsDoc: 'console.log\'hello world!',
+                htmlDoc: 'Hello world',
+                cssDoc: '',
+            }
         },
     ]);
     const cardRef = React.useRef<HTMLDivElement>(null);
@@ -98,7 +103,11 @@ export default function AIChat(props: AIChatProps) {
                     role: "human",
                     content: userQuestion,
                     question: "",
-                    task: "",
+                    task: {
+                        jsDoc: '',
+                        htmlDoc: '',
+                        cssDoc: '',
+                    },
                 },
                 {
                     id: newCardId + 1,
@@ -106,7 +115,11 @@ export default function AIChat(props: AIChatProps) {
                     content: "",
                     // TODO: get below from formatted response from AI
                     question: "",
-                    task: "",
+                    task: {
+                        jsDoc: '',
+                        htmlDoc: '',
+                        cssDoc: '',
+                    },
                 }
             ]);
 
@@ -160,8 +173,11 @@ export default function AIChat(props: AIChatProps) {
                                         content: card.content + jsonChunk.token,
                                         // TODO: get below from formatted response from AI
                                         question: "Fix the problem below such that it will output \"hello world\" in console.",
-                                        task: "console.log'hello world!",
-                                        solution: "console.log('hello world!');"
+                                        task: {
+                                            jsDoc: 'console.log\'hello world!',
+                                            htmlDoc: 'Hello world',
+                                            cssDoc: '',
+                                        }
                                     };
                                 }
                                 return card;
