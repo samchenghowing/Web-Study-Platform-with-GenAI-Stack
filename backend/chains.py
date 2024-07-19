@@ -19,10 +19,10 @@ from langchain.prompts import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate
 )
-from langchain_core.messages.base import BaseMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from typing import List, Any
-from utils import BaseLogger, extract_title_and_question
+from utils import BaseLogger, extract_task
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
@@ -111,10 +111,13 @@ def configure_llm_only_chain(llm):
     def generate_llm_output(
         chat_history: List[dict], callbacks: List[Any], prompt=chat_prompt
     ) -> str:
-        formatted_chat_history = [
-            BaseMessage(role=message['role'], content=message['content'])
-            for message in chat_history
-        ]
+        print("Chat History:", chat_history)  # Debugging print
+        formatted_chat_history = []
+        for message in chat_history:
+            if message['role'] == 'ai':
+                formatted_chat_history.append(AIMessage(content=message['content']))
+            else:
+                formatted_chat_history.append(HumanMessage(content=message['content']))
         chain = prompt | llm
         answer = chain.invoke(
             {"conversation": formatted_chat_history}, config={"callbacks": callbacks}
@@ -191,7 +194,7 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     return kg_qa
 
 
-def generate_ticket(neo4j_graph, llm_chain, input_question):
+def generate_task(neo4j_graph, llm_chain, input_question):
     # Get high ranked questions
     records = neo4j_graph.query(
         "MATCH (q:Question) RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3"
@@ -207,18 +210,26 @@ def generate_ticket(neo4j_graph, llm_chain, input_question):
         questions_prompt += "----\n\n"
 
     gen_system_template = f"""
-    You're an expert in formulating high quality questions. 
-    Formulate a question in the same style and tone as the following example questions.
+    You're a programming teacher and you are preparing task and question on javascript. 
+    Generate coding question that having fault for students to fix and the corresponing correct solution.
+    Please provide the coding question in the same field as question topic.
     {questions_prompt}
     ---
 
-    Don't make anything up, only use information in the following question.
-    Return a title for the question, and the question post itself.
+    Return a title for the question, the question itself and a correct solution.
 
     Return format template:
     ---
     Title: This is a new title
     Question: This is a new question
+    Solution: This is a new solution
+    ---
+
+    Return format example:
+    ---
+    Title: Fix the problem below such that it will output \"hello world\" in console.
+    Question: consloe.log(\'hello world!)
+    Solution: console.log(\'hello world!\');
     ---
     """
     # we need jinja2 since the questions themselves contain curly braces
@@ -234,6 +245,7 @@ def generate_ticket(neo4j_graph, llm_chain, input_question):
                 ---
                 Title: New title
                 Question: New question
+                Solution: New solution
                 ---
                 """
             ),
@@ -241,9 +253,9 @@ def generate_ticket(neo4j_graph, llm_chain, input_question):
         ]
     )
     llm_response = llm_chain(
-        f"Here's the question to rewrite in the expected format: ```{input_question}```",
+        f"Here's the question topic to generate: ```{input_question}```",
         [],
         chat_prompt,
     )
-    new_title, new_question = extract_title_and_question(llm_response["answer"])
-    return (new_title, new_question)
+    new_title, new_question, new_solution = extract_task(llm_response["answer"])
+    return (new_title, new_question, new_solution)

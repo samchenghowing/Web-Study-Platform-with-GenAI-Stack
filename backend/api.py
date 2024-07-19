@@ -12,7 +12,7 @@ from chains import (
     load_llm,
     configure_llm_only_chain,
     configure_qa_rag_chain,
-    generate_ticket,
+    generate_task,
 )
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
@@ -125,7 +125,6 @@ class BaseTicket(BaseModel):
 @app.post("/query-stream")
 async def qstream(question: Question):
     output_function = llm_chain
-
     if question.rag:
         output_function = rag_chain
 
@@ -133,9 +132,9 @@ async def qstream(question: Question):
 
     def cb():
         chat_history = question.messages
-
+        chat_history_dicts = [message.model_dump() for message in chat_history]
         output_function(
-            chat_history, callbacks=[QueueCallback(q)]
+            chat_history_dicts, callbacks=[QueueCallback(q)]
         )
 
     def generate():
@@ -145,24 +144,12 @@ async def qstream(question: Question):
 
     return StreamingResponse(generate(), media_type="application/json")
 
-
-@app.get("/query")
-async def ask(question: Question = Depends()):
-    output_function = llm_chain
-    if question.rag:
-        output_function = rag_chain
-    result = output_function(
-        {"question": question.text, "chat_history": []}, callbacks=[]
-    )
-
-    return {"result": result["answer"], "model": llm_name}
-
-
-@app.get("/generate-ticket")
-async def generate_ticket_api(question: BaseTicket = Depends()):
-    new_title, new_question = generate_ticket(
+@app.get("/generate-task")
+async def generate_task_api(question: BaseTicket = Depends()):
+    new_title, new_question, new_solution = generate_task(
         neo4j_graph=neo4j_graph,
         llm_chain=llm_chain,
         input_question=question.text,
     )
-    return {"result": {"title": new_title, "text": new_question}, "model": llm_name}
+    # TODO: save new_question and new_solution pair to mongodb for verification/ construct graph
+    return {"result": {"question": new_title, "task": {"jsDoc": new_question}}, "model": llm_name}
