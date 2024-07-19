@@ -2,20 +2,20 @@ services:
 
   llm: &llm
     image: ollama/ollama:latest
-    profiles: ["linux"]
+    profiles: [ "linux" ]
     networks:
       - net
 
   llm-gpu:
     <<: *llm
-    profiles: ["linux-gpu"]
+    profiles: [ "linux-gpu" ]
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: all
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   pull-model:
     build:
@@ -28,26 +28,40 @@ services:
       - net
     tty: true
 
-  database:
+  neo4j-database:
     user: neo4j:neo4j
     image: neo4j:5.11
     ports:
       - 7687:7687
       - 7474:7474
     volumes:
-      - $PWD/data:/data
+      - $PWD/data:/data/neo4j
     environment:
       - NEO4J_AUTH=${NEO4J_USERNAME-neo4j}/${NEO4J_PASSWORD-password}
       - NEO4J_PLUGINS=["apoc"]
       - NEO4J_db_tx__log_rotation_retention__policy=false
       - NEO4J_dbms_security_procedures_unrestricted=apoc.*
     healthcheck:
-        test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
-        interval: 15s
-        timeout: 30s
-        retries: 10
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"
+        ]
+      interval: 15s
+      timeout: 30s
+      retries: 10
     networks:
       - net
+
+  mongo:
+    restart: always
+    image: mongo:4.2.0
+    volumes:
+      - $PWD/data:/data/mongodb
+    networks:
+      - net
+    expose:
+      - 27017
 
   loader:
     build:
@@ -60,7 +74,7 @@ services:
       - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
       - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY-}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY-}      
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY-}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL-sentence_transformer}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
@@ -73,7 +87,7 @@ services:
     networks:
       - net
     depends_on:
-      database:
+      neo4j-database:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
@@ -88,7 +102,6 @@ services:
     ports:
       - 8081:8080
       - 8502:8502
-
 
   pdf_bot:
     build:
@@ -113,7 +126,7 @@ services:
     networks:
       - net
     depends_on:
-      database:
+      neo4j-database:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
@@ -139,7 +152,7 @@ services:
       - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
       - NEO4J_USERNAME=${NEO4J_USERNAME-neo4j}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}  
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
       - LLM=${LLM-llama2}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL-sentence_transformer}
@@ -152,8 +165,9 @@ services:
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
     networks:
       - net
+      - frontend-net
     depends_on:
-      database:
+      neo4j-database:
         condition: service_healthy
       pull-model:
         condition: service_completed_successfully
@@ -168,7 +182,11 @@ services:
     ports:
       - 8504:8504
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 http://localhost:8504/ || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 http://localhost:8504/ || exit 1"
+        ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -189,9 +207,10 @@ services:
       api:
         condition: service_healthy
     networks:
-      - net
+      - frontend-net
     ports:
       - 8505:8505
 
 networks:
+  frontend-net:
   net:
