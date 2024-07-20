@@ -11,6 +11,7 @@ from chains import (
     load_embedding_model,
     load_llm,
     configure_llm_only_chain,
+    configure_llm_task_chain,
     configure_qa_rag_chain,
     generate_task,
 )
@@ -50,6 +51,7 @@ llm = load_llm(
 )
 
 llm_chain = configure_llm_only_chain(llm)
+task_chain = configure_llm_task_chain(llm)
 rag_chain = configure_qa_rag_chain(
     llm, embeddings, embeddings_store_url=url, username=username, password=password
 )
@@ -144,12 +146,12 @@ async def qstream(question: Question):
 
     return StreamingResponse(generate(), media_type="application/json")
 
-@app.get("/generate-task")
-async def generate_task_api(question: BaseTicket = Depends()):
+@app.post("/generate-task")
+async def generate_task_api(question: BaseTicket):
     new_title, new_question, new_solution = generate_task(
         neo4j_graph=neo4j_graph,
-        llm_chain=llm_chain,
-        input_question=question.text,
+        llm_chain=task_chain,
+        input_question=question,
     )
     # TODO: save new_question and new_solution pair to mongodb for verification/ construct graph
     return {"result": {"question": new_title, "task": {"jsDoc": new_question}}, "model": llm_name}

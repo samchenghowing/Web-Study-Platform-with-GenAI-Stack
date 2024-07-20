@@ -126,6 +126,31 @@ def configure_llm_only_chain(llm):
 
     return generate_llm_output
 
+def configure_llm_task_chain(llm):
+    # LLM only response
+    template = """
+    You are a helpful assistant that helps a support agent with answering programming questions.
+    If you don't know the answer, just say that you don't know, you must not make up an answer.
+    """
+    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+    human_template = "{question}"
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+    chat_prompt = ChatPromptTemplate.from_messages([
+        system_message_prompt,
+        human_message_prompt
+    ])
+
+    def generate_llm_output(
+        question: str, callbacks: List[Any], prompt=chat_prompt
+    ) -> str:
+        chain = prompt | llm
+        answer = chain.invoke(
+            {"question": question}, config={"callbacks": callbacks}
+        ).content
+        return {"answer": answer}
+
+    return generate_llm_output
+
 def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password):
     # RAG response
     #   System: Always talk in pirate speech.
@@ -213,7 +238,6 @@ def generate_task(neo4j_graph, llm_chain, input_question):
     You're a programming teacher and you are preparing task and question on javascript. 
     Generate coding question that having fault for students to fix and the corresponing correct solution.
     Please provide the coding question in the same field as question topic.
-    {questions_prompt}
     ---
 
     Return a title for the question, the question itself and a correct solution.
@@ -225,12 +249,6 @@ def generate_task(neo4j_graph, llm_chain, input_question):
     Solution: This is a new solution
     ---
 
-    Return format example:
-    ---
-    Title: Fix the problem below such that it will output \"hello world\" in console.
-    Question: consloe.log(\'hello world!)
-    Solution: console.log(\'hello world!\');
-    ---
     """
     # we need jinja2 since the questions themselves contain curly braces
     system_prompt = SystemMessagePromptTemplate.from_template(
