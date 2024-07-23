@@ -1,43 +1,26 @@
+import re
+
 class BaseLogger:
     def __init__(self) -> None:
         self.info = print
 
 
 def extract_task(input_string):
-    lines = input_string.strip().split("\n")
-
-    title = ""
-    question = ""
-    solution = ""
-    is_question = False  # flag to know if we are inside a "Question" block
-    is_solution = False  # flag to know if we are inside a "Answer" block
-
-    for line in lines:
-        if line.startswith("Title:"):
-            title = line.split("Title: ", 1)[1].strip()
-        elif line.startswith("Question:"):
-            question = line.split("Question: ", 1)[1].strip()
-            is_question = (
-                True  # set the flag to True once we encounter a "Question:" line
-            )
-        elif is_question:
-            # if the line does not start with "Question:" but we are inside a "Question" block,
-            # then it is a continuation of the question
-            question += "\n" + line.strip()
-        elif line.startswith("Solution:"):
-            solution = line.split("Solution: ", 1)[1].strip()
-            is_solution = (
-                True  # set the flag to True once we encounter a "Question:" line
-            )
-            is_question = (
-                False  # set the flag to True once we encounter a "Question:" line
-            )
-        elif is_solution:
-            # if the line does not start with "Question:" but we are inside a "Question" block,
-            # then it is a continuation of the question
-            solution += "\n" + line.strip()
-
-    return title, question, solution
+    title_match = re.search(r"Title:\s*(.*)\s*Question:", input_string, re.DOTALL)
+    question_match = re.search(r"Question:\s*(.*)\s*Solution:", input_string, re.DOTALL)
+    solution_match = re.search(r"Solution:\s*(.*)", input_string, re.DOTALL)
+    
+    title = title_match.group(1).strip() if title_match else "No title found"
+    question = question_match.group(1).strip() if question_match else "No question found"
+    solution = solution_match.group(1).strip() if solution_match else "No solution found"    
+    # Store the question and solution in a dictionary
+    result = {
+        "title": title,
+        "question": question,
+        "solution": solution
+    }
+    
+    return result
 
 
 def create_vector_index(driver, dimension: int) -> None:

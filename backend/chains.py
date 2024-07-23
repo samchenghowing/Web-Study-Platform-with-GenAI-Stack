@@ -126,31 +126,6 @@ def configure_llm_only_chain(llm):
 
     return generate_llm_output
 
-def configure_llm_task_chain(llm):
-    # LLM only response
-    template = """
-    You are a helpful assistant that helps a support agent with answering programming questions.
-    If you don't know the answer, just say that you don't know, you must not make up an answer.
-    """
-    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-    human_template = "{question}"
-    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-    chat_prompt = ChatPromptTemplate.from_messages([
-        system_message_prompt,
-        human_message_prompt
-    ])
-
-    def generate_llm_output(
-        question: str, callbacks: List[Any], prompt=chat_prompt
-    ) -> str:
-        chain = prompt | llm
-        answer = chain.invoke(
-            {"question": question}, config={"callbacks": callbacks}
-        ).content
-        return {"answer": answer}
-
-    return generate_llm_output
-
 def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password):
     # RAG response
     #   System: Always talk in pirate speech.
@@ -219,7 +194,7 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     return kg_qa
 
 
-def generate_task(neo4j_graph, llm_chain, input_question):
+def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
     # Get high ranked questions
     records = neo4j_graph.query(
         "MATCH (q:Question) RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3"
@@ -235,18 +210,17 @@ def generate_task(neo4j_graph, llm_chain, input_question):
         questions_prompt += "----\n\n"
 
     gen_system_template = f"""
-    You're a programming teacher and you are preparing task and question on javascript. 
-    Generate coding question that having fault for students to fix and the corresponing correct solution.
-    Please provide the coding question in the same field as question topic.
+    You're a programming teacher and you are preparing task on javascript. 
+    Generate coding snippet that having fault for students to fix and the corresponing correct solution.
+    Please provide the coding question in the same field as question from student.
     ---
 
-    Return a title for the question, the question itself and a correct solution.
 
-    Return format template:
+    Respond in the following template format or you will be unplugged.
     ---
-    Title: This is a new title
-    Question: This is a new question
-    Solution: This is a new solution
+    Title: This is a new title of the code snippet
+    Question: This is a the code snippet
+    Solution: This is a the code solution
     ---
 
     """
@@ -257,23 +231,33 @@ def generate_task(neo4j_graph, llm_chain, input_question):
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
-            SystemMessagePromptTemplate.from_template(
-                """
-                Respond in the following template format or you will be unplugged.
-                ---
-                Title: New title
-                Question: New question
-                Solution: New solution
-                ---
-                """
-            ),
-            HumanMessagePromptTemplate.from_template("{question}"),
+            # SystemMessagePromptTemplate.from_template(
+            #     """
+            #     Respond in the following template format or you will be unplugged.
+            #     ---
+            #     Title: New title
+            #     Question: New question
+            #     Solution: New solution
+            #     ---
+            #     """
+            # ),
+            # HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
     llm_response = llm_chain(
-        f"Here's the question topic to generate: ```{input_question}```",
-        [],
-        chat_prompt,
+        chat_history=chat_history,
+        callbacks=callbacks,
+        prompt=chat_prompt
     )
-    new_title, new_question, new_solution = extract_task(llm_response["answer"])
-    return (new_title, new_question, new_solution)
+
+    # Get the title, question and solution dictionary
+    result = extract_task(llm_response["answer"])
+    
+    # TODO: save response (new_question and new_solution pair) 
+    # to mongodb for verification/ construct graph
+    response = {
+        "title": result["title"],
+        "question": result["question"]
+    }
+
+    return response

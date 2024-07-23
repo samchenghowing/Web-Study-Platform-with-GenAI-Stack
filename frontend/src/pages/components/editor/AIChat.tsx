@@ -13,7 +13,6 @@ import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 
-const CHAT_API_ENDPOINT = "http://localhost:8504/query-stream";
 const TASK_API_ENDPOINT = "http://localhost:8504/generate-task";
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
@@ -132,7 +131,7 @@ export default function AIChat(props: AIChatProps) {
             setUserQuestion("");
 
             try {
-                const response = await fetch(CHAT_API_ENDPOINT, {
+                const response = await fetch(TASK_API_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -199,56 +198,6 @@ export default function AIChat(props: AIChatProps) {
         }
     };
 
-    const handleTask = async () => {
-        try {
-            const response = await fetch(TASK_API_ENDPOINT, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': 'http://localhost:8504',
-                },
-                body: JSON.stringify({
-                    "text": userQuestion
-                })
-            });
-
-            const reader = response.body!.getReader();
-            if (reader == null) console.log("error connection to gen ai");
-
-            const readStream = async () => {
-                let { done, value } = await reader.read();
-                if (done) {
-                    console.log('Stream complete');
-                    return;
-                }
-
-                // Decode the stream chunk to a string
-                const chunk = new TextDecoder('utf-8').decode(value);
-                // Split the chunk by newlines, as each JSON object ends with a newline
-                const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                jsonStrings.forEach(jsonString => {
-                    try {
-                        const jsonChunk = JSON.parse(jsonString);
-                        console.log(jsonChunk);
-                    } catch (error) {
-                        console.error('Error parsing JSON chunk', error);
-                    }
-                });
-                // Read the next chunk
-                readStream();
-            };
-            // Start reading the stream
-            readStream();
-
-            const task = await response.json();
-            console.log(task)
-        } catch (error) {
-            console.error('Stream end with error', error);
-        }
-
-    };
-
     React.useEffect(() => {
         if (cardRef.current != null) cardRef.current.scrollTo(0, cardRef.current.scrollHeight);
     }, [cardContent]);
@@ -272,8 +221,7 @@ export default function AIChat(props: AIChatProps) {
                 }}
                 onKeyDown={e => {
                     if (e.key === "Enter") {
-                        // handleChat();
-                        handleTask();
+                        handleChat();
                     }
 
                 }}
