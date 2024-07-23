@@ -77,14 +77,12 @@ Here's what's in this repo:
 
 | Name | Main files | Compose name | URLs | Description |
 |---|---|---|---|---|
-| Stack Overflow Loader | `loader.py` | `loader` | http://localhost:8502 | Load SO data into the database (create vector embeddings etc). Fullstack Python application. |
-| PDF Reader | `pdf_bot.py` | `pdf_bot` | http://localhost:8503 | Read local PDF and ask it questions. Fullstack Python application. |
-| Standalone Bot API | `api.py` | `api` | http://localhost:8504 | Standalone HTTP API streaming (SSE) + non-streaming endpoints Python. |
-| Standalone Bot UI | `front-end/` | `front-end` | http://localhost:8505 | Standalone client that uses the Standalone Bot API to interact with the model. JavaScript (Svelte) front-end. |
+| Standalone Bot API | `api.py` | `api` | http://localhost:8504 | Standalone HTTP API streaming (SSE) endpoints Python. |
+| Standalone Bot UI | `front-end/` | `front-end` | http://localhost:8505 | Standalone client that uses the Standalone Bot API to interact with the model. JavaScript (React) front-end. |
 
 The database can be explored at http://localhost:7474.
 
-##  App 1 - Loader
+##  App 1 - Loader (TO BE MOVED TO App 4)
 
 UI: http://localhost:8502
 DB client: http://localhost:7474
@@ -101,7 +99,7 @@ DB client: http://localhost:7474
 |---|---|
 | ![](.github/media/app2-ui-1.png) | ![](.github/media/app2-model.png) |
 
-## App 2 - Question / Answer with a local PDF
+## App 2 - Question / Answer with a local PDF (TO BE MOVED TO App 4)
 UI: http://localhost:8503  
 DB client: http://localhost:7474
 
@@ -122,8 +120,7 @@ Example cURL command:
 curl http://localhost:8504/query-stream\?text\=minimal%20hello%20world%20in%20python\&rag\=false
 ```
 
-Exposes the functionality to answer questions in the same way as App 1 above. Uses
-same code and prompts.
+Exposes the functionality to answer questions in App 4.
 
 ## App 4 - Static front-end
 UI: http://localhost:8505
