@@ -3,7 +3,6 @@ python-dotenv
 wikipedia
 tiktoken
 neo4j
-streamlit
 sentence_transformers==2.2.2
 fastapi
 PyPDF2

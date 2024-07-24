@@ -109,14 +109,13 @@ async def root():
     return {"message": "Hello World"}
 
 
-class Messages(BaseModel):
+class Message(BaseModel):
     role: str
     content: str
 
 class Question(BaseModel):
-    messages: List[Messages] | None = None
+    messages: List[Message] | None = None
     rag: bool | None = False 
-
 
 class BaseTicket(BaseModel):
     text: str
@@ -146,6 +145,10 @@ async def qstream(question: Question):
 
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
+    output_function = llm_chain
+    if question.rag:
+        output_function = rag_chain
+
     q = Queue()
 
     def cb():
@@ -154,7 +157,7 @@ async def generate_task_api(question: Question):
 
         generate_task(
             neo4j_graph=neo4j_graph,
-            llm_chain=llm_chain,
+            llm_chain=output_function,
             chat_history=chat_history_dicts,
             callbacks=[QueueCallback(q)],
         )
