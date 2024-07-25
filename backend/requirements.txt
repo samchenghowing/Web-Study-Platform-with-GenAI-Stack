@@ -1,16 +1,25 @@
-openai
+# utils
 python-dotenv
 wikipedia
-tiktoken
-neo4j
-sentence_transformers==2.2.2
-fastapi
 PyPDF2
+tiktoken
+sentence_transformers==2.2.2
 torch==2.0.1
+
+# databases
+neo4j
+pymongo
+
+# api 
+fastapi
 pydantic
 uvicorn
 sse-starlette
-boto3
+
+# 3rd party genai apps
+boto3 # AWS
+openai  # Openai
+
 # missing from the langchain base image?
 langchain-openai
 langchain-community

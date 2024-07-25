@@ -183,7 +183,6 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     )
     return kg_qa
 
-
 def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
     # Get high ranked questions
     records = neo4j_graph.query(

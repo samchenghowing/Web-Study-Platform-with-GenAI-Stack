@@ -3,9 +3,12 @@ import json
 import io
 from typing import Dict, List
 from uuid import UUID, uuid4
+from threading import Thread
+from queue import Queue, Empty
+from collections.abc import Generator
+from http import HTTPStatus
+from pydantic import BaseModel, Field
 
-
-from langchain_community.graphs import Neo4jGraph
 from utils import (
     create_vector_index,
     BaseLogger,
@@ -19,20 +22,17 @@ from chains import (
 )
 from fastapi import FastAPI
 from fastapi import BackgroundTasks, UploadFile, File
-from pydantic import BaseModel, Field
-from langchain.callbacks.base import BaseCallbackHandler
-from threading import Thread
-from queue import Queue, Empty
-from collections.abc import Generator
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from dotenv import load_dotenv
-from http import HTTPStatus
+
+from langchain_community.graphs import Neo4jGraph
+from langchain_community.vectorstores import Neo4jVector
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from PyPDF2 import PdfReader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Neo4jVector
 
+from dotenv import load_dotenv
 load_dotenv(".env")
 
 url = os.getenv("NEO4J_URI")
@@ -129,29 +129,6 @@ class Question(BaseModel):
 class BaseTicket(BaseModel):
     text: str
 
-
-@app.post("/query-stream")
-async def qstream(question: Question):
-    output_function = llm_chain
-    if question.rag:
-        output_function = rag_chain
-
-    q = Queue()
-
-    def cb():
-        chat_history = question.messages
-        chat_history_dicts = [message.model_dump() for message in chat_history]
-        output_function(
-            chat_history_dicts, callbacks=[QueueCallback(q)]
-        )
-
-    def generate():
-        yield json.dumps({"init": True, "model": llm_name})
-        for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
-
-    return StreamingResponse(generate(), media_type="application/json")
-
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
     output_function = llm_chain
@@ -184,14 +161,12 @@ async def generate_task_api(question: Question):
 # https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
 # https://github.com/tiangolo/fastapi/discussions/11177
 
-
 class Job(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
     status: str = "in_progress"
     processed_files: List[str] = Field(default_factory=list)
 
 jobs: Dict[UUID, Job] = {}
-
 
 def process_files(task_id: UUID, byte_files: List[dict]):
     for filename, content in byte_files.items():
@@ -230,13 +205,11 @@ def process_files(task_id: UUID, byte_files: List[dict]):
 
     jobs[task_id].status = "completed"
 
-
 async def get_file_content(files: List[UploadFile]):
     byte_files = {}
     for file in files:
         byte_files[file.filename] = await file.read()
     return byte_files
-
 
 @app.post("/upload/pdf", status_code=HTTPStatus.ACCEPTED)
 async def work(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
@@ -245,7 +218,6 @@ async def work(background_tasks: BackgroundTasks, files: List[UploadFile] = File
     byte_files = await get_file_content(files)
     background_tasks.add_task(process_files, new_task.uid, byte_files)
     return new_task
-
 
 @app.get("/upload/{uid}/status")
 async def status_handler(uid: UUID):

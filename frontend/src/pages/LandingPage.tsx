@@ -4,7 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from './components/Header';
+import AppAppBar from './components/home/Header';
 import Hero from './components/home/Hero';
 import Highlights from './components/home/Highlights';
 import Pricing from './components/home/Pricing';

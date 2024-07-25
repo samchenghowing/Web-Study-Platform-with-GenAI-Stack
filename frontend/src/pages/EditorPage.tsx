@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 
-import AppAppBar from './components/Header';
 import AIChat from './components/editor/AIChat'
 import EditorView from './components/editor/EditorView'
 import EditorConfig from './components/editor/editorConfig';
