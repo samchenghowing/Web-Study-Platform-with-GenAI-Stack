@@ -13,6 +13,7 @@ import AIChat from './components/editor/AIChat'
 import EditorView from './components/editor/EditorView'
 import EditorConfig from './components/editor/editorConfig';
 import Preview from './components/editor/Preview';
+import FileUploader from './components/FileUploader';
 
 export default () => {
 	// theme and css layout
@@ -98,6 +99,7 @@ export default () => {
 					<Grid xs={12}>
 						<Preview
 							editorDoc={editorDoc} />
+						<FileUploader />
 					</Grid>
 				</Grid>
 			</Stack>

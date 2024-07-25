@@ -1,6 +1,9 @@
 import os
 import json
-from typing import List
+import io
+from typing import Dict, List
+from uuid import UUID, uuid4
+
 
 from langchain_community.graphs import Neo4jGraph
 from utils import (
@@ -14,8 +17,9 @@ from chains import (
     configure_qa_rag_chain,
     generate_task,
 )
-from fastapi import FastAPI, Depends
-from pydantic import BaseModel
+from fastapi import FastAPI
+from fastapi import BackgroundTasks, UploadFile, File
+from pydantic import BaseModel, Field
 from langchain.callbacks.base import BaseCallbackHandler
 from threading import Thread
 from queue import Queue, Empty
@@ -23,6 +27,11 @@ from collections.abc import Generator
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
+from http import HTTPStatus
+
+from PyPDF2 import PdfReader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Neo4jVector
 
 load_dotenv(".env")
 
@@ -168,3 +177,76 @@ async def generate_task_api(question: Question):
             yield json.dumps({"token": token})
 
     return StreamingResponse(generate(), media_type="application/json")
+
+
+
+# https://stackoverflow.com/questions/64901945/how-to-send-a-progress-of-operation-in-a-fastapi-app
+# https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
+# https://github.com/tiangolo/fastapi/discussions/11177
+
+
+class Job(BaseModel):
+    uid: UUID = Field(default_factory=uuid4)
+    status: str = "in_progress"
+    processed_files: List[str] = Field(default_factory=list)
+
+jobs: Dict[UUID, Job] = {}
+
+
+def process_files(task_id: UUID, byte_files: List[dict]):
+    for filename, content in byte_files.items():
+        try:
+            # Create a file-like object from the content
+            pdf_reader = PdfReader(io.BytesIO(content))
+
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+
+            # langchain_textspliter
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, chunk_overlap=200, length_function=len
+            )
+
+            chunks = text_splitter.split_text(text=text)
+
+            # Store the chunks part in db (vector)
+            Neo4jVector.from_texts(
+                chunks,
+                url=url,
+                username=username,
+                password=password,
+                embedding=embeddings,
+                index_name="pdf_bot",
+                node_label="PdfBotChunk",
+                pre_delete_collection=True,  # Delete existing PDF data
+            )
+            
+        except Exception as error:
+            jobs[task_id].status = f"Importing {filename} fails with error: {error}"
+            return
+        finally:
+            jobs[task_id].processed_files.append(filename)
+
+    jobs[task_id].status = "completed"
+
+
+async def get_file_content(files: List[UploadFile]):
+    byte_files = {}
+    for file in files:
+        byte_files[file.filename] = await file.read()
+    return byte_files
+
+
+@app.post("/upload/pdf", status_code=HTTPStatus.ACCEPTED)
+async def work(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+    new_task = Job()
+    jobs[new_task.uid] = new_task
+    byte_files = await get_file_content(files)
+    background_tasks.add_task(process_files, new_task.uid, byte_files)
+    return new_task
+
+
+@app.get("/upload/{uid}/status")
+async def status_handler(uid: UUID):
+    return jobs[uid]
