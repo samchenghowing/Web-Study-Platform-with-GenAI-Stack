@@ -9,6 +9,7 @@ torch==2.0.1
 # databases
 neo4j
 pymongo
+motor==3.5.1
 
 # api 
 fastapi

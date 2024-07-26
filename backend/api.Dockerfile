@@ -15,6 +15,7 @@ RUN pip install --upgrade -r requirements.txt
 COPY api.py .
 COPY utils.py .
 COPY chains.py .
+COPY mongo.py .
 
 HEALTHCHECK CMD curl --fail http://localhost:8504
 
