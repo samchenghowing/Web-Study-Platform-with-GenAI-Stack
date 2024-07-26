@@ -20,10 +20,16 @@ from chains import (
     configure_qa_rag_chain,
     generate_task,
 )
+from mongo import (
+    StudentModel,
+    UpdateStudentModel,
+    StudentCollection,
+)
 from fastapi import FastAPI
+from fastapi import Body, HTTPException
 from fastapi import BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores import Neo4jVector
@@ -31,6 +37,10 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from PyPDF2 import PdfReader
+
+from bson import ObjectId
+import motor.motor_asyncio
+from pymongo import ReturnDocument
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -43,6 +53,12 @@ embedding_model_name = os.getenv("EMBEDDING_MODEL")
 llm_name = os.getenv("LLM")
 # Remapping for Langchain Neo4j integration
 os.environ["NEO4J_URL"] = url
+
+
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+db = client.college
+student_collection = db.get_collection("students")
+
 
 embeddings, dimension = load_embedding_model(
     embedding_model_name,
@@ -149,7 +165,7 @@ async def generate_task_api(question: Question):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": llm_name})
+        yield json.dumps({"init": True, "model": llm_name, "token": ""})
         for token, _ in stream(cb, q):
             yield json.dumps({"token": token})
 
@@ -222,3 +238,108 @@ async def work(background_tasks: BackgroundTasks, files: List[UploadFile] = File
 @app.get("/upload/{uid}/status")
 async def status_handler(uid: UUID):
     return jobs[uid]
+
+
+# CRUD mongodb
+# https://github.com/mongodb-developer/mongodb-with-fastapi
+@app.post(
+    "/students/",
+    response_description="Add new student",
+    response_model=StudentModel,
+    status_code=HTTPStatus.CREATED,
+    response_model_by_alias=False,
+)
+async def create_student(student: StudentModel = Body(...)):
+    """
+    Insert a new student record.
+
+    A unique `id` will be created and provided in the response.
+    """
+    new_student = await student_collection.insert_one(
+        student.model_dump(by_alias=True, exclude=["id"])
+    )
+    created_student = await student_collection.find_one(
+        {"_id": new_student.inserted_id}
+    )
+    return created_student
+
+
+@app.get(
+    "/students/",
+    response_description="List all students",
+    response_model=StudentCollection,
+    response_model_by_alias=False,
+)
+async def list_students():
+    """
+    List all of the student data in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    return StudentCollection(students=await student_collection.find().to_list(1000))
+
+
+@app.get(
+    "/students/{id}",
+    response_description="Get a single student",
+    response_model=StudentModel,
+    response_model_by_alias=False,
+)
+async def show_student(id: str):
+    """
+    Get the record for a specific student, looked up by `id`.
+    """
+    if (
+        student := await student_collection.find_one({"_id": ObjectId(id)})
+    ) is not None:
+        return student
+
+    raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+
+@app.put(
+    "/students/{id}",
+    response_description="Update a student",
+    response_model=StudentModel,
+    response_model_by_alias=False,
+)
+async def update_student(id: str, student: UpdateStudentModel = Body(...)):
+    """
+    Update individual fields of an existing student record.
+
+    Only the provided fields will be updated.
+    Any missing or `null` fields will be ignored.
+    """
+    student = {
+        k: v for k, v in student.model_dump(by_alias=True).items() if v is not None
+    }
+
+    if len(student) >= 1:
+        update_result = await student_collection.find_one_and_update(
+            {"_id": ObjectId(id)},
+            {"$set": student},
+            return_document=ReturnDocument.AFTER,
+        )
+        if update_result is not None:
+            return update_result
+        else:
+            raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+    # The update is empty, but we should still return the matching document:
+    if (existing_student := await student_collection.find_one({"_id": id})) is not None:
+        return existing_student
+
+    raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+
+@app.delete("/students/{id}", response_description="Delete a student")
+async def delete_student(id: str):
+    """
+    Remove a single student record from the database.
+    """
+    delete_result = await student_collection.delete_one({"_id": ObjectId(id)})
+
+    if delete_result.deleted_count == 1:
+        return Response(status_code=HTTPStatus.NO_CONTENT)
+
+    raise HTTPException(status_code=404, detail=f"Student {id} not found")
