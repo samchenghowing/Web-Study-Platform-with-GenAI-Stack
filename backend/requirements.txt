@@ -17,11 +17,12 @@ pydantic
 uvicorn
 sse-starlette
 
+# missing from the langchain base image?
+langchain-community
+langchain-mongodb
+
 # 3rd party genai apps
 boto3 # AWS
 openai  # Openai
-
-# missing from the langchain base image?
 langchain-openai
-langchain-community
 langchain-google-genai

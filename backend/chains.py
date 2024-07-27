@@ -17,9 +17,13 @@ from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
-    SystemMessagePromptTemplate
+    SystemMessagePromptTemplate,
+    MessagesPlaceholder,
 )
 from langchain_core.messages import AIMessage, HumanMessage
+
+from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from typing import List, Any
 from utils import BaseLogger, extract_task
@@ -111,6 +115,56 @@ def configure_llm_only_chain(llm):
         chain = prompt | llm
         answer = chain.invoke(
             {"conversation": formatted_chat_history}, config={"callbacks": callbacks}
+        ).content
+        return {"answer": answer}
+
+    return generate_llm_output
+
+def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
+    # Load chat history from MongoDB
+    template = """
+    You are a helpful assistant that helps a support agent with answering programming questions.
+    If you don't know the answer, just say that you don't know, you must not make up an answer.
+    """
+    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+    human_template = "{question}"
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+
+    chat_message_history = MongoDBChatMessageHistory(
+        session_id="test_session",
+        connection_string="mongodb://mongo:27017",
+        database_name="my_db",
+        collection_name="chat_histories",
+    )
+    chat_message_history.add_user_message("Hello")
+    chat_message_history.add_ai_message("Hi")
+
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_message_prompt,
+            MessagesPlaceholder(variable_name="history"),
+            human_message_prompt,
+        ]
+    )
+
+    def generate_llm_output(
+        question: str, callbacks: List[Any], prompt=chat_prompt
+    ) -> str:
+        chain = prompt | llm
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            lambda session_id: MongoDBChatMessageHistory(
+                session_id=session_id,
+                connection_string="mongodb://mongo:27017",
+                database_name="my_db",
+                collection_name="chat_histories",
+            ),
+            input_messages_key="question",
+            history_messages_key="history",
+        )
+
+        answer = chain_with_history.invoke(
+            {"question": question}, config={"configurable": {"session_id": "<SESSION_ID>"}, "callbacks": callbacks}
         ).content
         return {"answer": answer}
 
@@ -233,10 +287,17 @@ def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
             # HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
+    formatted_chat_history = []
+    for message in chat_history:
+        if message['role'] == 'ai':
+            formatted_chat_history.append(AIMessage(content=message['content']))
+        else:
+            formatted_chat_history.append(HumanMessage(content=message['content']))
+
     llm_response = llm_chain(
-        chat_history=chat_history,
+        question=formatted_chat_history[-1],
         callbacks=callbacks,
-        prompt=chat_prompt
+        # prompt=chat_prompt
     )
 
     # Get the title, question and solution dictionary

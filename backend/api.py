@@ -18,6 +18,7 @@ from chains import (
     load_llm,
     configure_llm_only_chain,
     configure_qa_rag_chain,
+    configure_llm_history_chain,
     generate_task,
 )
 from mongo import (
@@ -54,8 +55,8 @@ llm_name = os.getenv("LLM")
 # Remapping for Langchain Neo4j integration
 os.environ["NEO4J_URL"] = url
 
-
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+CONN_STR = os.getenv("MONGODB_URI")
+client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
 db = client.college
 student_collection = db.get_collection("students")
 
@@ -75,6 +76,7 @@ llm = load_llm(
 )
 
 llm_chain = configure_llm_only_chain(llm)
+llm_history_chain = configure_llm_history_chain(llm, CONN_STR, "my_db", "chat_histories")
 rag_chain = configure_qa_rag_chain(
     llm, embeddings, embeddings_store_url=url, username=username, password=password
 )
@@ -142,9 +144,7 @@ class Question(BaseModel):
     messages: List[Message] | None = None
     rag: bool | None = False 
 
-class BaseTicket(BaseModel):
-    text: str
-
+# Chat bot API
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
     output_function = llm_chain
@@ -159,7 +159,7 @@ async def generate_task_api(question: Question):
 
         generate_task(
             neo4j_graph=neo4j_graph,
-            llm_chain=output_function,
+            llm_chain=llm_history_chain,
             chat_history=chat_history_dicts,
             callbacks=[QueueCallback(q)],
         )
@@ -172,11 +172,8 @@ async def generate_task_api(question: Question):
     return StreamingResponse(generate(), media_type="application/json")
 
 
-
-# https://stackoverflow.com/questions/64901945/how-to-send-a-progress-of-operation-in-a-fastapi-app
-# https://stackoverflow.com/questions/63048825/how-to-upload-file-using-fastapi
-# https://github.com/tiangolo/fastapi/discussions/11177
-
+# PDF API
+# Background task for PDF processing
 class Job(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
     status: str = "in_progress"
@@ -241,7 +238,6 @@ async def status_handler(uid: UUID):
 
 
 # CRUD mongodb
-# https://github.com/mongodb-developer/mongodb-with-fastapi
 @app.post(
     "/students/",
     response_description="Add new student",
