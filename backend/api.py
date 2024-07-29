@@ -25,6 +25,7 @@ from mongo import (
     StudentModel,
     UpdateStudentModel,
     StudentCollection,
+    ChatHistoryModelCollection,
 )
 from fastapi import FastAPI
 from fastapi import Body, HTTPException
@@ -56,9 +57,11 @@ llm_name = os.getenv("LLM")
 os.environ["NEO4J_URL"] = url
 
 CONN_STR = os.getenv("MONGODB_URI")
+DATABASE = "my_db"
 client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
-db = client.college
+db = client[DATABASE]
 student_collection = db.get_collection("students")
+chat_history_collection = db.get_collection("chat_histories")
 
 
 embeddings, dimension = load_embedding_model(
@@ -76,7 +79,7 @@ llm = load_llm(
 )
 
 llm_chain = configure_llm_only_chain(llm)
-llm_history_chain = configure_llm_history_chain(llm, CONN_STR, "my_db", "chat_histories")
+llm_history_chain = configure_llm_history_chain(llm, CONN_STR, DATABASE, "chat_histories")
 rag_chain = configure_qa_rag_chain(
     llm, embeddings, embeddings_store_url=url, username=username, password=password
 )
@@ -225,7 +228,7 @@ async def get_file_content(files: List[UploadFile]):
     return byte_files
 
 @app.post("/upload/pdf", status_code=HTTPStatus.ACCEPTED)
-async def work(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
     byte_files = await get_file_content(files)
@@ -339,3 +342,18 @@ async def delete_student(id: str):
         return Response(status_code=HTTPStatus.NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+
+@app.get(
+    "/chat_histories/",
+    response_description="List all chat histories",
+    response_model=ChatHistoryModelCollection,
+    response_model_by_alias=False,
+)
+async def list_chat_histories():
+    """
+    List all of the chat histories data in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    return ChatHistoryModelCollection(chat_histories=await chat_history_collection.find().to_list(1000))

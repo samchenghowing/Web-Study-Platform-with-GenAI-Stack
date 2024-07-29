@@ -130,15 +130,6 @@ def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME
     human_template = "{question}"
     human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 
-    chat_message_history = MongoDBChatMessageHistory(
-        session_id="test_session",
-        connection_string="mongodb://mongo:27017",
-        database_name="my_db",
-        collection_name="chat_histories",
-    )
-    chat_message_history.add_user_message("Hello")
-    chat_message_history.add_ai_message("Hi")
-
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_message_prompt,
@@ -148,24 +139,24 @@ def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME
     )
 
     def generate_llm_output(
-        question: str, callbacks: List[Any], prompt=chat_prompt
+        user_id: str, question: str, callbacks: List[Any], prompt=chat_prompt
     ) -> str:
-        chain = prompt | llm
-        chain_with_history = RunnableWithMessageHistory(
-            chain,
-            lambda session_id: MongoDBChatMessageHistory(
-                session_id=session_id,
-                connection_string="mongodb://mongo:27017",
-                database_name="my_db",
-                collection_name="chat_histories",
-            ),
-            input_messages_key="question",
-            history_messages_key="history",
+        history = MongoDBChatMessageHistory(
+            session_id=user_id,
+            connection_string=CONN_STRING,
+            database_name=DATABASE_NAME,
+            collection_name=COLLECTION_NAME,
         )
 
-        answer = chain_with_history.invoke(
-            {"question": question}, config={"configurable": {"session_id": "<SESSION_ID>"}, "callbacks": callbacks}
+        chain = prompt | llm
+        answer = chain.invoke(
+            {"question": question, "history": history.messages}, config={"callbacks": callbacks}
         ).content
+
+        # save history
+        history.add_user_message(question)
+        history.add_ai_message(answer)
+
         return {"answer": answer}
 
     return generate_llm_output
@@ -295,6 +286,7 @@ def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
             formatted_chat_history.append(HumanMessage(content=message['content']))
 
     llm_response = llm_chain(
+        user_id="test_user",
         question=formatted_chat_history[-1],
         callbacks=callbacks,
         # prompt=chat_prompt
