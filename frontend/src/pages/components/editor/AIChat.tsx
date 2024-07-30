@@ -14,6 +14,7 @@ import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 
 const TASK_API_ENDPOINT = "http://localhost:8504/generate-task";
+const CHAT_HISTORIES_API_ENDPOINT = "http://localhost:8504/chat_histories";
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -40,34 +41,29 @@ function InfoCard({ data, AIChatprops }) {
                 <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant="h5">
                     <Markdown>{data.content}</Markdown>
                 </Typography>
-                <Typography sx={{ mb: 1.5 }} color={data.role === 'human' ? '#fff' : '#000'}>
-                    {data.question}
-                </Typography>
-                <Typography variant="body2">
-                    {data.task.jsDoc}
-                </Typography>
+
+                {data.role === 'ai' && <>
+                    <Typography sx={{ mb: 1.5 }}>{data.question}</Typography>
+                    <Typography variant="body2">{data.task.jsDoc}</Typography>
+                </> // show task created by ai
+                }
+
 
             </CardContent>
-            <CardActions>
-                <Button size="large" onClick={() => {
-                    // TODO: get below from formatted response from ollama
-                    AIChatprops.setQuestion(data.question);
-                    AIChatprops.setTask(data.task);
-                }}>
-                    Take this task!
-                </Button>
-            </CardActions>
+            {data.role === 'ai' &&
+                <CardActions>
+                    <Button size="large" onClick={() => {
+                        // TODO: get below from formatted response from ollama
+                        AIChatprops.setQuestion(data.question);
+                        AIChatprops.setTask(data.task);
+                    }}>
+                        Take this task!
+                    </Button>
+                </CardActions>
+            }
         </StyledCard>
     );
 }
-
-// Better add in backend?
-// TODO: formatted response json from AI  
-// {
-//     question: "Fix the problem below such that it will output \"hello world\" in console.",
-//     task: "console.log'hello world!';",
-// },
-// https://github.com/ollama/ollama/blob/main/docs/api.md#request-json-mode
 
 interface AIChatProps {
     question: string;
@@ -76,22 +72,61 @@ interface AIChatProps {
     setTask: Dispatch<SetStateAction<{ jsDoc: string; htmlDoc: string; cssDoc: string }>>;
 }
 
+interface cardContentType {
+    id: number;
+    role: string;
+    content: string;
+    question: string;
+    task: {
+        jsDoc: string;
+        htmlDoc: string;
+        cssDoc: string;
+    };
+}
+
+
 export default function AIChat(props: AIChatProps) {
     const [userQuestion, setUserQuestion] = React.useState("");
-    const [cardContent, setCardContent] = React.useState([
-        {
-            id: 1,
-            role: "ai",
-            content: "Hi! I prepared the following task for you! Lets' see if you can fix it!",
-            question: "Fix the problem below such that it will output \"hello world\" in console.",
-            task: {
-                jsDoc: 'console.log\'hello world!',
-                htmlDoc: 'Hello world',
-                cssDoc: '',
-            }
-        },
-    ]);
+    const [cardContent, setCardContent] = React.useState<Array<cardContentType>>([]);
     const cardRef = React.useRef<HTMLDivElement>(null);
+
+    const getChatHistory = () => {
+        fetch(CHAT_HISTORIES_API_ENDPOINT)
+            .then(response => response.json())
+            .then(json => {
+                console.log(json.chat_histories);
+                json.chat_histories.forEach(element => {
+                    setCardContent(prevCardContent => [
+                        ...prevCardContent,
+                        {
+                            id: element.id,
+                            role: element.History.type,
+                            content: element.History.data.content,
+                            question: "",
+                            task: {
+                                jsDoc: '',
+                                htmlDoc: '',
+                                cssDoc: '',
+                            },
+                        }
+                    ]);
+                });
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    };
+
+    const deleteChatHistory = (userID) => {
+        fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${userID}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(json => {
+                setCardContent([]);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+    };
 
     const handleChat = async () => {
         if (userQuestion.trim()) { // Check if the prompt is not empty
@@ -202,6 +237,13 @@ export default function AIChat(props: AIChatProps) {
         if (cardRef.current != null) cardRef.current.scrollTo(0, cardRef.current.scrollHeight);
     }, [cardContent]);
 
+    React.useEffect(() => {
+        // initialize
+        return () => {
+            getChatHistory();
+        }
+    }, []);
+
 
     return (
         <BackgroundPaper
@@ -220,10 +262,7 @@ export default function AIChat(props: AIChatProps) {
                     setUserQuestion(e.target.value)
                 }}
                 onKeyDown={e => {
-                    if (e.key === "Enter") {
-                        handleChat();
-                    }
-
+                    if (e.key === "Enter") handleChat();
                 }}
                 InputProps={{
                     endAdornment:
@@ -234,6 +273,9 @@ export default function AIChat(props: AIChatProps) {
                         </InputAdornment>
                 }}
             />
+            <Button size="large" onClick={() => { deleteChatHistory("test_user") }}>
+                Delete Chat History
+            </Button>
         </BackgroundPaper>
     );
 }

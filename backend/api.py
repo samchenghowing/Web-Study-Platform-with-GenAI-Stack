@@ -357,3 +357,16 @@ async def list_chat_histories():
     The response is unpaginated and limited to 1000 results.
     """
     return ChatHistoryModelCollection(chat_histories=await chat_history_collection.find().to_list(1000))
+
+@app.delete("/chat_histories/{SessionId}", response_description="Delete a session's chat histories")
+async def delete_chat_histories(SessionId: str):
+    """
+    Remove a session's chat histories from the database.
+    """
+    delete_result = await chat_history_collection.delete_many({"SessionId": SessionId})
+
+    if delete_result.deleted_count > 1:
+        return Response(status_code=HTTPStatus.OK)
+
+    raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
+
