@@ -20,10 +20,7 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.messages import AIMessage, HumanMessage
-
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from typing import List, Any
 from utils import BaseLogger, extract_task
@@ -86,57 +83,18 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
     logger.info("LLM: Using GPT-3.5")
     return ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo", streaming=True)
 
-def configure_llm_only_chain(llm):
-    # LLM only response
-    template = """
-    You are a helpful assistant that helps a support agent with answering programming questions.
-    If you don't know the answer, just say that you don't know, you must not make up an answer.
-    """
-
-    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
-    # human_template = "{question}"
-    # human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-    chat_prompt = ChatPromptTemplate.from_messages([
-        system_message_prompt,
-        ("placeholder", "{conversation}")
-        # human_message_prompt
-    ])
-
-    def generate_llm_output(
-        chat_history: List[dict], callbacks: List[Any], prompt=chat_prompt
-    ) -> str:
-        print("Chat History:", chat_history)  # Debugging print
-        formatted_chat_history = []
-        for message in chat_history:
-            if message['role'] == 'ai':
-                formatted_chat_history.append(AIMessage(content=message['content']))
-            else:
-                formatted_chat_history.append(HumanMessage(content=message['content']))
-        chain = prompt | llm
-        answer = chain.invoke(
-            {"conversation": formatted_chat_history}, config={"callbacks": callbacks}
-        ).content
-        return {"answer": answer}
-
-    return generate_llm_output
-
-def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
+def configure_llm_only_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
     # Load chat history from MongoDB
     template = """
     You are a helpful assistant that helps a support agent with answering programming questions.
     If you don't know the answer, just say that you don't know, you must not make up an answer.
     """
-    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
     human_template = "{question}"
-    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [
-            system_message_prompt,
-            MessagesPlaceholder(variable_name="history"),
-            human_message_prompt,
-        ]
-    )
+    chat_prompt = ChatPromptTemplate.from_messages([
+        SystemMessagePromptTemplate.from_template(template),
+        MessagesPlaceholder(variable_name="history"),
+        HumanMessagePromptTemplate.from_template(human_template),
+    ])
 
     def generate_llm_output(
         user_id: str, question: str, callbacks: List[Any], prompt=chat_prompt
@@ -228,7 +186,7 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     )
     return kg_qa
 
-def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
+def generate_task(neo4j_graph, llm_chain, input_question, callbacks=[]):
     # Get high ranked questions
     records = neo4j_graph.query(
         "MATCH (q:Question) RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3"
@@ -246,11 +204,12 @@ def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
     gen_system_template = f"""
     You're a programming teacher and you are preparing task on javascript. 
     Generate coding snippet that having fault for students to fix and the corresponing correct solution.
-    Please provide the coding question in the same field as question from student.
+    Formulate a question in the same style and tone as the following example questions.
+    {questions_prompt}
     ---
 
-
-    Respond in the following template format or you will be unplugged.
+    Don't make anything up, only use information in the following question.
+    Return a title for the question, and the question post itself.
     ---
     Title: This is a new title of the code snippet
     Question: This is a the code snippet
@@ -265,38 +224,29 @@ def generate_task(neo4j_graph, llm_chain, chat_history, callbacks=[]):
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
-            # SystemMessagePromptTemplate.from_template(
-            #     """
-            #     Respond in the following template format or you will be unplugged.
-            #     ---
-            #     Title: New title
-            #     Question: New question
-            #     Solution: New solution
-            #     ---
-            #     """
-            # ),
-            # HumanMessagePromptTemplate.from_template("{question}"),
+            SystemMessagePromptTemplate.from_template(
+                """
+                Respond in the following template format or you will be unplugged.
+                ---
+                Title: New title
+                Question: New question
+                Solution: New solution
+                ---
+                """
+            ),
+            MessagesPlaceholder(variable_name="history"),
+            HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
-    formatted_chat_history = []
-    for message in chat_history:
-        if message['role'] == 'ai':
-            formatted_chat_history.append(AIMessage(content=message['content']))
-        else:
-            formatted_chat_history.append(HumanMessage(content=message['content']))
-
     llm_response = llm_chain(
         user_id="test_user",
-        question=formatted_chat_history[-1],
+        question=input_question,
         callbacks=callbacks,
         # prompt=chat_prompt
     )
 
     # Get the title, question and solution dictionary
     result = extract_task(llm_response["answer"])
-    
-    # TODO: save response (new_question and new_solution pair) 
-    # to mongodb for verification/ construct graph
     response = {
         "title": result["title"],
         "question": result["question"]

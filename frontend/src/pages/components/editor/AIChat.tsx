@@ -119,13 +119,12 @@ export default function AIChat(props: AIChatProps) {
 
     const deleteChatHistory = (userID) => {
         fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${userID}`, { method: 'DELETE' })
-            .then(response => response.json())
-            .then(json => {
-                setCardContent([]);
+            .then(response => {
             })
             .catch(error => {
                 console.error(error);
             });
+        setCardContent([]);
     };
 
     const handleChat = async () => {
@@ -157,12 +156,6 @@ export default function AIChat(props: AIChatProps) {
                     },
                 }
             ]);
-
-            var messages = cardContent.map(({ role, content }) => {
-                let doc = { role, content };
-                return doc;
-            });
-            messages.push({ role: "human", content: userQuestion });
             setUserQuestion("");
 
             try {
@@ -172,15 +165,11 @@ export default function AIChat(props: AIChatProps) {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        "messages": messages,
+                        "text": userQuestion,
                         "rag": false
                     })
                 });
 
-                console.log(JSON.stringify({
-                    "messages": messages,
-                    "rag": false
-                }));
                 const reader = response.body!.getReader();
                 if (reader == null) console.log("error connection to gen ai");
 

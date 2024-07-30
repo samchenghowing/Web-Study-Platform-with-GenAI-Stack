@@ -18,7 +18,6 @@ from chains import (
     load_llm,
     configure_llm_only_chain,
     configure_qa_rag_chain,
-    configure_llm_history_chain,
     generate_task,
 )
 from mongo import (
@@ -55,7 +54,6 @@ embedding_model_name = os.getenv("EMBEDDING_MODEL")
 llm_name = os.getenv("LLM")
 # Remapping for Langchain Neo4j integration
 os.environ["NEO4J_URL"] = url
-
 CONN_STR = os.getenv("MONGODB_URI")
 DATABASE = "my_db"
 client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
@@ -78,8 +76,7 @@ llm = load_llm(
     llm_name, logger=BaseLogger(), config={"ollama_base_url": ollama_base_url}
 )
 
-llm_chain = configure_llm_only_chain(llm)
-llm_history_chain = configure_llm_history_chain(llm, CONN_STR, DATABASE, "chat_histories")
+llm_chain = configure_llm_only_chain(llm, CONN_STR, DATABASE, "chat_histories")
 rag_chain = configure_qa_rag_chain(
     llm, embeddings, embeddings_store_url=url, username=username, password=password
 )
@@ -139,12 +136,8 @@ async def root():
     return {"message": "Hello World"}
 
 
-class Message(BaseModel):
-    role: str
-    content: str
-
 class Question(BaseModel):
-    messages: List[Message] | None = None
+    text: str
     rag: bool | None = False 
 
 # Chat bot API
@@ -157,13 +150,10 @@ async def generate_task_api(question: Question):
     q = Queue()
 
     def cb():
-        chat_history = question.messages
-        chat_history_dicts = [message.model_dump() for message in chat_history]
-
         generate_task(
             neo4j_graph=neo4j_graph,
-            llm_chain=llm_history_chain,
-            chat_history=chat_history_dicts,
+            llm_chain=output_function,
+            input_question=question.text,
             callbacks=[QueueCallback(q)],
         )
 
