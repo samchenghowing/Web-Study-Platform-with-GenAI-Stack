@@ -78,7 +78,7 @@ llm = load_llm(
 
 llm_chain = configure_llm_only_chain(llm, CONN_STR, DATABASE, "chat_histories")
 rag_chain = configure_qa_rag_chain(
-    llm, embeddings, embeddings_store_url=url, username=username, password=password
+    llm, CONN_STR, DATABASE, "chat_histories", embeddings, embeddings_store_url=url, username=username, password=password
 )
 
 

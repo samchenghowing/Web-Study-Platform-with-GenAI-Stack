@@ -21,6 +21,8 @@ from langchain.prompts import (
     MessagesPlaceholder,
 )
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
+from langchain.memory import ConversationBufferMemory
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from typing import List, Any
 from utils import BaseLogger, extract_task
@@ -92,34 +94,35 @@ def configure_llm_only_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
     human_template = "{question}"
     chat_prompt = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(template),
-        MessagesPlaceholder(variable_name="history"),
+        MessagesPlaceholder(variable_name="chat_history"),
         HumanMessagePromptTemplate.from_template(human_template),
     ])
 
     def generate_llm_output(
-        user_id: str, question: str, callbacks: List[Any], prompt=chat_prompt
+        question: str, callbacks: List[Any], prompt=chat_prompt
     ) -> str:
-        history = MongoDBChatMessageHistory(
-            session_id=user_id,
-            connection_string=CONN_STRING,
-            database_name=DATABASE_NAME,
-            collection_name=COLLECTION_NAME,
+        chain = prompt | llm
+        chain_with_history = RunnableWithMessageHistory(
+            chain,
+            lambda session_id: MongoDBChatMessageHistory(
+                session_id=session_id,
+                connection_string=CONN_STRING,
+                database_name=DATABASE_NAME,
+                collection_name=COLLECTION_NAME,
+            ),
+            input_messages_key="question",
+            history_messages_key="chat_history",
         )
 
-        chain = prompt | llm
-        answer = chain.invoke(
-            {"question": question, "history": history.messages}, config={"callbacks": callbacks}
+        answer = chain_with_history.invoke(
+            {"question": question}, config={"callbacks": callbacks, "configurable": {"session_id": "test_user"}}
         ).content
-
-        # save history
-        history.add_user_message(question)
-        history.add_ai_message(answer)
 
         return {"answer": answer}
 
     return generate_llm_output
 
-def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, password):
+def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, embeddings, embeddings_store_url, username, password):
     # RAG response
     #   System: Always talk in pirate speech.
     general_system_template = """ 
@@ -142,6 +145,7 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     general_user_template = "Question:```{question}```"
     messages = [
         SystemMessagePromptTemplate.from_template(general_system_template),
+        MessagesPlaceholder(variable_name="chat_history"),
         HumanMessagePromptTemplate.from_template(general_user_template),
     ]
     qa_prompt = ChatPromptTemplate.from_messages(messages)
@@ -178,8 +182,22 @@ def configure_qa_rag_chain(llm, embeddings, embeddings_store_url, username, pass
     """,
     )
 
+    mongo_history = MongoDBChatMessageHistory(
+        session_id="test_user",
+        connection_string=CONN_STRING,
+        database_name=DATABASE_NAME,
+        collection_name=COLLECTION_NAME,
+    )
+    conversational_memory = ConversationBufferMemory(
+        chat_memory=mongo_history,
+        memory_key="chat_history",
+        return_messages=True,
+        # output_key="answer"
+    )
+
     kg_qa = RetrievalQAWithSourcesChain(
         combine_documents_chain=qa_chain,
+        memory=conversational_memory,
         retriever=kg.as_retriever(search_kwargs={"k": 2}),
         reduce_k_below_max_tokens=False,
         max_tokens_limit=3375,
@@ -234,12 +252,11 @@ def generate_task(neo4j_graph, llm_chain, input_question, callbacks=[]):
                 ---
                 """
             ),
-            MessagesPlaceholder(variable_name="history"),
+            MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
     llm_response = llm_chain(
-        user_id="test_user",
         question=input_question,
         callbacks=callbacks,
         # prompt=chat_prompt
