@@ -99,7 +99,7 @@ def configure_llm_only_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
     ])
 
     def generate_llm_output(
-        question: str, callbacks: List[Any], prompt=chat_prompt
+        user_id: str, question: str, callbacks: List[Any], prompt=chat_prompt
     ) -> str:
         chain = prompt | llm
         chain_with_history = RunnableWithMessageHistory(
@@ -115,7 +115,8 @@ def configure_llm_only_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
         )
 
         answer = chain_with_history.invoke(
-            {"question": question}, config={"callbacks": callbacks, "configurable": {"session_id": "test_user"}}
+            {"question": question}, 
+            config={"callbacks": callbacks, "configurable": {"session_id": user_id}}
         ).content
 
         return {"answer": answer}
@@ -150,61 +151,72 @@ def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, emb
     ]
     qa_prompt = ChatPromptTemplate.from_messages(messages)
 
-    qa_chain = load_qa_with_sources_chain(
-        llm,
-        chain_type="stuff",
-        prompt=qa_prompt,
-    )
+    def generate_llm_output(
+        user_id: str, question: str, callbacks: List[Any], prompt=qa_prompt
+    ) -> str:
 
-    # Vector + Knowledge Graph response
-    kg = Neo4jVector.from_existing_index(
-        embedding=embeddings,
-        url=embeddings_store_url,
-        username=username,
-        password=password,
-        database="neo4j",  # neo4j by default
-        index_name="stackoverflow",  # vector by default
-        text_node_property="body",  # text by default
-        retrieval_query="""
-    WITH node AS question, score AS similarity
-    CALL  { with question
-        MATCH (question)<-[:ANSWERS]-(answer)
-        WITH answer
-        ORDER BY answer.is_accepted DESC, answer.score DESC
-        WITH collect(answer)[..2] as answers
-        RETURN reduce(str='', answer IN answers | str + 
-                '\n### Answer (Accepted: '+ answer.is_accepted +
-                ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
-    } 
-    RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
-        + answerTexts AS text, similarity as score, {source: question.link} AS metadata
-    ORDER BY similarity ASC // so that best answers are the last
-    """,
-    )
+        qa_chain = load_qa_with_sources_chain(
+            llm,
+            chain_type="stuff",
+            prompt=prompt,
+        )
 
-    mongo_history = MongoDBChatMessageHistory(
-        session_id="test_user",
-        connection_string=CONN_STRING,
-        database_name=DATABASE_NAME,
-        collection_name=COLLECTION_NAME,
-    )
-    conversational_memory = ConversationBufferMemory(
-        chat_memory=mongo_history,
-        memory_key="chat_history",
-        return_messages=True,
-        # output_key="answer"
-    )
+        # chat history
+        mongo_history = MongoDBChatMessageHistory(
+            session_id=user_id,
+            connection_string=CONN_STRING,
+            database_name=DATABASE_NAME,
+            collection_name=COLLECTION_NAME,
+        )
+        conversational_memory = ConversationBufferMemory(
+            chat_memory=mongo_history,
+            memory_key="chat_history",
+            return_messages=True,
+            output_key="answer"
+        )
 
-    kg_qa = RetrievalQAWithSourcesChain(
-        combine_documents_chain=qa_chain,
-        memory=conversational_memory,
-        retriever=kg.as_retriever(search_kwargs={"k": 2}),
-        reduce_k_below_max_tokens=False,
-        max_tokens_limit=3375,
-    )
-    return kg_qa
+        # Vector + Knowledge Graph response
+        kg = Neo4jVector.from_existing_index(
+            embedding=embeddings,
+            url=embeddings_store_url,
+            username=username,
+            password=password,
+            database="neo4j",  # neo4j by default
+            index_name="stackoverflow",  # vector by default
+            text_node_property="body",  # text by default
+            retrieval_query="""
+        WITH node AS question, score AS similarity
+        CALL  { with question
+            MATCH (question)<-[:ANSWERS]-(answer)
+            WITH answer
+            ORDER BY answer.is_accepted DESC, answer.score DESC
+            WITH collect(answer)[..2] as answers
+            RETURN reduce(str='', answer IN answers | str + 
+                    '\n### Answer (Accepted: '+ answer.is_accepted +
+                    ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
+        } 
+        RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
+            + answerTexts AS text, similarity as score, {source: question.link} AS metadata
+        ORDER BY similarity ASC // so that best answers are the last
+        """,
+        )
 
-def generate_task(neo4j_graph, llm_chain, input_question, callbacks=[]):
+        kg_qa = RetrievalQAWithSourcesChain(
+            combine_documents_chain=qa_chain,
+            memory=conversational_memory,
+            retriever=kg.as_retriever(search_kwargs={"k": 2}),
+            reduce_k_below_max_tokens=False,
+            max_tokens_limit=3375,
+        )
+        answer = kg_qa.invoke(
+            {"question": question}, 
+            config={"callbacks": callbacks, "configurable": {"session_id": user_id}}
+        )
+        return {"answer": answer}
+
+    return generate_llm_output
+
+def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[]):
     # Get high ranked questions
     records = neo4j_graph.query(
         "MATCH (q:Question) RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3"
@@ -257,9 +269,10 @@ def generate_task(neo4j_graph, llm_chain, input_question, callbacks=[]):
         ]
     )
     llm_response = llm_chain(
+        user_id=user_id,
         question=input_question,
         callbacks=callbacks,
-        # prompt=chat_prompt
+        prompt=chat_prompt,
     )
 
     # Get the title, question and solution dictionary

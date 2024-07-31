@@ -141,6 +141,28 @@ class Question(BaseModel):
     rag: bool | None = False 
 
 # Chat bot API
+@app.post("/query-stream")
+async def qstream(question: Question):
+    output_function = llm_chain
+    if question.rag:
+        output_function = rag_chain
+
+    q = Queue()
+
+    def cb():
+        output_function(
+            user_id="test_user",
+            question=question.text,
+            callbacks=[QueueCallback(q)],
+        )
+
+    def generate():
+        yield json.dumps({"init": True, "model": llm_name, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+
+    return StreamingResponse(generate(), media_type="application/json")
+
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
     output_function = llm_chain
@@ -151,6 +173,7 @@ async def generate_task_api(question: Question):
 
     def cb():
         generate_task(
+            user_id="test_user",
             neo4j_graph=neo4j_graph,
             llm_chain=output_function,
             input_question=question.text,
