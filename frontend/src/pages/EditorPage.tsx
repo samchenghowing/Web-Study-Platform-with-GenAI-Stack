@@ -13,6 +13,7 @@ import EditorView from './components/editor/EditorView'
 import EditorConfig from './components/editor/editorConfig';
 import Preview from './components/editor/Preview';
 import FileUploader from './components/FileUploader';
+import SOLoader from './components/SOLoader';
 
 export default () => {
 	// theme and css layout
@@ -99,6 +100,7 @@ export default () => {
 						<Preview
 							editorDoc={editorDoc} />
 						<FileUploader />
+						<SOLoader />
 					</Grid>
 				</Grid>
 			</Stack>

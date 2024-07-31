@@ -13,6 +13,7 @@ import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 
+const CHAT_API_ENDPOINT = "http://localhost:8504/query-stream";
 const TASK_API_ENDPOINT = "http://localhost:8504/generate-task";
 const CHAT_HISTORIES_API_ENDPOINT = "http://localhost:8504/chat_histories";
 
@@ -159,7 +160,7 @@ export default function AIChat(props: AIChatProps) {
             setUserQuestion("");
 
             try {
-                const response = await fetch(TASK_API_ENDPOINT, {
+                const response = await fetch(CHAT_API_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

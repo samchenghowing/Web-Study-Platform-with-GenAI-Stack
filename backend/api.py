@@ -1,6 +1,7 @@
 import os
-import json
 import io
+import requests
+import json
 from typing import Dict, List
 from uuid import UUID, uuid4
 from threading import Thread
@@ -10,7 +11,9 @@ from http import HTTPStatus
 from pydantic import BaseModel, Field
 
 from utils import (
+    create_constraints,
     create_vector_index,
+    insert_so_data,
     BaseLogger,
 )
 from chains import (
@@ -61,6 +64,7 @@ db = client[DATABASE]
 student_collection = db.get_collection("students")
 chat_history_collection = db.get_collection("chat_histories")
 
+SO_API_BASE_URL = "https://api.stackexchange.com/2.3/search/advanced"
 
 embeddings, dimension = load_embedding_model(
     embedding_model_name,
@@ -70,6 +74,7 @@ embeddings, dimension = load_embedding_model(
 
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database
 neo4j_graph = Neo4jGraph(url=url, username=username, password=password)
+create_constraints(neo4j_graph)
 create_vector_index(neo4j_graph, dimension)
 
 llm = load_llm(
@@ -251,6 +256,44 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
 @app.get("/upload/{uid}/status")
 async def status_handler(uid: UUID):
     return jobs[uid]
+
+
+# Loader API
+# Background task for loading stackoverflow data to neo4j
+@app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
+async def load_so(background_tasks: BackgroundTasks, tag: str = Body(...)):
+    new_task = Job()
+    jobs[new_task.uid] = new_task
+    background_tasks.add_task(load_so_data, new_task.uid, tag)
+    return new_task
+
+@app.get("/load/{uid}/status")
+async def load_status_handler(uid: UUID):
+    return jobs[uid]
+
+def load_so_data(task_id: UUID, tag: str = "javascript", page: int = 10) -> None:
+    try:
+        parameters = (
+            f"?pagesize=100&page={page}&order=desc&sort=creation&answers=1&tagged={tag}"
+            "&site=stackoverflow&filter=!*236eb_eL9rai)MOSNZ-6D3Q6ZKb0buI*IVotWaTb"
+        )
+        data = requests.get(SO_API_BASE_URL + parameters).json()
+        insert_so_data(neo4j_graph, embeddings, data)
+    except Exception as error:
+        jobs[task_id].status = f"Importing {tag} from so fails with error: {error}"
+        return
+    finally:
+        jobs[task_id].processed_files.append(tag)
+    jobs[task_id].status = "completed"
+
+def load_high_score_so_data() -> None:
+    parameters = (
+        f"?fromdate=1664150400&order=desc&sort=votes&site=stackoverflow&"
+        "filter=!.DK56VBPooplF.)bWW5iOX32Fh1lcCkw1b_Y6Zkb7YD8.ZMhrR5.FRRsR6Z1uK8*Z5wPaONvyII"
+    )
+    data = requests.get(SO_API_BASE_URL + parameters).json()
+    insert_so_data(neo4j_graph, embeddings, data)
+
 
 
 # CRUD mongodb

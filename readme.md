@@ -3,8 +3,6 @@ The GenAI Stack will get you started building your own GenAI application in no t
 The demo applications can serve as inspiration or as a starting point.
 Learn more about the details in the [technical blog post](https://neo4j.com/developer-blog/genai-app-how-to-build/).
 
-[Original source](https://github.com/docker/genai-stack)
-
 # Configure
 
 Create a `.env` file from the environment template file `env.example`
@@ -53,6 +51,7 @@ Ollama now supports Windows. Install [Ollama](https://ollama.ai) on Windows and 
 ```
 docker compose up
 ```
+
 If changes to build scripts have been made, **rebuild**.
 ```
 docker compose up --build
@@ -82,35 +81,7 @@ Here's what's in this repo:
 
 The database can be explored at http://localhost:7474.
 
-##  App 1 - Loader (TO BE MOVED TO App 4)
-
-UI: http://localhost:8502
-DB client: http://localhost:7474
-
-- import recent Stack Overflow data for certain tags into a KG
-- embed questions and answers and store them in vector index
-- UI: choose tags, run import, see progress, some stats of data in the database
-- Load high ranked questions (regardless of tags) to support the ticket generation feature of App 1.
-
-
-
-
-|  |  |
-|---|---|
-| ![](.github/media/app2-ui-1.png) | ![](.github/media/app2-model.png) |
-
-## App 2 - Question / Answer with a local PDF (TO BE MOVED TO App 4)
-UI: http://localhost:8503  
-DB client: http://localhost:7474
-
-This application lets you load a local PDF into text
-chunks and embed it into Neo4j so you can ask questions about
-its contents and have the LLM answer them using vector similarity
-search.
-
-![](.github/media/app3-ui.png)
-
-## App 3 - Standalone HTTP API
+## App 1 - Backend HTTP API
 Endpoints: 
   - http://localhost:8504/query?text=hello&rag=false (non streaming)
   - http://localhost:8504/query-stream?text=hello&rag=false (SSE streaming)
@@ -120,12 +91,10 @@ Example cURL command:
 curl http://localhost:8504/query-stream\?text\=minimal%20hello%20world%20in%20python\&rag\=false
 ```
 
-Exposes the functionality to answer questions in App 4.
+Exposes the functionality to answer questions in App 2.
 
-## App 4 - Static front-end
-UI: http://localhost:8505
-DB client: http://localhost:7474
-
+## App 2 - Static front-end
+### - Chat bot
 - answer support question based on recent entries
 - provide summarized answers with sources
 - demonstrate difference between
@@ -133,6 +102,29 @@ DB client: http://localhost:7474
     - RAG Enabled (vector + knowledge graph context)
 - allow to generate a high quality support ticket for the current conversation based on the style of highly rated questions in the database.
 
+### - Question / Answer with a local PDF
+This application lets you load a local PDF into text
+chunks and embed it into Neo4j so you can ask questions about
+its contents and have the LLM answer them using vector similarity
+search.
+
+### - Loader
+- import recent Stack Overflow data for certain tags into a KG
+- embed questions and answers and store them in vector index
+- UI: choose tags, run import, see progress, some stats of data in the database
+- Load high ranked questions (regardless of tags) to support the ticket generation feature of App 1.
+
+
 This application built separate from the back-end code using React.
 The auto-reload on changes are instant using the Docker watch `sync` config.  
 ![](.github/media/app5-ui.png)
+
+
+# References
+- [genai-stack source](https://github.com/docker/genai-stack)
+- [PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents](https://arxiv.org/abs/2407.0939)
+- [frontend idea](https://github.com/jojowwbb/PenEditor)
+- [stack exchange API](https://api.stackexchange.com/docs/advanced-search)
+- [LangChain](https://python.langchain.com/v0.2/docs/introduction/)
+- [genai-app-how-to-build](https://neo4j.com/developer-blog/genai-app-how-to-build/)
+- [Ollama](https://ollama.ai)
