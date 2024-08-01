@@ -238,12 +238,11 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     {questions_prompt}
     ---
 
-    Don't make anything up, only use information in the following question.
     Return a title for the question, and the question post itself.
     ---
-    Title: This is a new title of the code snippet
-    Question: This is a the code snippet
-    Solution: This is a the code solution
+    Title: This is the title with question description
+    Question: ```This is a the code snippet```
+    Solution: ```This is a the code solution```
     ---
 
     """
@@ -254,16 +253,16 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
-            SystemMessagePromptTemplate.from_template(
-                """
-                Respond in the following template format or you will be unplugged.
-                ---
-                Title: New title
-                Question: New question
-                Solution: New solution
-                ---
-                """
-            ),
+            # SystemMessagePromptTemplate.from_template(
+            #     """
+            #     Respond in the following template format or you will be unplugged.
+            #     ---
+            #     Title: New title
+            #     Question: ```New question```
+            #     Solution: ```New solution```
+            #     ---
+            #     """
+            # ),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{question}"),
         ]

@@ -13,9 +13,9 @@ import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 
-const CHAT_API_ENDPOINT = "http://localhost:8504/query-stream";
-const TASK_API_ENDPOINT = "http://localhost:8504/generate-task";
-const CHAT_HISTORIES_API_ENDPOINT = "http://localhost:8504/chat_histories";
+const CHAT_API_ENDPOINT = 'http://localhost:8504/query-stream';
+const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
+const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -39,13 +39,17 @@ function InfoCard({ data, AIChatprops }) {
                 <Typography sx={{ fontSize: 14 }} color={data.role === 'human' ? '#fff' : '#000'} gutterBottom>
                     {data.role}
                 </Typography>
-                <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant="h5">
+                <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant='h5'>
                     <Markdown>{data.content}</Markdown>
                 </Typography>
 
                 {data.role === 'ai' && <>
                     <Typography sx={{ mb: 1.5 }}>{data.question}</Typography>
-                    <Typography variant="body2">{data.task.jsDoc}</Typography>
+                    <Typography>
+                        <Markdown>
+                            {data.task.jsDoc}
+                        </Markdown>
+                    </Typography>
                 </> // show task created by ai
                 }
 
@@ -53,7 +57,7 @@ function InfoCard({ data, AIChatprops }) {
             </CardContent>
             {data.role === 'ai' &&
                 <CardActions>
-                    <Button size="large" onClick={() => {
+                    <Button size='large' onClick={() => {
                         // TODO: get below from formatted response from ollama
                         AIChatprops.setQuestion(data.question);
                         AIChatprops.setTask(data.task);
@@ -87,7 +91,7 @@ interface cardContentType {
 
 
 export default function AIChat(props: AIChatProps) {
-    const [userQuestion, setUserQuestion] = React.useState("");
+    const [userQuestion, setUserQuestion] = React.useState('');
     const [cardContent, setCardContent] = React.useState<Array<cardContentType>>([]);
     const cardRef = React.useRef<HTMLDivElement>(null);
 
@@ -96,16 +100,38 @@ export default function AIChat(props: AIChatProps) {
             .then(response => response.json())
             .then(json => {
                 console.log(json.chat_histories);
+
+                // sample response
+                // {"chat_histories":[{"id":"66ab9bd1f5f91e16b33f5599","SessionId":"test_user","History":{"type":"human","data":{"content":"find max in array","additional_kwargs":{},"response_metadata":{},"type":"human","name":null,"id":null,"example":false}}},{"id":"66ab9bd1f5f91e16b33f559a","SessionId":"test_user","History":{"type":"ai","data":{"content":"Here's an example of a faulty JavaScript function that attempts to find the maximum value in an array:\n\n**Question**\nTitle: Finding Max Value in Array\nQuestion:\n```javascript\nfunction findMax(arr) {\n  let max = arr[0];\n  for (let i = 1; i < arr.length; i++) {\n    if (arr[i] > max) {\n      max = arr[i];\n    }\n  }\n  return max;\n}\n\n// Test the function with an array: [4, 2, 9, 6, 5]\nconsole.log(findMax([4, 2, 9, 6, 5])); // Output: ?\n```\n**Solution**\n```javascript\nfunction findMax(arr) {\n  if (arr.length === 0) {\n    throw new Error(\"Array is empty\");\n  }\n  let max = arr[0];\n  for (let i = 1; i < arr.length; i++) {\n    if (arr[i] > max) {\n      max = arr[i];\n    }\n  }\n  return max;\n}\n\n// Test the function with an array: [4, 2, 9, 6, 5]\nconsole.log(findMax([4, 2, 9, 6, 5])); // Output: 9\n```\nIn this corrected solution, we added a check at the beginning of the `findMax` function to ensure that the input array is not empty. If it is empty, an error is thrown with a message indicating that the array is empty. This prevents the function from attempting to access elements in an empty array, which would result in an \"undefined\" value being returned.","additional_kwargs":{},"response_metadata":{"model":"llama3.1","created_at":"2024-08-01T14:29:37.298108981Z","message":{"role":"assistant","content":""},"done_reason":"stop","done":true,"total_duration":89996188739,"load_duration":4519740962,"prompt_eval_count":292,"prompt_eval_duration":4052657000,"eval_count":348,"eval_duration":81333721000},"type":"ai","name":null,"id":"run-c6248bc1-061d-4290-ac23-a48a912e5c8e-0","example":false,"tool_calls":[],"invalid_tool_calls":[],"usage_metadata":null}}}]}
                 json.chat_histories.forEach(element => {
+
+                    // Extract JavaScript code using regular expressions
+                    const jsCodeRegex = /```javascript\n([\s\S]*?)\n```/g;
+                    const jsCodeMatches = [...element.History.data.content.matchAll(jsCodeRegex)];
+                    const jsCode = jsCodeMatches.map(match => match[1]).join('\n');
+
+                    // Extract title and question
+                    const titleRegex = /Title: (.*)\n/;
+                    const questionRegex = /Question:\n([\s\S]*?)\n```/;
+                    const titleMatch = element.History.data.content.match(titleRegex);
+                    const questionMatch = element.History.data.content.match(questionRegex);
+
+                    const title = titleMatch ? titleMatch[1] : '';
+                    const question = questionMatch ? questionMatch[1] : '';
+
+                    // Remove the solution section from content
+                    const solutionRegex = /\*\*Solution\*\*[\s\S]*$/;
+                    const contentWithoutSolution = element.History.data.content.replace(solutionRegex, '');
+
                     setCardContent(prevCardContent => [
                         ...prevCardContent,
                         {
                             id: element.id,
                             role: element.History.type,
-                            content: element.History.data.content,
-                            question: "",
+                            content: contentWithoutSolution,
+                            question: question,
                             task: {
-                                jsDoc: '',
+                                jsDoc: jsCode,
                                 htmlDoc: '',
                                 cssDoc: '',
                             },
@@ -135,9 +161,9 @@ export default function AIChat(props: AIChatProps) {
                 ...prevCardContent,
                 {
                     id: newCardId,
-                    role: "human",
+                    role: 'human',
                     content: userQuestion,
-                    question: "",
+                    question: '',
                     task: {
                         jsDoc: '',
                         htmlDoc: '',
@@ -146,10 +172,10 @@ export default function AIChat(props: AIChatProps) {
                 },
                 {
                     id: newCardId + 1,
-                    role: "ai",
-                    content: "",
+                    role: 'ai',
+                    content: '',
                     // TODO: get below from formatted response from AI
-                    question: "",
+                    question: '',
                     task: {
                         jsDoc: '',
                         htmlDoc: '',
@@ -157,22 +183,22 @@ export default function AIChat(props: AIChatProps) {
                     },
                 }
             ]);
-            setUserQuestion("");
+            setUserQuestion('');
 
             try {
-                const response = await fetch(CHAT_API_ENDPOINT, {
+                const response = await fetch(TASK_API_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        "text": userQuestion,
-                        "rag": false
+                        'text': userQuestion,
+                        'rag': false
                     })
                 });
 
                 const reader = response.body!.getReader();
-                if (reader == null) console.log("error connection to gen ai");
+                if (reader == null) console.log('error connection to gen ai');
 
                 const readStream = async () => {
                     let { done, value } = await reader.read();
@@ -190,6 +216,7 @@ export default function AIChat(props: AIChatProps) {
                         try {
                             const jsonChunk = JSON.parse(jsonString);
                             console.log(jsonChunk);
+
                             // Update the content of the new card with the received chunk
                             setCardContent(prevCardContent => prevCardContent.map(card => {
                                 if (card.id === newCardId + 1) {
@@ -197,7 +224,7 @@ export default function AIChat(props: AIChatProps) {
                                         ...card,
                                         content: card.content + jsonChunk.token,
                                         // TODO: get below from formatted response from AI
-                                        question: "Fix the problem below such that it will output \"hello world\" in console.",
+                                        question: 'Fix the problem below such that it will output \'hello world\' in console.',
                                         task: {
                                             jsDoc: 'console.log\'hello world!',
                                             htmlDoc: 'Hello world',
@@ -245,25 +272,25 @@ export default function AIChat(props: AIChatProps) {
             <TextField
                 fullWidth
                 multiline
-                id="user-prompt"
-                placeholder="How to print hello world in javascript?"
+                id='user-prompt'
+                placeholder='How to print hello world in javascript?'
                 value={userQuestion}
                 onChange={e => {
                     setUserQuestion(e.target.value)
                 }}
                 onKeyDown={e => {
-                    if (e.key === "Enter") handleChat();
+                    if (e.key === 'Enter') handleChat();
                 }}
                 InputProps={{
                     endAdornment:
-                        <InputAdornment position="end">
-                            <IconButton edge="end" color="primary" onClick={handleChat}>
+                        <InputAdornment position='end'>
+                            <IconButton edge='end' color='primary' onClick={handleChat}>
                                 <SendIcon />
                             </IconButton>
                         </InputAdornment>
                 }}
             />
-            <Button size="large" onClick={() => { deleteChatHistory("test_user") }}>
+            <Button size='large' onClick={() => { deleteChatHistory('test_user') }}>
                 Delete Chat History
             </Button>
         </BackgroundPaper>

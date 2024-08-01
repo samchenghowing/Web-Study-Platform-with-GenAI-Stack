@@ -7,7 +7,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-const LOADSO_API_ENDPOINT = "http://localhost:8504/load/stackoverflow";
+const LOADSO_API_ENDPOINT = "http://localhost:8504/load";
 
 export default function FormDialog() {
     const [open, setOpen] = React.useState(false);
@@ -50,7 +50,7 @@ export default function FormDialog() {
                         const formJson = Object.fromEntries((formData as any).entries());
                         const tag = formJson.tag;
 
-                        fetch(`${LOADSO_API_ENDPOINT}`, {
+                        fetch(`${LOADSO_API_ENDPOINT}/stackoverflow`, {
                             method: "POST",
                             body: tag
                         })
