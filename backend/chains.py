@@ -253,16 +253,17 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
-            # SystemMessagePromptTemplate.from_template(
-            #     """
-            #     Respond in the following template format or you will be unplugged.
-            #     ---
-            #     Title: New title
-            #     Question: ```New question```
-            #     Solution: ```New solution```
-            #     ---
-            #     """
-            # ),
+            SystemMessagePromptTemplate.from_template(
+                """
+                Don't include any explanations in your responses.
+                Respond in the following template format or you will be unplugged.
+                ---
+                Title: New title
+                Question: ```New question```
+                Solution: ```New solution```
+                ---
+                """
+            ),
             MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
