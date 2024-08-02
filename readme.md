@@ -128,3 +128,5 @@ The auto-reload on changes are instant using the Docker watch `sync` config.
 - [LangChain](https://python.langchain.com/v0.2/docs/introduction/)
 - [genai-app-how-to-build](https://neo4j.com/developer-blog/genai-app-how-to-build/)
 - [Ollama](https://ollama.ai)
+- [gemma2:2b](https://developers.googleblog.com/en/smaller-safer-more-transparent-advancing-responsible-ai-with-gemma/)
+- [Error when runnig some llm inide container](https://github.com/docker/genai-stack/issues/170)

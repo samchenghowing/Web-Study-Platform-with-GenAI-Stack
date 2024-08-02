@@ -17,16 +17,16 @@ services:
               count: all
               capabilities: [ gpu ]
 
-  pull-model:
-    build:
-      context: backend
-      dockerfile: pull_model.Dockerfile
-    environment:
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-      - LLM=${LLM-llama2}
-    networks:
-      - net
-    tty: true
+  # pull-model:
+  #   build:
+  #     context: backend
+  #     dockerfile: pull_model.Dockerfile
+  #   environment:
+  #     - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
+  #     - LLM=${LLM-llama2}
+  #   networks:
+  #     - net
+  #   tty: true
 
   neo4j-database:
     user: neo4j:neo4j
@@ -96,8 +96,8 @@ services:
     depends_on:
       neo4j-database:
         condition: service_healthy
-      pull-model:
-        condition: service_completed_successfully
+      # pull-model:
+      #   condition: service_completed_successfully
     develop:
       watch:
         - action: rebuild
