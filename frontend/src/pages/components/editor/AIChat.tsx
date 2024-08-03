@@ -43,25 +43,15 @@ function InfoCard({ data, AIChatprops }) {
                     {data.role}
                 </Typography>
                 <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant='h5'>
-                    <Markdown>{data.content}</Markdown>
+                    <Markdown>{data.question}</Markdown>
                 </Typography>
-
-                {data.role === 'ai' && <>
-                    <Typography sx={{ mb: 1.5 }}>{data.question}</Typography>
-                    <Typography>
-                        <Markdown>
-                            {data.task.jsDoc}
-                        </Markdown>
-                    </Typography>
-                </> // show task created by ai
-                }
-
 
             </CardContent>
             {data.role === 'ai' &&
                 <CardActions>
                     <Button size='large' onClick={() => {
-                        // TODO: get below from formatted response from ollama
+                        const [jsCode, htmlCode, cssCode] = extract_task(data.question);
+                        data.task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
                         AIChatprops.setQuestion(data.question);
                         AIChatprops.setTask(data.task);
                     }}>
@@ -83,7 +73,6 @@ interface AIChatProps {
 interface cardContentType {
     id: number;
     role: string;
-    content: string;
     question: string;
     task: {
         jsDoc: string;
@@ -102,23 +91,18 @@ export default function AIChat(props: AIChatProps) {
         fetch(CHAT_HISTORIES_API_ENDPOINT)
             .then(response => response.json())
             .then(json => {
-                console.log(json.chat_histories);
-
-                // sample response
-                // {"chat_histories":[{"id":"66ab9bd1f5f91e16b33f5599","SessionId":"test_user","History":{"type":"human","data":{"content":"find max in array","additional_kwargs":{},"response_metadata":{},"type":"human","name":null,"id":null,"example":false}}},{"id":"66ab9bd1f5f91e16b33f559a","SessionId":"test_user","History":{"type":"ai","data":{"content":"Here's an example of a faulty JavaScript function that attempts to find the maximum value in an array:\n\n**Question**\nTitle: Finding Max Value in Array\nQuestion:\n```javascript\nfunction findMax(arr) {\n  let max = arr[0];\n  for (let i = 1; i < arr.length; i++) {\n    if (arr[i] > max) {\n      max = arr[i];\n    }\n  }\n  return max;\n}\n\n// Test the function with an array: [4, 2, 9, 6, 5]\nconsole.log(findMax([4, 2, 9, 6, 5])); // Output: ?\n```\n**Solution**\n```javascript\nfunction findMax(arr) {\n  if (arr.length === 0) {\n    throw new Error(\"Array is empty\");\n  }\n  let max = arr[0];\n  for (let i = 1; i < arr.length; i++) {\n    if (arr[i] > max) {\n      max = arr[i];\n    }\n  }\n  return max;\n}\n\n// Test the function with an array: [4, 2, 9, 6, 5]\nconsole.log(findMax([4, 2, 9, 6, 5])); // Output: 9\n```\nIn this corrected solution, we added a check at the beginning of the `findMax` function to ensure that the input array is not empty. If it is empty, an error is thrown with a message indicating that the array is empty. This prevents the function from attempting to access elements in an empty array, which would result in an \"undefined\" value being returned.","additional_kwargs":{},"response_metadata":{"model":"llama3.1","created_at":"2024-08-01T14:29:37.298108981Z","message":{"role":"assistant","content":""},"done_reason":"stop","done":true,"total_duration":89996188739,"load_duration":4519740962,"prompt_eval_count":292,"prompt_eval_duration":4052657000,"eval_count":348,"eval_duration":81333721000},"type":"ai","name":null,"id":"run-c6248bc1-061d-4290-ac23-a48a912e5c8e-0","example":false,"tool_calls":[],"invalid_tool_calls":[],"usage_metadata":null}}}]}
                 json.chat_histories.forEach(element => {
-                    let [title, question, jsCode, contentWithoutSolution] = extract_task(element.History.data.content);
+                    const [jsCode, htmlCode, cssCode] = extract_task(element.History.data.content);
                     setCardContent(prevCardContent => [
                         ...prevCardContent,
                         {
                             id: element.id,
                             role: element.History.type,
-                            content: contentWithoutSolution,
-                            question: question,
+                            question: element.History.data.content,
                             task: {
                                 jsDoc: jsCode,
-                                htmlDoc: '',
-                                cssDoc: '',
+                                htmlDoc: htmlCode,
+                                cssDoc: cssCode,
                             },
                         }
                     ]);
@@ -147,8 +131,7 @@ export default function AIChat(props: AIChatProps) {
                 {
                     id: newCardId,
                     role: 'human',
-                    content: userQuestion,
-                    question: '',
+                    question: userQuestion,
                     task: {
                         jsDoc: '',
                         htmlDoc: '',
@@ -158,8 +141,6 @@ export default function AIChat(props: AIChatProps) {
                 {
                     id: newCardId + 1,
                     role: 'ai',
-                    content: '',
-                    // TODO: get below from formatted response from AI
                     question: '',
                     task: {
                         jsDoc: '',
@@ -202,19 +183,15 @@ export default function AIChat(props: AIChatProps) {
                             const jsonChunk = JSON.parse(jsonString);
                             console.log(jsonChunk);
 
-                            let [title, question, jsCode, contentWithoutSolution] = extract_task(jsonChunk.token);
-
                             // Update the content of the new card with the received chunk
                             setCardContent(prevCardContent => prevCardContent.map(card => {
                                 if (card.id === newCardId + 1) {
                                     return {
                                         ...card,
-                                        content: card.content + contentWithoutSolution,
-                                        // TODO: get below from formatted response from AI
-                                        question: card.question + question,
+                                        question: card.question + jsonChunk.token,
                                         task: {
-                                            jsDoc: card.task.jsDoc + jsCode,
-                                            htmlDoc: 'Hello world',
+                                            jsDoc: '',
+                                            htmlDoc: '',
                                             cssDoc: '',
                                         }
                                     };

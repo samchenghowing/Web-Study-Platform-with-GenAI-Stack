@@ -1,20 +1,24 @@
+/**
+ * Extracts task information from a given input string.
+ *
+ * @param {string} input - The input string containing task information.
+ * @return {Array<string>} An array containing the JavaScript, HTML and CSS code of the task.
+ */
 export function extract_task(input: string) {
     // Extract JavaScript code using regular expressions
     const jsCodeRegex = /```javascript\n([\s\S]*?)\n```/g;
     const jsCodeMatches = [...input.matchAll(jsCodeRegex)];
     const jsCode = jsCodeMatches.map(match => match[1]).join('\n');
 
-    // Extract title and question
-    const titleRegex = /Title: (.*)\n/;
-    const questionRegex = /Question:\n([\s\S]*?)\n```/;
-    const titleMatch = input.match(titleRegex);
-    const questionMatch = input.match(questionRegex);
+    // Extract HTML code using regular expressions
+    const htmlCodeRegex = /```html\n([\s\S]*?)\n```/g;
+    const htmlCodeMatches = [...input.matchAll(htmlCodeRegex)];
+    const htmlCode = htmlCodeMatches.map(match => match[1]).join('\n');
 
-    const title = titleMatch ? titleMatch[1] : '';
-    const question = questionMatch ? questionMatch[1] : '';
+    // Extract CSS code using regular expressions
+    const cssCodeRegex = /```css\n([\s\S]*?)\n```/g;
+    const cssCodeMatches = [...input.matchAll(cssCodeRegex)];
+    const cssCode = cssCodeMatches.map(match => match[1]).join('\n');
 
-    // Remove the solution section from content
-    const solutionRegex = /\*\*Solution\*\*[\s\S]*$/;
-    const contentWithoutSolution = input.replace(solutionRegex, '');
-    return [title, question, jsCode, contentWithoutSolution];
+    return [jsCode, htmlCode, cssCode];
 }
