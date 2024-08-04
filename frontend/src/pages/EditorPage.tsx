@@ -15,6 +15,8 @@ import Preview from './components/editor/Preview';
 import FileUploader from './components/FileUploader';
 import SOLoader from './components/SOLoader';
 
+const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
+
 export default () => {
 	// theme and css layout
 	const [mode, setMode] = React.useState<PaletteMode>('light');
@@ -35,11 +37,6 @@ export default () => {
 	});
 
 	// AIChat
-	// TODO: generate the question, task and solution by AIChat
-	// Motivation:
-	// Instead of asking GenAI to craft a possibliy incorrect question, or 
-	// if we can't guarntee the correctness of solution from GenAI, why don't 
-	// we create a wrong question and it's corresponing accepted answer pair? 
 	const [question, setQuestion] = React.useState('No question assigned yet... Chat with AI to get your tailored task!');
 	const [task, setTask] = React.useState({
 		jsDoc: 'console.log(\'You can learn anything\');',
@@ -49,19 +46,22 @@ export default () => {
 
 	function handleCodeSubmit() {
 		console.log('Function ran in EditorConfig');
-		// TODO: show loading and send to AI for verification (test cases??)
-		// result = getSubmittionResultFromApi()
+		getSubmittionResult();
 	}
 
-	const getSubmittionResultFromApi = () => {
-		return fetch('http://localhost:8504/submit')
-			.then(response => response.json())
-			.then(json => {
-				return json.result;
+	const getSubmittionResult = () => {
+		// TODO: show loading and send to AI for verification (test cases??)
+		return fetch(SUBMIT_API_ENDPOINT, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				'jsDoc': editorDoc.jsDoc,
+				'htmlDoc': editorDoc.htmlDoc,
+				'cssDoc': editorDoc.cssDoc,
 			})
-			.catch(error => {
-				console.error(error);
-			});
+		});
 	}
 
 	React.useEffect(() => {

@@ -145,6 +145,11 @@ class Question(BaseModel):
     text: str
     rag: bool | None = False 
 
+class Task(BaseModel):
+    jsDoc: str
+    htmlDoc: str
+    cssDoc: str
+
 # Chat bot API
 @app.post("/query-stream")
 async def qstream(question: Question):
@@ -191,6 +196,10 @@ async def generate_task_api(question: Question):
             yield json.dumps({"token": token})
 
     return StreamingResponse(generate(), media_type="application/json")
+
+@app.post("/submit")
+async def submit_question(task: Task):
+    return {"Your submittion is received": task}
 
 
 # PDF API
