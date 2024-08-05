@@ -24,21 +24,56 @@ interface PreviewProps {
 
 export default function Preview(props: PreviewProps) {
     const [open, setOpen] = React.useState(false);
+    const [consoleOutput, setConsoleOutput] = React.useState<string[]>([]);
 
     const handleClickOpen = () => {
         setOpen(true);
+        setConsoleOutput([]); // Clear console output when opening
     };
 
     const handleClose = () => {
         setOpen(false);
     };
 
-    const html = `<html><body><h1>${props.editorDoc.htmlDoc}<h1/><script>${props.editorDoc.jsDoc}</script></body></html>`;
+    const html = `
+        <html>
+            <head>
+                <style>${props.editorDoc.cssDoc}</style>
+            </head>
+            <body>
+                <h1>${props.editorDoc.htmlDoc}</h1>
+                <script>
+                    (function() {
+                        const originalConsoleLog = console.log;
+                        console.log = function(...args) {
+                            window.parent.postMessage({ type: 'console-log', args: args }, '*');
+                            originalConsoleLog.apply(console, args);
+                        };
+                    })();
+                    ${props.editorDoc.jsDoc}
+                </script>
+            </body>
+        </html>
+    `;
+
+    React.useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data.type === 'console-log') {
+                setConsoleOutput(prev => [...prev, ...event.data.args.map(arg => arg.toString())]);
+            }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, []);
 
     return (
         <React.Fragment>
             <Button variant="outlined" onClick={handleClickOpen}>
-                Show Preview
+                Run the code
             </Button>
             <Dialog
                 fullScreen
@@ -65,10 +100,14 @@ export default function Preview(props: PreviewProps) {
                     srcDoc={html}
                     title="Preview"
                     width="100%"
-                    height="100px"
+                    height="80%"
+                    style={{ border: 'none' }}
                 ></iframe>
+                <div style={{ height: '20%', overflowY: 'auto', padding: '8px', background: '#f5f5f5' }}>
+                    <strong>Console Output:</strong>
+                    <pre>{consoleOutput.join('\n')}</pre>
+                </div>
             </Dialog>
         </React.Fragment>
-
-    )
+    );
 }

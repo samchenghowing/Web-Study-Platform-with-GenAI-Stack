@@ -87,6 +87,8 @@ export default () => {
 							setTask={setTask} />
 					</Grid>
 					<Grid xs={8}>
+						<Preview
+							editorDoc={editorDoc} />
 						<EditorConfig
 							editorConfig={editorConfig}
 							setEditorConfig={setEditorConfig}
@@ -97,8 +99,6 @@ export default () => {
 							setEditorDoc={setEditorDoc} />
 					</Grid>
 					<Grid xs={12}>
-						<Preview
-							editorDoc={editorDoc} />
 						<FileUploader />
 						<SOLoader />
 					</Grid>
