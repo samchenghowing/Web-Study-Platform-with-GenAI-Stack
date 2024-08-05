@@ -8,6 +8,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
 const LOADSO_API_ENDPOINT = "http://localhost:8504/load";
+const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 
 export default function FormDialog() {
     const [open, setOpen] = React.useState(false);
@@ -22,7 +23,7 @@ export default function FormDialog() {
     };
 
     const checkUploadProgress = function (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) {
-        fetch(`${LOADSO_API_ENDPOINT}/${uploadTaskUID}/status`, {
+        fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${uploadTaskUID}/status`, {
             method: "Get"
         })
             .then(response => response.json())

@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
+const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -50,7 +51,7 @@ export default function InputFileUpload() {
     };
 
     const checkUploadProgress = function (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) {
-        fetch(`${FILEUPLOAD_API_ENDPOINT}/${uploadTaskUID}/status`, {
+        fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${uploadTaskUID}/status`, {
             method: "Get"
         })
             .then(response => response.json())

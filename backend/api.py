@@ -1,20 +1,23 @@
 import os
-import io
-import requests
 import json
 from typing import Dict, List
-from uuid import UUID, uuid4
+from uuid import UUID
 from threading import Thread
 from queue import Queue, Empty
 from collections.abc import Generator
 from http import HTTPStatus
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from utils import (
     create_constraints,
     create_vector_index,
-    insert_so_data,
     BaseLogger,
+)
+from background_task import(
+    Job,
+    process_files,
+    load_so_data,
+    verify_submission,
 )
 from chains import (
     load_embedding_model,
@@ -36,11 +39,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 
 from langchain_community.graphs import Neo4jGraph
-from langchain_community.vectorstores import Neo4jVector
 from langchain.callbacks.base import BaseCallbackHandler
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-from PyPDF2 import PdfReader
 
 from bson import ObjectId
 import motor.motor_asyncio
@@ -63,8 +62,6 @@ client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
 db = client[DATABASE]
 student_collection = db.get_collection("students")
 chat_history_collection = db.get_collection("chat_histories")
-
-SO_API_BASE_URL = "https://api.stackexchange.com/2.3/search/advanced"
 
 embeddings, dimension = load_embedding_model(
     embedding_model_name,
@@ -140,12 +137,13 @@ app.add_middleware(
 async def root():
     return {"message": "Hello World"}
 
+jobs: Dict[UUID, Job] = {}
 
 class Question(BaseModel):
     text: str
     rag: bool | None = False 
 
-class Task(BaseModel):
+class Submission(BaseModel):
     jsDoc: str
     htmlDoc: str
     cssDoc: str
@@ -197,57 +195,22 @@ async def generate_task_api(question: Question):
 
     return StreamingResponse(generate(), media_type="application/json")
 
-@app.post("/submit")
-async def submit_question(task: Task):
-    return {"Your submittion is received": task}
 
+# Get status of backgroud task (Process PDF, load data from stackoverflow, verify submission)
+@app.get("/bgtask/{uid}/status")
+async def status_handler(uid: UUID):
+    return jobs[uid]
+
+
+# Submission API
+@app.post("/submit", status_code=HTTPStatus.ACCEPTED)
+async def submit_question(background_tasks: BackgroundTasks, task: Submission):
+    new_task = Job()
+    jobs[new_task.uid] = new_task
+    background_tasks.add_task(process_files, jobs, new_task.uid, task)
+    return new_task
 
 # PDF API
-# Background task for PDF processing
-class Job(BaseModel):
-    uid: UUID = Field(default_factory=uuid4)
-    status: str = "in_progress"
-    processed_files: List[str] = Field(default_factory=list)
-
-jobs: Dict[UUID, Job] = {}
-
-def process_files(task_id: UUID, byte_files: List[dict]):
-    for filename, content in byte_files.items():
-        try:
-            # Create a file-like object from the content
-            pdf_reader = PdfReader(io.BytesIO(content))
-
-            text = ""
-            for page in pdf_reader.pages:
-                text += page.extract_text()
-
-            # langchain_textspliter
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=1000, chunk_overlap=200, length_function=len
-            )
-
-            chunks = text_splitter.split_text(text=text)
-
-            # Store the chunks part in db (vector)
-            Neo4jVector.from_texts(
-                chunks,
-                url=url,
-                username=username,
-                password=password,
-                embedding=embeddings,
-                index_name="pdf_bot",
-                node_label="PdfBotChunk",
-                pre_delete_collection=True,  # Delete existing PDF data
-            )
-            
-        except Exception as error:
-            jobs[task_id].status = f"Importing {filename} fails with error: {error}"
-            return
-        finally:
-            jobs[task_id].processed_files.append(filename)
-
-    jobs[task_id].status = "completed"
-
 async def get_file_content(files: List[UploadFile]):
     byte_files = {}
     for file in files:
@@ -259,50 +222,16 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     new_task = Job()
     jobs[new_task.uid] = new_task
     byte_files = await get_file_content(files)
-    background_tasks.add_task(process_files, new_task.uid, byte_files)
+    background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
-@app.get("/upload/{uid}/status")
-async def status_handler(uid: UUID):
-    return jobs[uid]
-
-
 # Loader API
-# Background task for loading stackoverflow data to neo4j
 @app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
 async def load_so(background_tasks: BackgroundTasks, tag: str = Body(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
-    background_tasks.add_task(load_so_data, new_task.uid, tag)
+    background_tasks.add_task(load_so_data, jobs, new_task.uid, tag)
     return new_task
-
-@app.get("/load/{uid}/status")
-async def load_status_handler(uid: UUID):
-    return jobs[uid]
-
-def load_so_data(task_id: UUID, tag: str = "javascript", page: int = 10) -> None:
-    try:
-        parameters = (
-            f"?pagesize=100&page={page}&order=desc&sort=creation&answers=1&tagged={tag}"
-            "&site=stackoverflow&filter=!*236eb_eL9rai)MOSNZ-6D3Q6ZKb0buI*IVotWaTb"
-        )
-        data = requests.get(SO_API_BASE_URL + parameters).json()
-        insert_so_data(neo4j_graph, embeddings, data)
-    except Exception as error:
-        jobs[task_id].status = f"Importing {tag} from so fails with error: {error}"
-        return
-    finally:
-        jobs[task_id].processed_files.append(tag)
-    jobs[task_id].status = "completed"
-
-def load_high_score_so_data() -> None:
-    parameters = (
-        f"?fromdate=1664150400&order=desc&sort=votes&site=stackoverflow&"
-        "filter=!.DK56VBPooplF.)bWW5iOX32Fh1lcCkw1b_Y6Zkb7YD8.ZMhrR5.FRRsR6Z1uK8*Z5wPaONvyII"
-    )
-    data = requests.get(SO_API_BASE_URL + parameters).json()
-    insert_so_data(neo4j_graph, embeddings, data)
-
 
 
 # CRUD mongodb

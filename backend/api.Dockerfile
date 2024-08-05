@@ -16,6 +16,7 @@ COPY api.py .
 COPY utils.py .
 COPY chains.py .
 COPY mongo.py .
+COPY background_task.py .
 
 HEALTHCHECK CMD curl --fail http://localhost:8504
 
