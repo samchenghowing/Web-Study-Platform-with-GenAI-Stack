@@ -18,6 +18,7 @@ from background_task import(
     process_files,
     load_so_data,
     verify_submission,
+    Submission,
 )
 from chains import (
     load_embedding_model,
@@ -143,11 +144,6 @@ class Question(BaseModel):
     text: str
     rag: bool | None = False 
 
-class Submission(BaseModel):
-    jsDoc: str
-    htmlDoc: str
-    cssDoc: str
-
 # Chat bot API
 @app.post("/query-stream")
 async def qstream(question: Question):
@@ -207,7 +203,7 @@ async def status_handler(uid: UUID):
 async def submit_question(background_tasks: BackgroundTasks, task: Submission):
     new_task = Job()
     jobs[new_task.uid] = new_task
-    background_tasks.add_task(process_files, jobs, new_task.uid, task)
+    background_tasks.add_task(verify_submission, jobs, new_task.uid, task)
     return new_task
 
 # PDF API

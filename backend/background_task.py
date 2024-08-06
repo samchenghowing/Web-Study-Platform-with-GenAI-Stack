@@ -1,8 +1,9 @@
 import os
 import io
 import requests
-from typing import List
+from typing import List, Dict
 from uuid import UUID, uuid4
+import subprocess
 from pydantic import BaseModel, Field
 
 from chains import (
@@ -44,8 +45,13 @@ class Job(BaseModel):
     status: str = "in_progress"
     processed_files: List[str] = Field(default_factory=list)
 
+class Submission(BaseModel):
+    jsDoc: str
+    htmlDoc: str
+    cssDoc: str
 
-# PDF processing
+
+# Background task for PDF processing
 def process_files(jobs: dict, task_id: UUID, byte_files: List[dict]):
     for filename, content in byte_files.items():
         try:
@@ -108,7 +114,87 @@ def load_high_score_so_data() -> None:
     data = requests.get(SO_API_BASE_URL + parameters).json()
     insert_so_data(neo4j_graph, embeddings, data)
 
-# TODO: 
-def verify_submission(jobs: dict, task_id: UUID):
-    return "your submittion is correct!"
+
+# Background task to verify user's submission code
+def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> str:
+    js_code = task.jsDoc
+    
+    # 1. Syntax Validation
+    if not validate_js_syntax(js_code):
+        jobs[task_id].status = "JavaScript syntax errors detected."
+        return
+
+    # 2. Functional Validation
+    test_results = run_js_tests(js_code)
+    if not test_results['success']:
+        jobs[task_id].status = f"Functional tests failed: {test_results['errors']}"
+        return
+    
+    jobs[task_id].status = "Your submission is correct!"    
+    return
+
+def validate_js_syntax(js_code: str) -> bool:
+    try:
+        # Save the code to a temporary file
+        with open('temp.js', 'w') as f:
+            f.write(js_code)
+        
+        # Run eslint to check for syntax errors
+        result = subprocess.run(['eslint', 'temp.js'], capture_output=True, text=True)
+        if result.returncode != 0:
+            return False
+    except Exception as e:
+        return False
+    return True
+
+def run_js_tests(js_code: str) -> Dict[str, any]:
+    # Save the code to a temporary file
+    with open('temp.js', 'w') as f:
+        f.write(js_code)
+    
+    # Define the test code (TODO: generated from AI)
+    test_code = """
+    const LinkedList = require('./temp.js'); // Import the submitted code
+    const list = new LinkedList();
+
+    // Test cases
+    try {
+        // Test appending nodes
+        list.append(1);
+        list.append(2);
+        list.append(3);
+        if (list.toArray().join(',') !== '1,2,3') throw new Error('Append test failed');
+
+        // Test deleting nodes
+        list.delete(2);
+        if (list.toArray().join(',') !== '1,3') throw new Error('Delete test failed');
+
+        // Test finding nodes
+        if (list.find(1) === null || list.find(2) !== null) throw new Error('Find test failed');
+
+        // Test empty list handling
+        list.delete(1);
+        list.delete(3);
+        if (list.toArray().length !== 0) throw new Error('Empty list test failed');
+
+        // Return success if all tests pass
+        return { success: true };
+    } catch (error) {
+        return { success: false, errors: error.message };
+    }
+    """
+    
+    try:
+        # Save the test code to a temporary file
+        with open('test.js', 'w') as f:
+            f.write(test_code)
+        
+        # Run the tests using Node.js
+        result = subprocess.run(['node', 'test.js'], capture_output=True, text=True)
+        if result.returncode != 0:
+            return {'success': False, 'errors': result.stderr}
+    except Exception as e:
+        return {'success': False, 'errors': str(e)}
+    
+    return {'success': True}
 
