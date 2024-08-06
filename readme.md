@@ -114,6 +114,13 @@ search.
 - UI: choose tags, run import, see progress, some stats of data in the database
 - Load high ranked questions (regardless of tags) to support the ticket generation feature of App 1.
 
+### - User code submission
+Security Considerations (TODO: Run in docker)
+- Sandboxing: Ensure the sandboxed environment is isolated and has limited permissions.
+- Resource Limits: Set limits on CPU and memory usage to prevent abuse.
+- Validation: Perform thorough validation of user input and code.
+
+
 
 This application built separate from the back-end code using React.
 The auto-reload on changes are instant using the Docker watch `sync` config.  
@@ -129,4 +136,4 @@ The auto-reload on changes are instant using the Docker watch `sync` config.
 - [genai-app-how-to-build](https://neo4j.com/developer-blog/genai-app-how-to-build/)
 - [Ollama](https://ollama.ai)
 - [gemma2:2b](https://developers.googleblog.com/en/smaller-safer-more-transparent-advancing-responsible-ai-with-gemma/)
-- [Error when runnig some llm inide container](https://github.com/docker/genai-stack/issues/170)
+- [Error when runnig some llm inside container](https://github.com/docker/genai-stack/issues/170)

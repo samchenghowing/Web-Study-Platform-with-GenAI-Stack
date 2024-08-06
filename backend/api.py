@@ -169,17 +169,13 @@ async def qstream(question: Question):
 
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
-    output_function = llm_chain
-    if question.rag:
-        output_function = rag_chain
-
     q = Queue()
 
     def cb():
         generate_task(
             user_id="test_user",
             neo4j_graph=neo4j_graph,
-            llm_chain=output_function,
+            llm_chain=llm_chain,
             input_question=question.text,
             callbacks=[QueueCallback(q)],
         )

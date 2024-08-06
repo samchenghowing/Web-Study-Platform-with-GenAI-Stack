@@ -25,7 +25,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from typing import List, Any
-from utils import BaseLogger, extract_task
+from utils import BaseLogger
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
@@ -245,7 +245,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
 
     User: Hey I want to know javascript
 
-    Agent: OK, here's an starting question containing errors, let see if you can fix it: ```javascript\nconsoel.log(Hello World')```
+    Agent: OK, here's an starting question containing errors, let see if you can fix it: #Title: Fix the error for the following code  ```javascript\nconsoel.log(Hello World')```
     ---
 
     """
@@ -266,12 +266,4 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
         callbacks=callbacks,
         prompt=chat_prompt,
     )
-
-    # Get the title, question and solution dictionary
-    result = extract_task(llm_response["answer"])
-    response = {
-        "title": result["title"],
-        "question": result["question"]
-    }
-
-    return response
+    return llm_response
