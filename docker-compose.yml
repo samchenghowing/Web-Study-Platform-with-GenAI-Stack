@@ -73,6 +73,7 @@ services:
       dockerfile: api.Dockerfile
     volumes:
       - $PWD/embedding_model:/embedding_model
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount Docker socket
     environment:
       - NEO4J_URI=${NEO4J_URI-neo4j://database:7687}
       - NEO4J_PASSWORD=${NEO4J_PASSWORD-password}
@@ -115,6 +116,17 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  node:
+    build:
+      context: backend/sandbox
+      dockerfile: node.Dockerfile
+    networks:
+      - net
+    volumes:
+      - $PWD/data:/data/sandbox:/app
+    # Optionally, you can add a command to execute the test script directly.
+    # command: node test.js
 
   frontend:
     build:

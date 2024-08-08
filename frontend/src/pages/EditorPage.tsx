@@ -16,6 +16,7 @@ import FileUploader from './components/FileUploader';
 import SOLoader from './components/SOLoader';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
+const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 
 export default () => {
 	// theme and css layout
@@ -44,14 +45,10 @@ export default () => {
 		cssDoc: '',
 	});
 
+	const [submissionUID, setsubmissionUID] = React.useState("");
 	function handleCodeSubmit() {
-		console.log('Function ran in EditorConfig');
-		getSubmittionResult();
-	}
-
-	const getSubmittionResult = () => {
 		// TODO: show loading and send to AI for verification (test cases??)
-		return fetch(SUBMIT_API_ENDPOINT, {
+		fetch(SUBMIT_API_ENDPOINT, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -61,8 +58,28 @@ export default () => {
 				'htmlDoc': editorDoc.htmlDoc,
 				'cssDoc': editorDoc.cssDoc,
 			})
-		});
+		})
+			.then(response => response.json())
+			.then(json => {
+				console.log(json);
+				setsubmissionUID(json.uid);
+			})
+			.catch(error => {
+				console.error(error);
+			});
 	}
+	const checkSubmissionProgress = function (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) {
+		fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${submissionUID}/status`, {
+			method: "Get"
+		})
+			.then(response => response.json())
+			.then(json => {
+				console.log(json)
+			})
+			.catch(error => {
+				console.error(error);
+			});
+	};
 
 	React.useEffect(() => {
 		// when receive new task from AIChat, update code in EditorView
@@ -93,6 +110,7 @@ export default () => {
 							editorConfig={editorConfig}
 							setEditorConfig={setEditorConfig}
 							handleCodeSubmit={handleCodeSubmit} />
+						<button onClick={checkSubmissionProgress}>Check submit result</button>
 						<EditorView
 							editorConfig={editorConfig}
 							editorDoc={editorDoc}

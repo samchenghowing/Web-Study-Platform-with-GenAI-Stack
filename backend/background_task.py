@@ -1,10 +1,14 @@
 import os
 import io
+import tempfile
 import requests
-from typing import List, Dict
+from typing import List, Dict, Union
 from uuid import UUID, uuid4
 import subprocess
+import docker
 from pydantic import BaseModel, Field
+
+client = docker.from_env()
 
 from chains import (
     load_embedding_model,
@@ -116,7 +120,7 @@ def load_high_score_so_data() -> None:
 
 
 # Background task to verify user's submission code
-def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> str:
+def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> None:
     js_code = task.jsDoc
     
     # 1. Syntax Validation
@@ -133,68 +137,110 @@ def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) 
     jobs[task_id].status = "Your submission is correct!"    
     return
 
-def validate_js_syntax(js_code: str) -> bool:
+def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> None:
+    js_code = task.jsDoc
+    
+    # 1. Syntax Validation
+    syntax_result = validate_js_syntax(js_code)
+    if not syntax_result['success']:
+        jobs[task_id].status = f"JavaScript syntax errors detected: {syntax_result['errors']}"
+        return
+
+    # 2. Functional Validation
+    test_results = run_js_tests(js_code)
+    if not test_results['success']:
+        jobs[task_id].status = f"Functional tests failed: {test_results['errors']}"
+        return
+    
+    jobs[task_id].status = "Your submission is correct!"    
+    return
+
+def validate_js_syntax(js_code: str) -> Dict[str, Union[bool, str]]:
     try:
-        # Save the code to a temporary file
-        with open('temp.js', 'w') as f:
-            f.write(js_code)
+        # Use a temporary file for code
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.js') as temp_file:
+            temp_file.write(js_code.encode())
+            temp_file_path = temp_file.name
         
         # Run eslint to check for syntax errors
-        result = subprocess.run(['eslint', 'temp.js'], capture_output=True, text=True)
+        result = subprocess.run(['eslint', temp_file_path], capture_output=True, text=True)
         if result.returncode != 0:
-            return False
-    except Exception as e:
-        return False
-    return True
-
-def run_js_tests(js_code: str) -> Dict[str, any]:
-    # Save the code to a temporary file
-    with open('temp.js', 'w') as f:
-        f.write(js_code)
-    
-    # Define the test code (TODO: generated from AI)
-    test_code = """
-    const LinkedList = require('./temp.js'); // Import the submitted code
-    const list = new LinkedList();
-
-    // Test cases
-    try {
-        // Test appending nodes
-        list.append(1);
-        list.append(2);
-        list.append(3);
-        if (list.toArray().join(',') !== '1,2,3') throw new Error('Append test failed');
-
-        // Test deleting nodes
-        list.delete(2);
-        if (list.toArray().join(',') !== '1,3') throw new Error('Delete test failed');
-
-        // Test finding nodes
-        if (list.find(1) === null || list.find(2) !== null) throw new Error('Find test failed');
-
-        // Test empty list handling
-        list.delete(1);
-        list.delete(3);
-        if (list.toArray().length !== 0) throw new Error('Empty list test failed');
-
-        // Return success if all tests pass
-        return { success: true };
-    } catch (error) {
-        return { success: false, errors: error.message };
-    }
-    """
-    
-    try:
-        # Save the test code to a temporary file
-        with open('test.js', 'w') as f:
-            f.write(test_code)
-        
-        # Run the tests using Node.js
-        result = subprocess.run(['node', 'test.js'], capture_output=True, text=True)
-        if result.returncode != 0:
-            return {'success': False, 'errors': result.stderr}
+            return {'success': False, 'errors': result.stderr.strip()}
     except Exception as e:
         return {'success': False, 'errors': str(e)}
+    finally:
+        # Clean up temporary file
+        os.remove(temp_file_path)
+    
+    return {'success': True}
+
+def run_js_tests(js_code: str) -> Dict[str, Union[bool, str]]:
+    try:
+        # Use a temporary file for the code and test
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.js') as temp_code_file, \
+             tempfile.NamedTemporaryFile(delete=False, suffix='.js') as temp_test_file:
+            
+            temp_code_path = temp_code_file.name
+            temp_test_path = temp_test_file.name
+            
+            temp_code_file.write(js_code.encode())
+            temp_test_code = f"""
+            const LinkedList = require('{temp_code_path}'); // Import the submitted code
+            const list = new LinkedList();
+
+            // Test cases
+            try {{
+                // Test appending nodes
+                list.append(1);
+                list.append(2);
+                list.append(3);
+                if (list.toArray().join(',') !== '1,2,3') throw new Error('Append test failed');
+
+                // Test deleting nodes
+                list.delete(2);
+                if (list.toArray().join(',') !== '1,3') throw new Error('Delete test failed');
+
+                // Test finding nodes
+                if (list.find(1) === null || list.find(2) !== null) throw new Error('Find test failed');
+
+                // Test empty list handling
+                list.delete(1);
+                list.delete(3);
+                if (list.toArray().length !== 0) throw new Error('Empty list test failed');
+
+                // Return success if all tests pass
+                console.log('Success');
+            }} catch (error) {{
+                console.error(error.message);
+                process.exit(1);
+            }}
+            """
+            temp_test_file.write(temp_test_code.encode())
+        
+        # Run the Node.js container
+        container = client.containers.run(
+            "node", 
+            command=f"node /app/test.js",
+            volumes={
+                temp_code_path: {'bind': '/app/temp.js', 'mode': 'rw'},
+                temp_test_path: {'bind': '/app/test.js', 'mode': 'rw'}
+            },
+            detach=True,
+            stdout=True,
+            stderr=True
+        )
+
+        logs = container.logs()
+        if container.wait()['StatusCode'] != 0:
+            return {'success': False, 'errors': logs.decode('utf-8')}
+        if 'Success' not in logs.decode('utf-8'):
+            return {'success': False, 'errors': 'Tests did not pass all cases'}
+    except Exception as e:
+        return {'success': False, 'errors': str(e)}
+    finally:
+        # Clean up temporary files
+        os.remove(temp_code_path)
+        os.remove(temp_test_path)
     
     return {'success': True}
 
