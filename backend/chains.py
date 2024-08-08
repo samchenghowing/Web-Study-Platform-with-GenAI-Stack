@@ -2,13 +2,12 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.embeddings import BedrockEmbeddings
-from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 from langchain_openai import ChatOpenAI
 from langchain_community.chat_models import ChatOllama
 from langchain_community.chat_models import BedrockChat
 
-from langchain_community.graphs import Neo4jGraph
 from langchain_community.vectorstores import Neo4jVector
 
 from langchain.chains import RetrievalQAWithSourcesChain
@@ -30,9 +29,9 @@ from utils import BaseLogger
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
         embeddings = OllamaEmbeddings(
-            base_url=config["ollama_base_url"], model="llama2"
+            base_url=config["ollama_base_url"], model="gemma2:2b"
         )
-        dimension = 4096
+        dimension = 2304
         logger.info("Embedding: Using Ollama")
     elif embedding_model_name == "openai":
         embeddings = OpenAIEmbeddings()
@@ -49,7 +48,7 @@ def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config=
         dimension = 768
         logger.info("Embedding: Using Google Generative AI Embeddings")
     else:
-        embeddings = SentenceTransformerEmbeddings(
+        embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2", cache_folder="/embedding_model"
         )
         dimension = 384

@@ -1,4 +1,4 @@
-FROM langchain/langchain
+FROM python:slim-bookworm
 
 WORKDIR /app
 

@@ -110,7 +110,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 http://localhost:8504/ || exit 1"
+          "curl --no-verbose http://localhost:8504/ || exit 1"
         ]
       interval: 5s
       timeout: 3s
