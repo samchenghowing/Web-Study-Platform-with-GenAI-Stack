@@ -4,18 +4,20 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
+import { EditorConfigType, EditorDocType, TaskType } from './editorType';
 
 interface EditorViewProps {
-    editorDoc: { jsDoc: string; htmlDoc: string; cssDoc: string };
-    editorConfig: { language: string; autoRun: boolean };
-    setEditorDoc: Dispatch<SetStateAction<{ jsDoc: string; htmlDoc: string; cssDoc: string }>>;
+    editorDoc: EditorDocType;
+    editorConfig: EditorConfigType;
+    setEditorDoc: Dispatch<SetStateAction<EditorDocType>>;
 }
 
-export default function EditorView(props: EditorViewProps) {
+const EditorView: React.FC<EditorViewProps> = (props) => {
+    const { editorDoc, editorConfig, setEditorDoc } = props;
     const editorRef = React.useRef(null);
 
-    const getExtensions = (language) => {
-        switch (language) {
+    const getExtensions = React.useMemo(() => {
+        switch (editorConfig.language) {
             case 'js':
                 return [javascript({ jsx: true })];
             case 'html':
@@ -25,10 +27,10 @@ export default function EditorView(props: EditorViewProps) {
             default:
                 return [];
         }
-    };
+    }, [editorConfig.language]);
 
-    const getValue = (language, editorDoc) => {
-        switch (language) {
+    const getValue = React.useMemo(() => {
+        switch (editorConfig.language) {
             case 'js':
                 return editorDoc.jsDoc;
             case 'html':
@@ -38,17 +40,12 @@ export default function EditorView(props: EditorViewProps) {
             default:
                 return '';
         }
-    };
+    }, [editorConfig.language, editorDoc]);
 
-    // This function is called whenever the content of the editor changes. It updates the corresponding document in the state based on the current language.
-    // It first creates a copy of the current editorDoc state.
-    // It then updates the appropriate document (jsDoc, htmlDoc, or cssDoc) based on the current language.
-    // Finally, it calls props.setEditorDoc to update the state with the modified document.
-    const handleChange = (value) => {
-        const { language } = props.editorConfig;
-        const updatedDoc = { ...props.editorDoc };
+    const handleChange = (value: string) => {
+        const updatedDoc = { ...editorDoc };
 
-        switch (language) {
+        switch (editorConfig.language) {
             case 'js':
                 updatedDoc.jsDoc = value;
                 break;
@@ -62,19 +59,18 @@ export default function EditorView(props: EditorViewProps) {
                 break;
         }
 
-        props.setEditorDoc(updatedDoc);
+        setEditorDoc(updatedDoc);
     };
 
     return (
         <CodeMirror
             ref={editorRef}
-            value={getValue(props.editorConfig.language, props.editorDoc)}
-            extensions={getExtensions(props.editorConfig.language)}
-            options={{
-                lineNumbers: true,
-            }}
-            onChange={(value) => handleChange(value)}
+            value={getValue}
+            extensions={getExtensions}
+            onChange={handleChange}
             height="400px"
         />
     );
 }
+
+export default EditorView;
