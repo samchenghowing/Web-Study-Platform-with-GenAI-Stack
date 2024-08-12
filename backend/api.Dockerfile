@@ -15,6 +15,7 @@ RUN pip install --upgrade -r requirements.txt
 COPY api.py .
 COPY utils.py .
 COPY chains.py .
+COPY graphs.py .
 COPY mongo.py .
 COPY background_task.py .
 
