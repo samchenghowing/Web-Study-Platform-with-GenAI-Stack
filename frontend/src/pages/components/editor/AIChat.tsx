@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { SetStateAction, Dispatch } from 'react';
-
-import { extract_task } from './utils'
-
+import { extract_task } from './utils';
 import { styled } from '@mui/material/styles';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
@@ -10,7 +8,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
-import Markdown from 'react-markdown' // For fromatting GenAI response
+import Markdown from 'react-markdown';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
@@ -27,27 +25,26 @@ const BackgroundPaper = styled(Paper)(({ theme }) => ({
     color: theme.palette.text.secondary,
 }));
 
-function InfoCard({ data, AIChatprops }) {
-    const StyledCard = styled(Card)(({ theme }) => ({
-        backgroundColor: data.role === 'human' ? '#3f50b5' : '#fff',
-        ...theme.typography.body2,
-        padding: theme.spacing(1),
-        color: theme.palette.text.secondary,
-        whiteSpace: 'pre-wrap', // Add this line
-    }));
+const StyledCard = styled(Card)(({ theme, role }) => ({
+    backgroundColor: role === 'human' ? '#3f50b5' : '#fff',
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    color: role === 'human' ? '#fff' : '#000',
+    whiteSpace: 'pre-wrap',
+}));
 
+function InfoCard({ data, AIChatprops }) {
     return (
-        <StyledCard sx={{ minWidth: 275, marginBottom: 2 }}>
+        <StyledCard role={data.role} sx={{ minWidth: 275, marginBottom: 2 }}>
             <CardContent>
-                <Typography sx={{ fontSize: 14 }} color={data.role === 'human' ? '#fff' : '#000'} gutterBottom>
+                <Typography sx={{ fontSize: 14 }} gutterBottom>
                     {data.role}
                 </Typography>
-                <Typography color={data.role === 'human' ? '#fff' : '#000'} component={'span'} variant='h5'>
+                <Typography component={'span'} variant='h5'>
                     <Markdown>{data.question}</Markdown>
                 </Typography>
-
             </CardContent>
-            {data.role === 'ai' &&
+            {data.role === 'ai' && (
                 <CardActions>
                     <Button size='large' onClick={() => {
                         const [jsCode, htmlCode, cssCode] = extract_task(data.question);
@@ -58,7 +55,7 @@ function InfoCard({ data, AIChatprops }) {
                         Take this task!
                     </Button>
                 </CardActions>
-            }
+            )}
         </StyledCard>
     );
 }
@@ -70,7 +67,7 @@ interface AIChatProps {
     setTask: Dispatch<SetStateAction<{ jsDoc: string; htmlDoc: string; cssDoc: string }>>;
 }
 
-interface cardContentType {
+interface CardContentType {
     id: number;
     role: string;
     question: string;
@@ -81,72 +78,69 @@ interface cardContentType {
     };
 }
 
-
 export default function AIChat(props: AIChatProps) {
     const [userQuestion, setUserQuestion] = React.useState('');
-    const [cardContent, setCardContent] = React.useState<Array<cardContentType>>([]);
+    const [cardContent, setCardContent] = React.useState<CardContentType[]>([]);
     const cardRef = React.useRef<HTMLDivElement>(null);
 
-    const getChatHistory = () => {
-        fetch(CHAT_HISTORIES_API_ENDPOINT)
-            .then(response => response.json())
-            .then(json => {
-                json.chat_histories.forEach(element => {
-                    const [jsCode, htmlCode, cssCode] = extract_task(element.History.data.content);
-                    setCardContent(prevCardContent => [
-                        ...prevCardContent,
-                        {
-                            id: element.id,
-                            role: element.History.type,
-                            question: element.History.data.content,
-                            task: {
-                                jsDoc: jsCode,
-                                htmlDoc: htmlCode,
-                                cssDoc: cssCode,
-                            },
-                        }
-                    ]);
+    React.useEffect(() => {
+        const abortController = new AbortController();
+        const fetchChatHistory = async () => {
+            try {
+                const response = await fetch(CHAT_HISTORIES_API_ENDPOINT, {
+                    signal: abortController.signal
                 });
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    };
+                const json = await response.json();
+                const updatedContent = json.chat_histories.map(element => {
+                    const [jsCode, htmlCode, cssCode] = extract_task(element.History.data.content);
+                    return {
+                        id: element.id,
+                        role: element.History.type,
+                        question: element.History.data.content,
+                        task: {
+                            jsDoc: jsCode,
+                            htmlDoc: htmlCode,
+                            cssDoc: cssCode,
+                        },
+                    };
+                });
+                setCardContent(updatedContent);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+        };
 
-    const deleteChatHistory = (userID) => {
-        fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${userID}`, { method: 'DELETE' })
-            .then(response => {
-            })
-            .catch(error => {
-                console.error(error);
-            });
-        setCardContent([]);
+        fetchChatHistory();
+        return () => abortController.abort();
+    }, []);
+
+    const deleteChatHistory = async (userID: string) => {
+        try {
+            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${userID}`, { method: 'DELETE' });
+            setCardContent([]);
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const handleChat = async () => {
-        if (userQuestion.trim()) { // Check if the prompt is not empty
+        if (userQuestion.trim()) {
             const newCardId = Date.now();
-            setCardContent(prevCardContent => [
-                ...prevCardContent,
+            setCardContent(prev => [
+                ...prev,
                 {
                     id: newCardId,
                     role: 'human',
                     question: userQuestion,
-                    task: {
-                        jsDoc: '',
-                        htmlDoc: '',
-                        cssDoc: '',
-                    },
+                    task: { jsDoc: '', htmlDoc: '', cssDoc: '' },
                 },
                 {
                     id: newCardId + 1,
                     role: 'ai',
                     question: '',
-                    task: {
-                        jsDoc: '',
-                        htmlDoc: '',
-                        cssDoc: '',
-                    },
+                    task: { jsDoc: '', htmlDoc: '', cssDoc: '' },
                 }
             ]);
             setUserQuestion('');
@@ -154,46 +148,30 @@ export default function AIChat(props: AIChatProps) {
             try {
                 const response = await fetch(TASK_API_ENDPOINT, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        'text': userQuestion,
-                        'rag': false
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: userQuestion, rag: false })
                 });
 
-                const reader = response.body!.getReader();
-                if (reader == null) console.log('error connection to gen ai');
+                const reader = response.body?.getReader();
+                if (!reader) {
+                    throw new Error('Stream reader is not available');
+                }
 
                 const readStream = async () => {
                     let { done, value } = await reader.read();
-                    if (done) {
-                        console.log('Stream complete');
-                        return;
-                    }
+                    if (done) return;
 
-                    // Decode the stream chunk to a string
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    // Split the chunk by newlines, as each JSON object ends with a newline
                     const jsonStrings = chunk.split('\n').filter(Boolean);
 
                     jsonStrings.forEach(jsonString => {
                         try {
                             const jsonChunk = JSON.parse(jsonString);
-                            console.log(jsonChunk);
-
-                            // Update the content of the new card with the received chunk
-                            setCardContent(prevCardContent => prevCardContent.map(card => {
+                            setCardContent(prev => prev.map(card => {
                                 if (card.id === newCardId + 1) {
                                     return {
                                         ...card,
                                         question: card.question + jsonChunk.token,
-                                        task: {
-                                            jsDoc: '',
-                                            htmlDoc: '',
-                                            cssDoc: '',
-                                        }
                                     };
                                 }
                                 return card;
@@ -202,35 +180,25 @@ export default function AIChat(props: AIChatProps) {
                             console.error('Error parsing JSON chunk', error);
                         }
                     });
-                    // Read the next chunk
-                    readStream();
+                    await readStream();
                 };
-                // Start reading the stream
-                readStream();
 
+                await readStream();
             } catch (error) {
-                console.error('Stream end with error', error);
+                console.error('Error during stream', error);
             }
         }
     };
 
     React.useEffect(() => {
-        if (cardRef.current != null) cardRef.current.scrollTo(0, cardRef.current.scrollHeight);
+        if (cardRef.current) {
+            cardRef.current.scrollTo(0, cardRef.current.scrollHeight);
+        }
     }, [cardContent]);
 
-    React.useEffect(() => {
-        // initialize
-        return () => {
-            getChatHistory();
-        }
-    }, []);
-
-
     return (
-        <BackgroundPaper
-            ref={cardRef}
-            sx={{ maxHeight: 500, minHeight: 500, overflow: 'auto' }}>
-            {cardContent.map((data) => (
+        <BackgroundPaper ref={cardRef} sx={{ maxHeight: 500, minHeight: 500, overflow: 'auto' }}>
+            {cardContent.map(data => (
                 <InfoCard key={data.id} data={data} AIChatprops={props} />
             ))}
             <TextField
@@ -239,22 +207,21 @@ export default function AIChat(props: AIChatProps) {
                 id='user-prompt'
                 placeholder='How to print hello world in javascript?'
                 value={userQuestion}
-                onChange={e => {
-                    setUserQuestion(e.target.value)
-                }}
+                onChange={e => setUserQuestion(e.target.value)}
                 onKeyDown={e => {
                     if (e.key === 'Enter') handleChat();
                 }}
                 InputProps={{
-                    endAdornment:
+                    endAdornment: (
                         <InputAdornment position='end'>
                             <IconButton edge='end' color='primary' onClick={handleChat}>
                                 <SendIcon />
                             </IconButton>
                         </InputAdornment>
+                    ),
                 }}
             />
-            <Button size='large' onClick={() => { deleteChatHistory('test_user') }}>
+            <Button size='large' onClick={() => deleteChatHistory('test_user')}>
                 Delete Chat History
             </Button>
         </BackgroundPaper>
