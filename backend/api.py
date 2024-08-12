@@ -17,6 +17,7 @@ from background_task import(
     Job,
     process_files,
     load_so_data,
+    load_web_data,
     verify_submission,
     Submission,
 )
@@ -32,6 +33,7 @@ from mongo import (
     UpdateStudentModel,
     StudentCollection,
     ChatHistoryModelCollection,
+    WebfileModelCollection,
 )
 from fastapi import FastAPI
 from fastapi import Body, HTTPException
@@ -62,6 +64,7 @@ DATABASE = "my_db"
 client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
 db = client[DATABASE]
 student_collection = db.get_collection("students")
+file_collection = db.get_collection("files")
 chat_history_collection = db.get_collection("chat_histories")
 
 embeddings, dimension = load_embedding_model(
@@ -194,7 +197,7 @@ async def status_handler(uid: UUID):
     return jobs[uid]
 
 
-# Submission API
+# Submission backgroud task API
 @app.post("/submit", status_code=HTTPStatus.ACCEPTED)
 async def submit_question(background_tasks: BackgroundTasks, task: Submission):
     new_task = Job()
@@ -202,7 +205,7 @@ async def submit_question(background_tasks: BackgroundTasks, task: Submission):
     background_tasks.add_task(verify_submission, jobs, new_task.uid, task)
     return new_task
 
-# PDF API
+# PDF backgroud task API
 async def get_file_content(files: List[UploadFile]):
     byte_files = {}
     for file in files:
@@ -217,12 +220,22 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
-# Loader API
+# SO Loader backgroud task API
+# TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
 @app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
 async def load_so(background_tasks: BackgroundTasks, tag: str = Body(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
     background_tasks.add_task(load_so_data, jobs, new_task.uid, tag)
+    return new_task
+
+# Web Loader backgroud task API
+@app.post("/load/website", status_code=HTTPStatus.ACCEPTED)
+async def load_so(background_tasks: BackgroundTasks, url: str = Body(...)):
+    new_task = Job()
+    jobs[new_task.uid] = new_task
+    # background_tasks.add_task(load_web_data, jobs, new_task.uid, file_collection, url)
+    background_tasks.add_task(load_web_data, jobs, new_task.uid, file_collection)
     return new_task
 
 
@@ -355,4 +368,19 @@ async def delete_chat_histories(SessionId: str):
         return Response(status_code=HTTPStatus.OK)
 
     raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
+
+
+@app.get(
+    "/web_files/",
+    response_description="List all web files",
+    response_model=WebfileModelCollection,
+    response_model_by_alias=False,
+)
+async def list_web_files():
+    """
+    List all of the web files data in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    return WebfileModelCollection(web_files=await file_collection.find().to_list(1000))
 

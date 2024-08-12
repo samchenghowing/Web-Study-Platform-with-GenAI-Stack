@@ -7,6 +7,8 @@ from uuid import UUID, uuid4
 import subprocess
 import docker
 from pydantic import BaseModel, Field
+from bs4 import BeautifulSoup as Soup
+from mongo import WebfileModel
 
 client = docker.from_env()
 
@@ -21,6 +23,7 @@ from utils import (
 from langchain_community.vectorstores import Neo4jVector
 from langchain_community.graphs import Neo4jGraph
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
 from PyPDF2 import PdfReader
 
@@ -117,6 +120,32 @@ def load_high_score_so_data() -> None:
     )
     data = requests.get(SO_API_BASE_URL + parameters).json()
     insert_so_data(neo4j_graph, embeddings, data)
+
+# Background task for crawling web data to mongodb
+def load_web_data(jobs: dict, task_id: UUID, file_collection, url: str = "https://python.langchain.com/v0.2/docs/concepts/#langchain-expression-language-lcel"):
+    try:
+        loader = RecursiveUrlLoader(
+            url=url, max_depth=20, extractor=lambda x: Soup(x, "html.parser").text
+        )
+        docs = loader.load()
+
+        # Sort the list based on the URLs and get the text
+        d_sorted = sorted(docs, key=lambda x: x.metadata["source"])
+        d_reversed = list(reversed(d_sorted))
+        concatenated_content = "\n\n\n --- \n\n\n".join(
+            [doc.page_content for doc in d_reversed]
+        )
+        webfile = WebfileModel(
+            id=None,  # Assign a new ObjectId or None if you want MongoDB to generate it
+            file_name=url,
+            contents=concatenated_content
+        )
+        file_collection.insert_one(webfile.dict(by_alias=True))
+    except Exception as error:
+        jobs[task_id].status = f"Importing {url} from fails with error: {error}"
+        return
+    finally:
+        jobs[task_id].processed_files.append(url)
 
 
 # Background task to verify user's submission code
