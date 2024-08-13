@@ -12,8 +12,9 @@ import AIChat from './components/editor/AIChat';
 import EditorView from './components/editor/EditorView';
 import EditorConfig from './components/editor/editorConfig';
 import Preview from './components/editor/Preview';
-import FileUploader from './components/FileUploader';
-import SOLoader from './components/Loader';
+import Drawer from './components/Drawer'
+import FileUploader from './components/loader/FileUploader';
+import SOLoader from './components/loader/Loader';
 import { EditorConfigType, EditorDocType, TaskType } from './components/editor/editorType';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
@@ -82,41 +83,43 @@ export default function MainComponent() {
 	return (
 		<ThemeProvider theme={LPtheme}>
 			<CssBaseline />
-			<Stack sx={{ width: '100%' }} spacing={2}>
-				{/* <AppAppBar mode={mode} toggleColorMode={toggleColorMode} /> */}
-				<Alert severity="info">
-					<AlertTitle>Current task</AlertTitle>
-					{question}
-				</Alert>
-				<Grid container>
-					<Grid xs={4}>
-						<AIChat
-							question={question}
-							setQuestion={setQuestion}
-							task={task}
-							setTask={setTask}
-						/>
+			<Drawer>
+				<Stack sx={{ width: '100%' }} spacing={2}>
+					{/* <AppAppBar mode={mode} toggleColorMode={toggleColorMode} /> */}
+					<Alert severity="info">
+						<AlertTitle>Current task</AlertTitle>
+						{question}
+					</Alert>
+					<Grid container>
+						<Grid xs={4}>
+							<AIChat
+								question={question}
+								setQuestion={setQuestion}
+								task={task}
+								setTask={setTask}
+							/>
+						</Grid>
+						<Grid xs={8}>
+							<Preview editorDoc={editorDoc} />
+							<EditorConfig
+								editorConfig={editorConfig}
+								setEditorConfig={setEditorConfig}
+								handleCodeSubmit={handleCodeSubmit}
+							/>
+							<button onClick={checkSubmissionProgress}>Check submit result</button>
+							<EditorView
+								editorConfig={editorConfig}
+								editorDoc={editorDoc}
+								setEditorDoc={setEditorDoc}
+							/>
+						</Grid>
+						<Grid xs={12}>
+							<FileUploader />
+							<SOLoader />
+						</Grid>
 					</Grid>
-					<Grid xs={8}>
-						<Preview editorDoc={editorDoc} />
-						<EditorConfig
-							editorConfig={editorConfig}
-							setEditorConfig={setEditorConfig}
-							handleCodeSubmit={handleCodeSubmit}
-						/>
-						<button onClick={checkSubmissionProgress}>Check submit result</button>
-						<EditorView
-							editorConfig={editorConfig}
-							editorDoc={editorDoc}
-							setEditorDoc={setEditorDoc}
-						/>
-					</Grid>
-					<Grid xs={12}>
-						<FileUploader />
-						<SOLoader />
-					</Grid>
-				</Grid>
-			</Stack>
+				</Stack>
+			</Drawer>
 		</ThemeProvider>
 	);
 }

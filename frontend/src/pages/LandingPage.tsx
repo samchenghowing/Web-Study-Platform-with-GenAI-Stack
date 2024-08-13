@@ -12,7 +12,6 @@ import Features from './components/home/Features';
 import FAQ from './components/home/FAQ';
 import Footer from './components/Footer';
 import getLPTheme from './getLPTheme';
-import MultipleChoiceQuestion from './components/MultipleChoiceQuestion'
 
 export default function LandingPage() {
   const [mode, setMode] = React.useState<PaletteMode>('light');
@@ -32,13 +31,6 @@ export default function LandingPage() {
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={toggleColorMode} />
       <Hero />
-
-      <MultipleChoiceQuestion
-        question="What is the capital of France?"
-        choices={['Berlin', 'Madrid', 'Paris', 'Rome']}
-        correctAnswer="Paris"
-        onAnswer={handleAnswer}
-      />
       <Box sx={{ bgcolor: 'background.default' }}>
         {/* <LogoCollection /> */}
         <Features />

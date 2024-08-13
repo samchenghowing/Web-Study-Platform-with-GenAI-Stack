@@ -1,11 +1,12 @@
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, } from "react-router-dom";
-import EditorPage from "./pages/EditorPage";
 import ErrorPage from "./pages/ErrorPage";
 import HomePage from "./pages/LandingPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import EditorPage from "./pages/EditorPage";
+import QuizPage from "./pages/QuizPage";
 
 const router = createBrowserRouter([
     {
@@ -26,6 +27,11 @@ const router = createBrowserRouter([
     {
         path: "/signup",
         element: <SignUpPage />,
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: "/quiz",
+        element: <QuizPage />,
         errorElement: <ErrorPage />,
     },
 ]);
