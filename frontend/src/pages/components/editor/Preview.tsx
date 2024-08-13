@@ -9,20 +9,17 @@ import CloseIcon from '@mui/icons-material/Close';
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
 
-const Transition = React.forwardRef(function Transition(
-    props: TransitionProps & {
-        children: React.ReactElement;
-    },
-    ref: React.Ref<unknown>,
-) {
-    return <Slide direction="up" ref={ref} {...props} />;
-});
+const Transition = React.forwardRef<HTMLDivElement, TransitionProps & { children: React.ReactElement }>(
+    function Transition(props, ref) {
+        return <Slide direction="up" ref={ref} {...props} />;
+    }
+);
 
 interface PreviewProps {
     editorDoc: { jsDoc: string; htmlDoc: string; cssDoc: string };
 }
 
-export default function Preview(props: PreviewProps) {
+export default function Preview({ editorDoc }: PreviewProps) {
     const [open, setOpen] = React.useState(false);
     const [consoleOutput, setConsoleOutput] = React.useState<string[]>([]);
 
@@ -36,12 +33,13 @@ export default function Preview(props: PreviewProps) {
     };
 
     const html = `
+        <!DOCTYPE html>
         <html>
             <head>
-                <style>${props.editorDoc.cssDoc}</style>
+                <style>${editorDoc.cssDoc}</style>
             </head>
             <body>
-                <h1>${props.editorDoc.htmlDoc}</h1>
+                <h1>${editorDoc.htmlDoc}</h1>
                 <script>
                     (function() {
                         const originalConsoleLog = console.log;
@@ -50,14 +48,14 @@ export default function Preview(props: PreviewProps) {
                             originalConsoleLog.apply(console, args);
                         };
                     })();
-                    ${props.editorDoc.jsDoc}
+                    ${editorDoc.jsDoc}
                 </script>
             </body>
         </html>
     `;
 
     React.useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
+        const handleMessage = (event: MessageEvent<any>) => {
             if (event.data.type === 'console-log') {
                 setConsoleOutput(prev => [...prev, ...event.data.args.map(arg => arg.toString())]);
             }
@@ -81,7 +79,7 @@ export default function Preview(props: PreviewProps) {
                 onClose={handleClose}
                 TransitionComponent={Transition}
             >
-                <AppBar sx={{ position: 'relative' }}>
+                <AppBar position="relative">
                     <Toolbar>
                         <IconButton
                             edge="start"
@@ -91,7 +89,7 @@ export default function Preview(props: PreviewProps) {
                         >
                             <CloseIcon />
                         </IconButton>
-                        <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+                        <Typography variant="h6" component="div" sx={{ ml: 2, flex: 1 }}>
                             Preview
                         </Typography>
                     </Toolbar>

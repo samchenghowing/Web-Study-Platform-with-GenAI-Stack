@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { SetStateAction, Dispatch } from 'react';
 
-import { saveAs } from "file-saver"
-
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -15,8 +13,6 @@ import CssIcon from '@mui/icons-material/Css';
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
-import Switch from '@mui/material/Switch';
-
 
 interface EditorConfigProps {
     editorConfig: { language: string; autoRun: boolean };
@@ -25,7 +21,7 @@ interface EditorConfigProps {
     handleCodeSubmit: () => void;
 }
 
-const EditorConfig = React.forwardRef(function EditorConfig(props: EditorConfigProps, ref) {
+const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(function EditorConfig(props, ref) {
     const [alignment, setAlignment] = React.useState<string | null>('js');
 
     const handleAlignment = (
@@ -33,77 +29,57 @@ const EditorConfig = React.forwardRef(function EditorConfig(props: EditorConfigP
         newAlignment: string | null,
     ) => {
         setAlignment(newAlignment);
+        if (newAlignment) {
+            props.setEditorConfig(prevState => ({
+                ...prevState,
+                language: newAlignment
+            }));
+        }
     };
 
     const onDownload = React.useCallback(() => {
-        let lib = ``;
-        // ref.current.lib.map((item) => {
-        //     lib += `<script src="${item}"></script>`;
-        // });
-        // let reset = ``;
-        // var html = `
-        // 		<!DOCTYPE html>
-        // <html lang="en">
-        // 	<head><style>${reset}</style><style>${ref.current.css.getValue()}</style></head>
-        // 	<body>${ref.current.html.getValue()}${lib}<script type="text/babel" data-presets="react">${ref.current.js.getValue()}</script></body>
-        // </html>`;
-        // var blob = new Blob([html], { type: "text/html; charset=utf-8" });
-        // saveAs(blob, `PenEditor-${new Date().getTime()}.html`);
+        // Your download logic goes here.
+        // You can use the ref.current if you need to access some DOM elements or methods
     }, []);
 
     return (
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="static">
                 <Toolbar>
-
                     <ToggleButtonGroup
                         value={alignment}
                         exclusive
                         onChange={handleAlignment}
-                        aria-label="text alignment"
+                        aria-label="editor language"
                     >
-                        <Tooltip title="JS Editor">
-                            <ToggleButton value="js" onClick={() => props.setEditorConfig(previousState => {
-                                return { ...previousState, language: "js" }
-                            })}>
+                        <Tooltip title="JavaScript Editor">
+                            <ToggleButton value="js">
                                 <JavascriptIcon />
                             </ToggleButton>
                         </Tooltip>
-                        <Tooltip title="Html Editor">
-                            <ToggleButton value="html" onClick={() => props.setEditorConfig(previousState => {
-                                return { ...previousState, language: "html" }
-                            })}>
+                        <Tooltip title="HTML Editor">
+                            <ToggleButton value="html">
                                 <HtmlIcon />
                             </ToggleButton>
                         </Tooltip>
-                        <Tooltip title="Css Editor">
-                            <ToggleButton value="css" onClick={() => props.setEditorConfig(previousState => {
-                                return { ...previousState, language: "css" }
-                            })}>
+                        <Tooltip title="CSS Editor">
+                            <ToggleButton value="css">
                                 <CssIcon />
                             </ToggleButton>
                         </Tooltip>
                     </ToggleButtonGroup>
 
-                    <Tooltip title="Submit">
+                    <Tooltip title="Submit Code">
                         <IconButton color="inherit" onClick={props.handleCodeSubmit}>
                             <TaskAltIcon />
                         </IconButton>
                     </Tooltip>
 
-                    {/* <Switch
-                        checked={autoRun}
-                        onChange={(e) => {
-                            ref.current.isAuto = e.currentTarget.checked;
-                            setAutoRun(e.currentTarget.checked);
-                        }} /> */}
-
-                    <Tooltip title="Save as html file">
+                    <Tooltip title="Save as HTML file">
                         <IconButton onClick={onDownload}>
-                            <SaveAsIcon></SaveAsIcon>
+                            <SaveAsIcon />
                         </IconButton>
                     </Tooltip>
-
                 </Toolbar>
             </AppBar>
         </Box>

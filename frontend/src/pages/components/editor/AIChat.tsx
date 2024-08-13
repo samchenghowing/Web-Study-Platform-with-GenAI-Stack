@@ -116,9 +116,9 @@ export default function AIChat(props: AIChatProps) {
         return () => abortController.abort();
     }, []);
 
-    const deleteChatHistory = async (userID: string) => {
+    const deleteChatHistory = async (user_id: string) => {
         try {
-            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${userID}`, { method: 'DELETE' });
+            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user_id}`, { method: 'DELETE' });
             setCardContent([]);
         } catch (error) {
             console.error(error);

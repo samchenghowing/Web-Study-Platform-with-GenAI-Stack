@@ -4,7 +4,6 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const webpack = require('webpack');
 
 function assetsPath(_path) {
 	return path.posix.join("assets", _path);
@@ -36,10 +35,6 @@ if (isProduction) {
 		new BundleAnalyzerPlugin(),
 		new CleanWebpackPlugin()
 	);
-} else {
-	plugins.push(
-		new webpack.HotModuleReplacementPlugin()
-	);
 }
 
 module.exports = {
@@ -57,7 +52,6 @@ module.exports = {
 		historyApiFallback: true,
 		allowedHosts: 'all',
 		static: { directory: path.resolve(__dirname, "dist") },
-		hot: !isProduction,
 	},
 	resolve: {
 		extensions: [".ts", ".tsx", ".js", ".jsx", ".json", ".less", ".css"],

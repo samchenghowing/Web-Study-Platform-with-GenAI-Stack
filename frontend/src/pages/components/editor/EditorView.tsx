@@ -4,7 +4,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
-import { EditorConfigType, EditorDocType, TaskType } from './editorType';
+import { EditorConfigType, EditorDocType } from './editorType';
 
 interface EditorViewProps {
     editorDoc: EditorDocType;
