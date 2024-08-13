@@ -19,9 +19,14 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
     MessagesPlaceholder,
 )
+
 from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
 from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables.history import RunnableWithMessageHistory
+
+from langchain.chains.summarize import load_summarize_chain
+from langchain_community.document_loaders.mongodb import MongodbLoader
+
 
 from typing import List, Any
 from utils import BaseLogger
@@ -266,3 +271,45 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
         prompt=chat_prompt,
     )
     return llm_response
+
+def summraize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
+    # https://www.reddit.com/r/ChatGPT/comments/11twe7z/prompt_to_summarize/
+    # PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents
+    # template = """
+    # Your task is to help the User Profile Agent improve its understanding of user preferences based on conversation history and the shared global memory pool.
+
+    # Question:
+    # {question}
+    # Passages:
+    # {passages}
+    # Global Memory:
+    # {global_memory}
+
+    # Task Description:
+    # From the provided passages and global memory pool, analyze clues about the user's learning preferences and level. Look for themes, types of documents, and navigation behaviors that reveal user interest. Use these insights to recommend how the User Profile Agent can refine and expand the user profile to deliver better-personalized results.
+    # """
+    # # human_template = "{question}"
+    # chat_prompt = ChatPromptTemplate.from_messages([
+    #     SystemMessagePromptTemplate.from_template(template),
+    #     # MessagesPlaceholder(variable_name="chat_history"),
+    #     # HumanMessagePromptTemplate.from_template(human_template),
+    # ])
+
+    # chain = chat_prompt | llm
+
+    summarize_chain = load_summarize_chain(llm, chain_type="stuff")
+
+    loader = MongodbLoader(
+        connection_string=CONN_STRING,
+        db_name=DATABASE_NAME,
+        collection_name=COLLECTION_NAME,
+        filter_criteria={"SessionId": user_id},
+        # field_names=["History"],
+    )
+    docs = loader.load()
+
+    result = summarize_chain.invoke(docs)
+
+    print(result["output_text"])
+    return result
+

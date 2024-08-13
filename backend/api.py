@@ -27,6 +27,7 @@ from chains import (
     configure_llm_only_chain,
     configure_qa_rag_chain,
     generate_task,
+    summraize_user,
 )
 from mongo import (
     StudentModel,
@@ -191,6 +192,13 @@ async def generate_task_api(question: Question):
     return StreamingResponse(generate(), media_type="application/json")
 
 
+#testing use only
+@app.get("/summraize")
+def summraize_api():
+    result = summraize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
+    return result
+
+
 # Get status of backgroud task (Process PDF, load data from stackoverflow, verify submission)
 @app.get("/bgtask/{uid}/status")
 async def status_handler(uid: UUID):
@@ -220,6 +228,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
+
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
 @app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
@@ -231,7 +240,7 @@ async def load_so(background_tasks: BackgroundTasks, tag: str = Body(...)):
 
 # Web Loader backgroud task API
 @app.post("/load/website", status_code=HTTPStatus.ACCEPTED)
-async def load_so(background_tasks: BackgroundTasks, url: str = Body(...)):
+async def load_web(background_tasks: BackgroundTasks, url: str = Body(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
     # background_tasks.add_task(load_web_data, jobs, new_task.uid, file_collection, url)
