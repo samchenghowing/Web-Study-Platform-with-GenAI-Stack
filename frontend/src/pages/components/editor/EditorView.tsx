@@ -4,17 +4,17 @@ import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
+import { useTheme } from '@mui/material/styles';
 import { EditorConfigType, EditorDocType } from './editorType';
 
 interface EditorViewProps {
     editorDoc: EditorDocType;
     editorConfig: EditorConfigType;
     setEditorDoc: Dispatch<SetStateAction<EditorDocType>>;
-    colorMode: 'light' | 'dark';
 }
 
 const EditorView: React.FC<EditorViewProps> = (props) => {
-    const { editorDoc, editorConfig, setEditorDoc, colorMode } = props;
+    const { editorDoc, editorConfig, setEditorDoc } = props;
     const editorRef = React.useRef(null);
 
     const getExtensions = React.useMemo(() => {
@@ -70,7 +70,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
             extensions={getExtensions}
             onChange={handleChange}
             height="400px"
-            theme={colorMode}
+            theme={useTheme().palette.mode}
         />
     );
 }

@@ -96,7 +96,6 @@ export default function MainComponent() {
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}
 						setEditorDoc={setEditorDoc}
-						colorMode={'light'} // TODO: accept changes from theme
 					/>
 				</Grid>
 				<Grid xs={12}>
