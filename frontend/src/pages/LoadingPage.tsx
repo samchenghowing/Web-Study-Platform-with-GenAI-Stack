@@ -1,5 +1,3 @@
-// src/pages/LoadingPage.tsx
-
 import * as React from "react";
 import { CircularProgress, Box, Typography } from '@mui/material';
 
