@@ -1,7 +1,5 @@
-# GenAI Stack
-The GenAI Stack will get you started building your own GenAI application in no time.
-The demo applications can serve as inspiration or as a starting point.
-Learn more about the details in the [technical blog post](https://neo4j.com/developer-blog/genai-app-how-to-build/).
+# Web Study Platform with GenAI Stack
+2024-2025 Capstone project
 
 # Configure
 
@@ -41,7 +39,9 @@ Make sure to set the `OLLAMA_BASE_URL=http://llm:11434` in the `.env` file when 
 To use the Linux-GPU profile: run `docker compose --profile linux-gpu up`. Also change `OLLAMA_BASE_URL=http://llm-gpu:11434` in the `.env` file.
 
 **Windows**
-Ollama now supports Windows. Install [Ollama](https://ollama.ai) on Windows and start it before running `docker compose up` using `ollama serve` in a separate terminal. Alternatively, Windows users can generate an OpenAI API key and configure the stack to use `gpt-3.5` or `gpt-4` in the `.env` file.
+Ollama now supports Windows. However, running inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) is prefered and you can follow the exact same guide as above. 
+
+If you still prefer running in Windows, install [Ollama](https://ollama.ai) on Windows and start it before running `docker compose up` using `ollama serve` in a separate terminal. Alternatively, Windows users can generate an OpenAI API key and configure the stack to use `gpt-3.5` or `gpt-4` in the `.env` file.
 # Develop
 
 > [!WARNING]
@@ -79,21 +79,9 @@ Here's what's in this repo:
 | Standalone Bot API | `api.py` | `api` | http://localhost:8504 | Standalone HTTP API streaming (SSE) endpoints Python. |
 | Standalone Bot UI | `front-end/` | `front-end` | http://localhost:8505 | Standalone client that uses the Standalone Bot API to interact with the model. JavaScript (React) front-end. |
 
-The database can be explored at http://localhost:7474.
+The neo4j database can be explored at http://localhost:7474.
 
-## App 1 - Backend HTTP API
-Endpoints: 
-  - http://localhost:8504/query?text=hello&rag=false (non streaming)
-  - http://localhost:8504/query-stream?text=hello&rag=false (SSE streaming)
-
-Example cURL command:
-```bash
-curl http://localhost:8504/query-stream\?text\=minimal%20hello%20world%20in%20python\&rag\=false
-```
-
-Exposes the functionality to answer questions in App 2.
-
-## App 2 - Static front-end
+## App Functions
 ### - Chat bot
 - answer support question based on recent entries
 - provide summarized answers with sources
@@ -101,6 +89,7 @@ Exposes the functionality to answer questions in App 2.
     - RAG Disabled (pure LLM response)
     - RAG Enabled (vector + knowledge graph context)
 - allow to generate a high quality support ticket for the current conversation based on the style of highly rated questions in the database.
+- Chat histories are stored in mongo DB
 
 ### - Question / Answer with a local PDF
 This application lets you load a local PDF into text
@@ -108,11 +97,19 @@ chunks and embed it into Neo4j so you can ask questions about
 its contents and have the LLM answer them using vector similarity
 search.
 
+### - Quiz (TODO: Backend)
+- Let user take quiz in frontend, save result in mongo db
+- Analyze the result and suggest relavent tasks for user
+
 ### - Loader
 - import recent Stack Overflow data for certain tags into a KG
 - embed questions and answers and store them in vector index
 - UI: choose tags, run import, see progress, some stats of data in the database
 - Load high ranked questions (regardless of tags) to support the ticket generation feature of App 1.
+
+### - Web Loader
+- import website data for given url into mongodb
+- UI: Input URL, run import, see progress, some stats of data in the database
 
 ### - User code submission
 Security Considerations (TODO: Run in docker)
@@ -120,15 +117,22 @@ Security Considerations (TODO: Run in docker)
 - Resource Limits: Set limits on CPU and memory usage to prevent abuse.
 - Validation: Perform thorough validation of user input and code.
 
-
-
+## Others
 This application built separate from the back-end code using React.
-The auto-reload on changes are instant using the Docker watch `sync` config.  
-![](.github/media/app5-ui.png)
+The auto-reload on changes are instant using the Docker watch `sync` config. 
+
+
+### - Layout design ideas
+[Binarysearch – Room](https://dribbble.com/shots/15675097-Binarysearch-Room)
+![](https://cdn.dribbble.com/users/3033100/screenshots/15675097/media/b36da227f6d934b98848153e571ebfb8.png)
+
+[CodeX: text editor, code checker](https://dribbble.com/shots/20957723-CodeX-text-editor-code-checker)
+![](https://cdn.dribbble.com/userupload/5465202/file/original-eb500e12c70dd3b613a18611f633132f.png?resize=752x)
 
 
 # References
 - [genai-stack source](https://github.com/docker/genai-stack)
+- [technical blog post](https://neo4j.com/developer-blog/genai-app-how-to-build/)
 - [PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents](https://arxiv.org/abs/2407.0939)
 - [frontend idea](https://github.com/jojowwbb/PenEditor)
 - [stack exchange API](https://api.stackexchange.com/docs/advanced-search)
