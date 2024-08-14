@@ -10,6 +10,7 @@ import { AuthProvider } from './authentication/AuthContext';
 const HomePage = lazy(() => import('./pages/LandingPage'));
 const SignInPage = lazy(() => import('./pages/SignInPage'));
 const SignUpPage = lazy(() => import('./pages/SignUpPage'));
+const MainPage = lazy(() => import('./pages/MainPage'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const QuizPage = lazy(() => import('./pages/QuizPage'));
 
@@ -42,26 +43,35 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />,
     },
     {
-        path: '/editor',
+        path: '/main',
         element: (
             // <PrivateRoute>
                 <Suspense fallback={<LoadingPage />}>
-                    <EditorPage />
+                    <MainPage />
                 </Suspense>
             // </PrivateRoute>
         ),
         errorElement: <ErrorPage />,
-    },
-    {
-        path: '/quiz',
-        element: (
-            // <PrivateRoute>
-                <Suspense fallback={<LoadingPage />}>
-                    <QuizPage />
-                </Suspense>
-            // </PrivateRoute>
-        ),
-        errorElement: <ErrorPage />,
+        children: [
+            {
+                path: 'editor',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <EditorPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'quiz',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <QuizPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+        ],
     },
 ]);
 

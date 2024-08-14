@@ -1,8 +1,4 @@
 import * as React from 'react';
-import { PaletteMode } from '@mui/material';
-import CssBaseline from '@mui/material/CssBaseline';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import getLPTheme from './getLPTheme';
 import Grid from '@mui/material/Unstable_Grid2';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
@@ -12,7 +8,6 @@ import AIChat from './components/editor/AIChat';
 import EditorView from './components/editor/EditorView';
 import EditorConfig from './components/editor/editorConfig';
 import Preview from './components/editor/Preview';
-import Drawer from './components/Drawer'
 import FileUploader from './components/loader/FileUploader';
 import SOLoader from './components/loader/Loader';
 import { EditorConfigType, EditorDocType, TaskType } from './components/editor/editorType';
@@ -22,8 +17,6 @@ const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';
 
 
 export default function MainComponent() {
-	// Theme and CSS layout
-	const [mode, setMode] = React.useState<PaletteMode>('light');
 	const [editorConfig, setEditorConfig] = React.useState<EditorConfigType>({
 		language: 'js',
 		autoRun: false,
@@ -41,10 +34,6 @@ export default function MainComponent() {
 	});
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [loading, setLoading] = React.useState<boolean>(false);
-
-	const LPtheme = createTheme(getLPTheme(mode));
-
-	const toggleColorMode = () => setMode(prev => (prev === 'dark' ? 'light' : 'dark'));
 
 	const handleCodeSubmit = async () => {
 		setLoading(true);
@@ -81,9 +70,6 @@ export default function MainComponent() {
 	}, [task]);
 
 	return (
-		<ThemeProvider theme={LPtheme}>
-			<CssBaseline />
-			<Drawer>
 				<Stack sx={{ width: '100%' }} spacing={2}>
 					{/* <AppAppBar mode={mode} toggleColorMode={toggleColorMode} /> */}
 					<Alert severity="info">
@@ -119,7 +105,5 @@ export default function MainComponent() {
 						</Grid>
 					</Grid>
 				</Stack>
-			</Drawer>
-		</ThemeProvider>
 	);
 }
