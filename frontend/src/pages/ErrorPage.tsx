@@ -1,10 +1,8 @@
 import * as React from 'react';
-import { useRouteError, isRouteErrorResponse } from "react-router-dom";
+import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+import { Typography, Container, Paper } from '@mui/material';
 
-interface ErrorPageProps {
-}
-
-const ErrorPage: React.FC<ErrorPageProps> = () => {
+const ErrorPage: React.FC = () => {
     const error = useRouteError();
     console.error(error);
 
@@ -21,15 +19,20 @@ const ErrorPage: React.FC<ErrorPageProps> = () => {
         errorMessage = 'Unknown error';
     }
 
-
     return (
-        <div id="error-page">
-            <h1>Oops!</h1>
-            <p>Sorry, an unexpected error has occurred.</p>
-            <p className='text-slate-400'>
-                <i>{errorMessage}</i>
-            </p>
-        </div>
+        <Container component="main" maxWidth="xs" sx={{ mt: 8, mb: 8 }}>
+            <Paper elevation={3} sx={{ padding: 4, textAlign: 'center' }}>
+                <Typography variant="h4" color="error" gutterBottom>
+                    Oops!
+                </Typography>
+                <Typography variant="h6" paragraph>
+                    Sorry, an unexpected error has occurred.
+                </Typography>
+                <Typography variant="body1" color="textSecondary">
+                    <i>{errorMessage}</i>
+                </Typography>
+            </Paper>
+        </Container>
     );
 }
 

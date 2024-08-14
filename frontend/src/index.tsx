@@ -1,37 +1,60 @@
 import * as React from "react";
+import { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider, } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ErrorPage from "./pages/ErrorPage";
-import HomePage from "./pages/LandingPage";
-import SignInPage from "./pages/SignInPage";
-import SignUpPage from "./pages/SignUpPage";
-import EditorPage from "./pages/EditorPage";
-import QuizPage from "./pages/QuizPage";
+import LoadingPage from "./pages/LoadingPage";
+
+const HomePage = lazy(() => import("./pages/LandingPage"));
+const SignInPage = lazy(() => import("./pages/SignInPage"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const EditorPage = lazy(() => import("./pages/EditorPage"));
+const QuizPage = lazy(() => import("./pages/QuizPage"));
 
 const router = createBrowserRouter([
     {
         path: "/",
-        element: <HomePage />,
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <HomePage />
+            </Suspense>
+        ),
         errorElement: <ErrorPage />,
     },
     {
         path: "/editor",
-        element: <EditorPage />,
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <EditorPage />
+            </Suspense>
+        ),
         errorElement: <ErrorPage />,
     },
     {
         path: "/signin",
-        element: <SignInPage />,
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <SignInPage />
+            </Suspense>
+        ),
         errorElement: <ErrorPage />,
     },
     {
         path: "/signup",
-        element: <SignUpPage />,
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <SignUpPage />
+            </Suspense>
+        ),
         errorElement: <ErrorPage />,
     },
     {
         path: "/quiz",
-        element: <QuizPage />,
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <QuizPage />
+            </Suspense>
+        ),
         errorElement: <ErrorPage />,
     },
 ]);
