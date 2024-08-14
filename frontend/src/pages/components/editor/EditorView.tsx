@@ -10,10 +10,11 @@ interface EditorViewProps {
     editorDoc: EditorDocType;
     editorConfig: EditorConfigType;
     setEditorDoc: Dispatch<SetStateAction<EditorDocType>>;
+    colorMode: 'light' | 'dark';
 }
 
 const EditorView: React.FC<EditorViewProps> = (props) => {
-    const { editorDoc, editorConfig, setEditorDoc } = props;
+    const { editorDoc, editorConfig, setEditorDoc, colorMode } = props;
     const editorRef = React.useRef(null);
 
     const getExtensions = React.useMemo(() => {
@@ -69,6 +70,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
             extensions={getExtensions}
             onChange={handleChange}
             height="400px"
+            theme={colorMode}
         />
     );
 }

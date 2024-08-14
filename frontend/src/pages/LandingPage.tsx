@@ -21,18 +21,12 @@ export default function LandingPage() {
     setMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const handleAnswer = (isCorrect) => {
-    alert(isCorrect ? 'Correct!' : 'Incorrect. Try again.');
-  };
-
-
   return (
     <ThemeProvider theme={LPtheme}>
       <CssBaseline />
       <AppAppBar mode={mode} toggleColorMode={toggleColorMode} />
       <Hero />
       <Box sx={{ bgcolor: 'background.default' }}>
-        {/* <LogoCollection /> */}
         <Features />
         <Highlights />
         <Divider />

@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Outlet } from 'react-router-dom';
-import getLPTheme from './getLPTheme';
-import Drawer from './components/Drawer';
 import { PaletteMode } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+
+import getLPTheme from './getLPTheme';
+import Drawer from './components/Drawer';
 
 const MainPage: React.FC = () => {
 	// Theme and CSS layout
@@ -16,7 +17,7 @@ const MainPage: React.FC = () => {
     return (
 		<ThemeProvider theme={LPtheme}>
 			<CssBaseline />
-			<Drawer>
+			<Drawer mode={mode} toggleColorMode={toggleColorMode} >
                 <Outlet /> {/* Renders child routes */}
 			</Drawer>
 		</ThemeProvider>

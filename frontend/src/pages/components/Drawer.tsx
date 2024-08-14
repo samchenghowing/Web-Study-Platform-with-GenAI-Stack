@@ -16,8 +16,10 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import InboxIcon from '@mui/icons-material/MoveToInbox';
-import MailIcon from '@mui/icons-material/Mail';
+import EditIcon from '@mui/icons-material/Edit';
+import QuizIcon from '@mui/icons-material/Quiz';
+import { Link } from 'react-router-dom'; // Import Link
+import ToggleColorMode from './ToggleColorMode'; // Import ToggleColorMode
 
 const drawerWidth = 240;
 
@@ -91,9 +93,11 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' 
 
 interface MiniDrawerProps {
     children: React.ReactNode;
+    mode: Theme['palette']['mode']; // Add mode prop
+    toggleColorMode: () => void;   // Add toggleColorMode prop
 }
 
-export default function MiniDrawer({ children }: MiniDrawerProps) {
+export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDrawerProps) {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
 
@@ -135,54 +139,26 @@ export default function MiniDrawer({ children }: MiniDrawerProps) {
                 </DrawerHeader>
                 <Divider />
                 <List>
-                    {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-                        <ListItem key={text} disablePadding sx={{ display: 'block' }}>
-                            <ListItemButton
-                                sx={{
-                                    minHeight: 48,
-                                    justifyContent: open ? 'initial' : 'center',
-                                    px: 2.5,
-                                }}
-                            >
-                                <ListItemIcon
-                                    sx={{
-                                        minWidth: 0,
-                                        mr: open ? 3 : 'auto',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                                </ListItemIcon>
-                                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/editor">
+                            <ListItemIcon>
+                                <EditIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Editor" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/quiz">
+                            <ListItemIcon>
+                                <QuizIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Quiz" />
+                        </ListItemButton>
+                    </ListItem>
                 </List>
-                <Divider />
-                <List>
-                    {['All mail', 'Trash', 'Spam'].map((text, index) => (
-                        <ListItem key={text} disablePadding sx={{ display: 'block' }}>
-                            <ListItemButton
-                                sx={{
-                                    minHeight: 48,
-                                    justifyContent: open ? 'initial' : 'center',
-                                    px: 2.5,
-                                }}
-                            >
-                                <ListItemIcon
-                                    sx={{
-                                        minWidth: 0,
-                                        mr: open ? 3 : 'auto',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
-                                </ListItemIcon>
-                                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
-                            </ListItemButton>
-                        </ListItem>
-                    ))}
-                </List>
+                <Box sx={{ p: 2 }}>
+                    <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
+                </Box>
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <DrawerHeader />

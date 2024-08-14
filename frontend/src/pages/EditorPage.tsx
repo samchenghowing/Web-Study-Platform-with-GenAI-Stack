@@ -70,40 +70,40 @@ export default function MainComponent() {
 	}, [task]);
 
 	return (
-				<Stack sx={{ width: '100%' }} spacing={2}>
-					{/* <AppAppBar mode={mode} toggleColorMode={toggleColorMode} /> */}
-					<Alert severity="info">
-						<AlertTitle>Current task</AlertTitle>
-						{question}
-					</Alert>
-					<Grid container>
-						<Grid xs={4}>
-							<AIChat
-								question={question}
-								setQuestion={setQuestion}
-								task={task}
-								setTask={setTask}
-							/>
-						</Grid>
-						<Grid xs={8}>
-							<Preview editorDoc={editorDoc} />
-							<EditorConfig
-								editorConfig={editorConfig}
-								setEditorConfig={setEditorConfig}
-								handleCodeSubmit={handleCodeSubmit}
-							/>
-							<button onClick={checkSubmissionProgress}>Check submit result</button>
-							<EditorView
-								editorConfig={editorConfig}
-								editorDoc={editorDoc}
-								setEditorDoc={setEditorDoc}
-							/>
-						</Grid>
-						<Grid xs={12}>
-							<FileUploader />
-							<SOLoader />
-						</Grid>
-					</Grid>
-				</Stack>
+		<Stack sx={{ width: '100%' }} spacing={2}>
+			<Alert severity="info">
+				<AlertTitle>Current task</AlertTitle>
+				{question}
+			</Alert>
+			<Grid container>
+				<Grid xs={4}>
+					<AIChat
+						question={question}
+						setQuestion={setQuestion}
+						task={task}
+						setTask={setTask}
+					/>
+				</Grid>
+				<Grid xs={8}>
+					<Preview editorDoc={editorDoc} />
+					<EditorConfig
+						editorConfig={editorConfig}
+						setEditorConfig={setEditorConfig}
+						handleCodeSubmit={handleCodeSubmit}
+					/>
+					<button onClick={checkSubmissionProgress}>Check submit result</button>
+					<EditorView
+						editorConfig={editorConfig}
+						editorDoc={editorDoc}
+						setEditorDoc={setEditorDoc}
+						colorMode={'light'} // TODO: accept changes from theme
+					/>
+				</Grid>
+				<Grid xs={12}>
+					<FileUploader />
+					<SOLoader />
+				</Grid>
+			</Grid>
+		</Stack>
 	);
 }
