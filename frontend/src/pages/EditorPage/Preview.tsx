@@ -6,6 +6,7 @@ import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
 
@@ -70,9 +71,14 @@ export default function Preview({ editorDoc }: PreviewProps) {
 
     return (
         <React.Fragment>
-            <Button variant="outlined" onClick={handleClickOpen}>
-                Run the code
-            </Button>
+            <IconButton
+                edge="start"
+                color="inherit"
+                onClick={handleClickOpen}
+                aria-label="run"
+            >
+                <PlayArrowIcon />
+            </IconButton>
             <Dialog
                 fullScreen
                 open={open}

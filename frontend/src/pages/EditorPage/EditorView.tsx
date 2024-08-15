@@ -5,7 +5,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
-import { EditorConfigType, EditorDocType } from './editorType';
+import { EditorConfigType, EditorDocType } from './utils';
 
 interface EditorViewProps {
     editorDoc: EditorDocType;

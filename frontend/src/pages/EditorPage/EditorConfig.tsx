@@ -13,9 +13,11 @@ import CssIcon from '@mui/icons-material/Css';
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import Preview from './Preview';
 
 interface EditorConfigProps {
     editorConfig: { language: string; autoRun: boolean };
+    editorDoc: { jsDoc: string; htmlDoc: string; cssDoc: string };
     setEditorConfig: Dispatch<SetStateAction<{ language: string; autoRun: boolean }>>;
 
     handleCodeSubmit: () => void;
@@ -46,6 +48,7 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
         <Box sx={{ flexGrow: 1 }}>
             <AppBar position="static">
                 <Toolbar>
+                    <Preview editorDoc={props.editorDoc} />
                     <ToggleButtonGroup
                         value={alignment}
                         exclusive

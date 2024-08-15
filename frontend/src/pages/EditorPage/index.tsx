@@ -6,11 +6,8 @@ import AlertTitle from '@mui/material/AlertTitle';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
-import EditorConfig from './editorConfig';
-import Preview from './Preview';
-import FileUploader from '../UploadPage/FileUploader';
-import SOLoader from '../UploadPage/Loader';
-import { EditorConfigType, EditorDocType, TaskType } from './editorType';
+import EditorConfig from './EditorConfig';
+import { EditorConfigType, EditorDocType } from './utils';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';
@@ -27,7 +24,7 @@ export default function MainComponent() {
 		cssDoc: '',
 	});
 	const [question, setQuestion] = React.useState('No question assigned yet... Chat with AI to get your tailored task!');
-	const [task, setTask] = React.useState<TaskType>({
+	const [task, setTask] = React.useState<EditorDocType>({
 		jsDoc: 'console.log(\'You can learn anything\');',
 		htmlDoc: 'Hello world',
 		cssDoc: '',
@@ -71,13 +68,12 @@ export default function MainComponent() {
 
 	return (
 		<Stack>
-			<Grid container>
+			<Grid container spacing={1}>
 				<Grid xs={4}>
 					<Alert severity="info">
 						<AlertTitle>Current task</AlertTitle>
 						{question}
 					</Alert>
-
 					<AIChat
 						question={question}
 						setQuestion={setQuestion}
@@ -86,9 +82,9 @@ export default function MainComponent() {
 					/>
 				</Grid>
 				<Grid xs={8}>
-					<Preview editorDoc={editorDoc} />
 					<EditorConfig
 						editorConfig={editorConfig}
+						editorDoc={editorDoc}
 						setEditorConfig={setEditorConfig}
 						handleCodeSubmit={handleCodeSubmit}
 					/>
