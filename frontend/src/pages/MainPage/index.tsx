@@ -5,7 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 import getLPTheme from './getLPTheme';
-import Drawer from './components/Drawer';
+import Drawer from './Drawer';
 
 const MainPage: React.FC = () => {
 	// Theme and CSS layout

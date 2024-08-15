@@ -1,9 +1,9 @@
 // QuizPage.tsx
 import * as React from 'react';
 import { useState } from 'react';
-import TrueFalseQuestion from './components/quizzes/TrueFalseQuestion';
-import MultipleChoiceQuestion from './components/quizzes/MultipleChoiceQuestion';
-import ShortAnswerQuestion from './components/quizzes/ShortAnswerQuestion';
+import TrueFalseQuestion from './TrueFalseQuestion';
+import MultipleChoiceQuestion from './MultipleChoiceQuestion';
+import ShortAnswerQuestion from './ShortAnswerQuestion';
 import { Typography, Container, Button } from '@mui/material';
 
 // Define a type for the question types

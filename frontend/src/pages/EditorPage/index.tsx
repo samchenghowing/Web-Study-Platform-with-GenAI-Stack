@@ -4,13 +4,13 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 
-import AIChat from './components/editor/AIChat';
-import EditorView from './components/editor/EditorView';
-import EditorConfig from './components/editor/editorConfig';
-import Preview from './components/editor/Preview';
-import FileUploader from './components/loader/FileUploader';
-import SOLoader from './components/loader/Loader';
-import { EditorConfigType, EditorDocType, TaskType } from './components/editor/editorType';
+import AIChat from './AIChat';
+import EditorView from './EditorView';
+import EditorConfig from './editorConfig';
+import Preview from './Preview';
+import FileUploader from '../UploadPage/FileUploader';
+import SOLoader from '../UploadPage/Loader';
+import { EditorConfigType, EditorDocType, TaskType } from './editorType';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';

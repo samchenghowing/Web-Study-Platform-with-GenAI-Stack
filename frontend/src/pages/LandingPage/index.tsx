@@ -4,14 +4,14 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import AppAppBar from './components/home/Header';
-import Hero from './components/home/Hero';
-import Highlights from './components/home/Highlights';
-import Pricing from './components/home/Pricing';
-import Features from './components/home/Features';
-import FAQ from './components/home/FAQ';
-import Footer from './components/Footer';
-import getLPTheme from './getLPTheme';
+import AppAppBar from './Header';
+import Hero from './Hero';
+import Highlights from './Highlights';
+import Pricing from './Pricing';
+import Features from './Features';
+import FAQ from './FAQ';
+import Footer from './Footer';
+import getLPTheme from '../MainPage/getLPTheme';
 
 export default function LandingPage() {
   const [mode, setMode] = React.useState<PaletteMode>('light');
