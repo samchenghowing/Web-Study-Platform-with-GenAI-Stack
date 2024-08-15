@@ -70,13 +70,14 @@ export default function MainComponent() {
 	}, [task]);
 
 	return (
-		<Stack sx={{ width: '100%' }} spacing={2}>
-			<Alert severity="info">
-				<AlertTitle>Current task</AlertTitle>
-				{question}
-			</Alert>
+		<Stack>
 			<Grid container>
 				<Grid xs={4}>
+					<Alert severity="info">
+						<AlertTitle>Current task</AlertTitle>
+						{question}
+					</Alert>
+
 					<AIChat
 						question={question}
 						setQuestion={setQuestion}
@@ -97,10 +98,6 @@ export default function MainComponent() {
 						editorDoc={editorDoc}
 						setEditorDoc={setEditorDoc}
 					/>
-				</Grid>
-				<Grid xs={12}>
-					<FileUploader />
-					<SOLoader />
 				</Grid>
 			</Grid>
 		</Stack>

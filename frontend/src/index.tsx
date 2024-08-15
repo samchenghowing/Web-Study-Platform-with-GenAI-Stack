@@ -13,6 +13,7 @@ const SignUpPage = lazy(() => import('./pages/SignUpPage'));
 const MainPage = lazy(() => import('./pages/MainPage'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const QuizPage = lazy(() => import('./pages/QuizPage'));
+const UpLoadPage = lazy(() => import('./pages/UpLoadPage'));
 
 const router = createBrowserRouter([
     {
@@ -67,6 +68,15 @@ const router = createBrowserRouter([
                 element: (
                     <Suspense fallback={<LoadingPage />}>
                         <QuizPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'upload',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <UpLoadPage />
                     </Suspense>
                 ),
                 errorElement: <ErrorPage />,

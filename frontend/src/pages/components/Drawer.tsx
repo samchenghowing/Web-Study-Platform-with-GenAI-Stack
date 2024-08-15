@@ -18,6 +18,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import EditIcon from '@mui/icons-material/Edit';
 import QuizIcon from '@mui/icons-material/Quiz';
+import UploadIcon from '@mui/icons-material/Upload';
 import { Link } from 'react-router-dom'; // Import Link
 import ToggleColorMode from './ToggleColorMode'; // Import ToggleColorMode
 
@@ -153,6 +154,14 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                                 <QuizIcon />
                             </ListItemIcon>
                             <ListItemText primary="Quiz" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/upload">
+                            <ListItemIcon>
+                                <UploadIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Upload" />
                         </ListItemButton>
                     </ListItem>
                 </List>
