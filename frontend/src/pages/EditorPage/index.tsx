@@ -51,7 +51,7 @@ export default function MainComponent() {
 		}
 	};
 
-	const checkSubmissionProgress = async () => {
+	const checkSubmissionResult = async () => {
 		if (!submissionUID) return;
 		try {
 			const response = await fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${submissionUID}/status`);
@@ -87,8 +87,8 @@ export default function MainComponent() {
 						editorDoc={editorDoc}
 						setEditorConfig={setEditorConfig}
 						handleCodeSubmit={handleCodeSubmit}
+						checkSubmissionResult={checkSubmissionResult}
 					/>
-					<button onClick={checkSubmissionProgress}>Check submit result</button>
 					<EditorView
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}

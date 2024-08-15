@@ -13,22 +13,25 @@ import CssIcon from '@mui/icons-material/Css';
 import JavascriptIcon from '@mui/icons-material/Javascript';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import GradingIcon from '@mui/icons-material/Grading';
 import Preview from './Preview';
 
 interface EditorConfigProps {
     editorConfig: { language: string; autoRun: boolean };
     editorDoc: { jsDoc: string; htmlDoc: string; cssDoc: string };
     setEditorConfig: Dispatch<SetStateAction<{ language: string; autoRun: boolean }>>;
-
     handleCodeSubmit: () => void;
+    checkSubmissionResult: () => void;
 }
 
+type Language = 'js' | 'html' | 'css' | null;
+
 const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(function EditorConfig(props, ref) {
-    const [alignment, setAlignment] = React.useState<string | null>('js');
+    const [alignment, setAlignment] = React.useState<Language>('js');
 
     const handleAlignment = (
         event: React.MouseEvent<HTMLElement>,
-        newAlignment: string | null,
+        newAlignment: Language
     ) => {
         setAlignment(newAlignment);
         if (newAlignment) {
@@ -39,10 +42,9 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
         }
     };
 
-    const onDownload = React.useCallback(() => {
-        // Your download logic goes here.
-        // You can use the ref.current if you need to access some DOM elements or methods
-    }, []);
+    const onDownload = () => {
+        // Implement download logic here
+    };
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -54,6 +56,7 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
                         exclusive
                         onChange={handleAlignment}
                         aria-label="editor language"
+                        color="standard"
                     >
                         <Tooltip title="JavaScript Editor">
                             <ToggleButton value="js">
@@ -78,8 +81,14 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
                         </IconButton>
                     </Tooltip>
 
+                    <Tooltip title="Check Submit Result">
+                        <IconButton color="inherit" onClick={props.checkSubmissionResult}>
+                            <GradingIcon />
+                        </IconButton>
+                    </Tooltip>
+
                     <Tooltip title="Save as HTML file">
-                        <IconButton onClick={onDownload}>
+                        <IconButton color="inherit" onClick={onDownload}>
                             <SaveAsIcon />
                         </IconButton>
                     </Tooltip>
