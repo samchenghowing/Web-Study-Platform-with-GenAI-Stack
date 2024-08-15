@@ -131,13 +131,23 @@ The auto-reload on changes are instant using the Docker watch `sync` config.
 
 
 # References
+## Compose Stack
 - [genai-stack source](https://github.com/docker/genai-stack)
 - [technical blog post](https://neo4j.com/developer-blog/genai-app-how-to-build/)
+
+## Backend
 - [PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents](https://arxiv.org/abs/2407.0939)
-- [frontend idea](https://github.com/jojowwbb/PenEditor)
 - [stack exchange API](https://api.stackexchange.com/docs/advanced-search)
 - [LangChain](https://python.langchain.com/v0.2/docs/introduction/)
-- [genai-app-how-to-build](https://neo4j.com/developer-blog/genai-app-how-to-build/)
+- [Neo4j](https://neo4j.com/docs/getting-started/introduction/)
 - [Ollama](https://ollama.ai)
 - [gemma2:2b](https://developers.googleblog.com/en/smaller-safer-more-transparent-advancing-responsible-ai-with-gemma/)
+- [llama3.1](https://ai.meta.com/blog/meta-llama-3-1/)
 - [Error when runnig some llm inside container](https://github.com/docker/genai-stack/issues/170)
+
+## Frontend
+- [frontend idea](https://github.com/jojowwbb/PenEditor)
+- [MUI](https://mui.com/)
+- [Webpack](https://webpack.js.org/)
+- [React](https://react.dev/)
+- [CodeMirror](http://codemirror.com)
