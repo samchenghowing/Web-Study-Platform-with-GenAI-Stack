@@ -7,11 +7,11 @@ import AlertTitle from '@mui/material/AlertTitle';
 import AIChat from './AIChat';
 import EditorView from './EditorView';
 import EditorConfig from './EditorConfig';
+import ResizablePanel from './ResizablePanel';
 import { EditorConfigType, EditorDocType } from './utils';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';
-
 
 export default function MainComponent() {
 	const [editorConfig, setEditorConfig] = React.useState<EditorConfigType>({
@@ -31,6 +31,7 @@ export default function MainComponent() {
 	});
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [loading, setLoading] = React.useState<boolean>(false);
+	const [aiChatWidth, setAiChatWidth] = React.useState<number>(300); // Initial width in pixels
 
 	const handleCodeSubmit = async () => {
 		setLoading(true);
@@ -69,19 +70,26 @@ export default function MainComponent() {
 	return (
 		<Stack>
 			<Grid container spacing={1}>
-				<Grid xs={4}>
-					<Alert severity="info">
-						<AlertTitle>Current task</AlertTitle>
-						{question}
-					</Alert>
-					<AIChat
-						question={question}
-						setQuestion={setQuestion}
-						task={task}
-						setTask={setTask}
-					/>
+				<Grid>
+					<ResizablePanel
+						width={aiChatWidth}
+						onWidthChange={setAiChatWidth}
+						minWidth={300} // Minimum width in pixels
+						maxWidth={600} // Maximum width in pixels
+					>
+						<Alert severity="info">
+							<AlertTitle>Current task</AlertTitle>
+							{question}
+						</Alert>
+						<AIChat
+							question={question}
+							setQuestion={setQuestion}
+							task={task}
+							setTask={setTask}
+						/>
+					</ResizablePanel>
 				</Grid>
-				<Grid xs={8}>
+				<Grid xs>
 					<EditorConfig
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}

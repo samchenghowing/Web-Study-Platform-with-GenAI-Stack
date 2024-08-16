@@ -69,7 +69,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
             value={getValue}
             extensions={getExtensions}
             onChange={handleChange}
-            height="400px"
+            height="500px"
             theme={useTheme().palette.mode}
         />
     );
