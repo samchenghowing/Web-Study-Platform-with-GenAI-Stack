@@ -22,6 +22,10 @@ const Resizer = styled('div')({
     top: 0,
     right: 0,
     zIndex: 1,
+    transition: 'background-color 0.2s',
+    '&:hover': {
+        backgroundColor: '#555',
+    },
 });
 
 interface ResizablePanelProps {

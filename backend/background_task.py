@@ -151,28 +151,10 @@ def load_web_data(jobs: dict, task_id: UUID, file_collection, url: str = "https:
 # Background task to verify user's submission code
 def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> None:
     js_code = task.jsDoc
-    
+
     # 1. Syntax Validation
     if not validate_js_syntax(js_code):
         jobs[task_id].status = "JavaScript syntax errors detected."
-        return
-
-    # 2. Functional Validation
-    test_results = run_js_tests(js_code)
-    if not test_results['success']:
-        jobs[task_id].status = f"Functional tests failed: {test_results['errors']}"
-        return
-    
-    jobs[task_id].status = "Your submission is correct!"    
-    return
-
-def verify_submission(jobs: Dict[UUID, 'Job'], task_id: UUID, task: Submission) -> None:
-    js_code = task.jsDoc
-    
-    # 1. Syntax Validation
-    syntax_result = validate_js_syntax(js_code)
-    if not syntax_result['success']:
-        jobs[task_id].status = f"JavaScript syntax errors detected: {syntax_result['errors']}"
         return
 
     # 2. Functional Validation
