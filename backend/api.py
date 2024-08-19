@@ -30,6 +30,7 @@ from chains import (
     summraize_user,
 )
 from mongo import (
+    QuestionModel,
     StudentModel,
     UpdateStudentModel,
     StudentCollection,
@@ -67,6 +68,7 @@ db = client[DATABASE]
 student_collection = db.get_collection("students")
 file_collection = db.get_collection("files")
 chat_history_collection = db.get_collection("chat_histories")
+questions_collection = db.get_collection("questions")
 
 embeddings, dimension = load_embedding_model(
     embedding_model_name,
@@ -192,6 +194,33 @@ async def generate_task_api(question: Question):
     return StreamingResponse(generate(), media_type="application/json")
 
 
+@app.get(
+    "/get-quiz/{id}",
+    response_description="Get quiz",
+    response_model=StudentModel,
+    response_model_by_alias=False,
+)
+async def get_quiz(id: str):
+    """
+    Get the quiz designed for the specific student, looked up by `id`.
+    """
+    if (
+        student_data := await student_collection.find_one({"_id": ObjectId(id)})
+    ) is not None:
+        student = StudentModel(**student_data)
+        question_ids = [answer.question_id for answer in student.answers or []]
+
+        if (
+            questions := await questions_collection.find({"_id": {"$in": question_ids}})
+        ) is not None:
+            question_models = [QuestionModel(**q) for q in questions]
+            return student, question_models
+        else:
+            raise HTTPException(status_code=404, detail=f"No question found for Student {id}")
+
+    raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+
 #testing use only
 @app.get("/summraize")
 def summraize_api():
@@ -250,7 +279,7 @@ async def load_web(background_tasks: BackgroundTasks, url: str = Body(...)):
 
 # CRUD mongodb
 @app.post(
-    "/students/",
+    "/signup/",
     response_description="Add new student",
     response_model=StudentModel,
     status_code=HTTPStatus.CREATED,

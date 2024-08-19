@@ -6,6 +6,8 @@ import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import { Typography, Container, Button } from '@mui/material';
 
+const QUIZ_API_ENDPOINT = 'http://localhost:8504/get-quiz';
+
 // Define a type for the question types
 type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer';
 
@@ -19,19 +21,39 @@ interface Question {
 }
 
 
-const questions: Question[] = [
-    { id: 1, question: 'The sky is blue.', type: 'true-false', correctAnswer: 'true' },
-    { id: 2, question: 'The grass is red.', type: 'true-false', correctAnswer: 'false' },
-    { id: 3, question: 'Which color is the sky?', type: 'multiple-choice', correctAnswer: 'Blue', choices: ['Red', 'Green', 'Blue', 'Yellow'] },
-    { id: 4, question: 'What is the color of the sun?', type: 'short-answer', correctAnswer: 'Yellow' },
-    // Add more questions as needed
-];
-
-
 const QuizPage: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [isQuizCompleted, setIsQuizCompleted] = useState(false);
+    const [questions, setQuestions] = React.useState<Question[]>([
+        { id: 1, question: 'The sky is blue.', type: 'true-false', correctAnswer: 'true' },
+        { id: 2, question: 'The grass is red.', type: 'true-false', correctAnswer: 'false' },
+        { id: 3, question: 'Which color is the sky?', type: 'multiple-choice', correctAnswer: 'Blue', choices: ['Red', 'Green', 'Blue', 'Yellow'] },
+        { id: 4, question: 'What is the color of the sun?', type: 'short-answer', correctAnswer: 'Yellow' },
+    ]);
+    const [userID, setUserID] = React.useState("1234");
+
+    // TODO: get questions from DB: Generate by langchain tools/ sturucted output 
+    // (Create question by textbook content, then verify and save it to db)
+    // React.useEffect(() => {
+    //     const abortController = new AbortController();
+    //     const fetchQuestions = async () => {
+    //         try {
+    //             const response = await fetch(QUIZ_API_ENDPOINT/${userID}, {
+    //                 signal: abortController.signal
+    //             });
+    //             const json = await response.json();
+    //             setQuestions(json);
+    //         } catch (error) {
+    //             if (error.name !== 'AbortError') {
+    //                 console.error(error);
+    //             }
+    //         }
+    //     };
+
+    //     fetchQuestions();
+    //     return () => abortController.abort();
+    // }, []);
 
     const handleAnswer = (isCorrect: boolean) => {
         if (isCorrect) {

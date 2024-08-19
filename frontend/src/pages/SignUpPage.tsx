@@ -13,6 +13,8 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup';
+
 function Copyright(props: any) {
   return (
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
@@ -39,7 +41,7 @@ export default function SignUp() {
     });
 
     try {
-      const response = fetch('api/signup', {
+      const response = fetch(SIGNUP_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
