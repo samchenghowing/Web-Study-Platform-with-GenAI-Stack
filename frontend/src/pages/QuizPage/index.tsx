@@ -6,7 +6,7 @@ import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import { Typography, Container, Button } from '@mui/material';
 
-const QUIZ_API_ENDPOINT = 'http://localhost:8504/get-quiz';
+const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 
 // Define a type for the question types
 type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer';
@@ -25,35 +25,31 @@ const QuizPage: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [isQuizCompleted, setIsQuizCompleted] = useState(false);
-    const [questions, setQuestions] = React.useState<Question[]>([
-        { id: 1, question: 'The sky is blue.', type: 'true-false', correctAnswer: 'true' },
-        { id: 2, question: 'The grass is red.', type: 'true-false', correctAnswer: 'false' },
-        { id: 3, question: 'Which color is the sky?', type: 'multiple-choice', correctAnswer: 'Blue', choices: ['Red', 'Green', 'Blue', 'Yellow'] },
-        { id: 4, question: 'What is the color of the sun?', type: 'short-answer', correctAnswer: 'Yellow' },
-    ]);
-    const [userID, setUserID] = React.useState("1234");
+    const [questions, setQuestions] = React.useState<Question[]>([]);
 
-    // TODO: get questions from DB: Generate by langchain tools/ sturucted output 
+    // TODO: Generate questions by langchain tools/ sturucted output 
     // (Create question by textbook content, then verify and save it to db)
-    // React.useEffect(() => {
-    //     const abortController = new AbortController();
-    //     const fetchQuestions = async () => {
-    //         try {
-    //             const response = await fetch(QUIZ_API_ENDPOINT/${userID}, {
-    //                 signal: abortController.signal
-    //             });
-    //             const json = await response.json();
-    //             setQuestions(json);
-    //         } catch (error) {
-    //             if (error.name !== 'AbortError') {
-    //                 console.error(error);
-    //             }
-    //         }
-    //     };
+    React.useEffect(() => {
+        const abortController = new AbortController();
+        const fetchQuestions = async () => {
+            try {
+                // TODO
+                // const response = await fetch(`${QUIZ_API_ENDPOINT}/${userID}`, {
+                const response = await fetch(`${QUIZ_API_ENDPOINT}`, {
+                    signal: abortController.signal
+                });
+                const json = await response.json();
+                setQuestions(json.questions);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+        };
 
-    //     fetchQuestions();
-    //     return () => abortController.abort();
-    // }, []);
+        fetchQuestions();
+        return () => abortController.abort();
+    }, []);
 
     const handleAnswer = (isCorrect: boolean) => {
         if (isCorrect) {
@@ -89,26 +85,32 @@ const QuizPage: React.FC = () => {
 
     return (
         <Container>
-            {currentQuestion.type === 'true-false' ? (
-                <TrueFalseQuestion
-                    question={currentQuestion.question}
-                    correctAnswer={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : currentQuestion.type === 'multiple-choice' ? (
-                <MultipleChoiceQuestion
-                    question={currentQuestion.question}
-                    choices={currentQuestion.choices!} // Non-null assertion
-                    correctAnswer={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : currentQuestion.type === 'short-answer' ? (
-                <ShortAnswerQuestion
-                    question={currentQuestion.question}
-                    correctAnswer={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : null}
+            {questions.length === 0 ? (
+                <Typography variant="h6">Loading questions...</Typography>
+            ) : currentQuestion ? (
+                currentQuestion.type === 'true-false' ? (
+                    <TrueFalseQuestion
+                        question={currentQuestion.question}
+                        correctAnswer={currentQuestion.correctAnswer}
+                        onAnswer={handleAnswer}
+                    />
+                ) : currentQuestion.type === 'multiple-choice' ? (
+                    <MultipleChoiceQuestion
+                        question={currentQuestion.question}
+                        choices={currentQuestion.choices || []} // Handle possible null
+                        correctAnswer={currentQuestion.correctAnswer}
+                        onAnswer={handleAnswer}
+                    />
+                ) : currentQuestion.type === 'short-answer' ? (
+                    <ShortAnswerQuestion
+                        question={currentQuestion.question}
+                        correctAnswer={currentQuestion.correctAnswer}
+                        onAnswer={handleAnswer}
+                    />
+                ) : null
+            ) : (
+                <Typography variant="h6">Error: No questions available.</Typography>
+            )}
         </Container>
     );
 };

@@ -36,6 +36,7 @@ from mongo import (
     StudentCollection,
     ChatHistoryModelCollection,
     WebfileModelCollection,
+    QuestionCollection,
 )
 from fastapi import FastAPI
 from fastapi import Body, HTTPException
@@ -195,9 +196,49 @@ async def generate_task_api(question: Question):
 
 
 @app.get(
-    "/get-quiz/{id}",
+    "/quiz",
+    response_description="Get quiz (Fake)",
+    response_model=QuestionCollection,
+    response_model_by_alias=False,
+)
+async def get_quizs():
+    """
+    Get the quiz.
+    """
+    fake_questions = [
+        QuestionModel(
+            id="1",
+            question="The sky is blue.",
+            type="true-false",
+            correctAnswer="true"
+        ),
+        QuestionModel(
+            id="2",
+            question="The grass is red.",
+            type="true-false",
+            correctAnswer="false"
+        ),
+        QuestionModel(
+            id="3",
+            question="Which color is the sky?",
+            type="multiple-choice",
+            correctAnswer="Blue",
+            choices=["Red", "Green", "Blue", "Yellow"]
+        ),
+        QuestionModel(
+            id="4",
+            question="What is the color of the sun?",
+            type="short-answer",
+            correctAnswer="Yellow"
+        )
+    ]
+    return QuestionCollection(questions=fake_questions)
+
+
+@app.get(
+    "/quiz/{id}",
     response_description="Get quiz",
-    response_model=StudentModel,
+    response_model=QuestionCollection,
     response_model_by_alias=False,
 )
 async def get_quiz(id: str):
@@ -214,7 +255,7 @@ async def get_quiz(id: str):
             questions := await questions_collection.find({"_id": {"$in": question_ids}})
         ) is not None:
             question_models = [QuestionModel(**q) for q in questions]
-            return student, question_models
+            return QuestionCollection(questions=question_models)
         else:
             raise HTTPException(status_code=404, detail=f"No question found for Student {id}")
 
