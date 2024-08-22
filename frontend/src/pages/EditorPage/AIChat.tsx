@@ -26,10 +26,10 @@ const BackgroundPaper = styled(Paper)(({ theme }) => ({
 }));
 
 const StyledCard = styled(Card)(({ theme, role }) => ({
-    backgroundColor: role === 'human' ? '#3f50b5' : '#fff',
+    backgroundColor: role === 'human' ? theme.palette.primary.main : theme.palette.background.paper,
+    color: role === 'human' ? theme.palette.common.white : theme.palette.text.primary,
     ...theme.typography.body2,
     padding: theme.spacing(1),
-    color: role === 'human' ? '#fff' : '#000',
     whiteSpace: 'pre-wrap',
 }));
 

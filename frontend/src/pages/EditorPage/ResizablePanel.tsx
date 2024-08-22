@@ -13,10 +13,10 @@ const ResizableContent = styled('div')({
     overflow: 'hidden',
 });
 
-const Resizer = styled('div')({
+const Resizer = styled('div')(({ theme }) => ({
     width: '5px',
     cursor: 'ew-resize',
-    backgroundColor: '#fff',
+    backgroundColor: theme.palette.grey[300], // Light grey color from the theme palette
     height: '100%',
     position: 'absolute',
     top: 0,
@@ -24,9 +24,9 @@ const Resizer = styled('div')({
     zIndex: 1,
     transition: 'background-color 0.2s',
     '&:hover': {
-        backgroundColor: '#555',
+        backgroundColor: theme.palette.grey[600], // Darker grey color on hover
     },
-});
+}));
 
 interface ResizablePanelProps {
     children: React.ReactNode;
