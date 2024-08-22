@@ -298,23 +298,28 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
+class LoadDataRequest(BaseModel):
+    tag: str
+
+class LoadWebDataRequest(BaseModel):
+    url: str
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
 @app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
-async def load_so(background_tasks: BackgroundTasks, tag: str = Body(...)):
+async def load_so(background_tasks: BackgroundTasks, request: LoadDataRequest):
     new_task = Job()
     jobs[new_task.uid] = new_task
-    background_tasks.add_task(load_so_data, jobs, new_task.uid, tag)
+    background_tasks.add_task(load_so_data, jobs, new_task.uid, request.tag)
     return new_task
 
 # Web Loader backgroud task API
 @app.post("/load/website", status_code=HTTPStatus.ACCEPTED)
-async def load_web(background_tasks: BackgroundTasks, url: str = Body(...)):
+async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataRequest):
     new_task = Job()
     jobs[new_task.uid] = new_task
-    # background_tasks.add_task(load_web_data, jobs, new_task.uid, file_collection, url)
-    background_tasks.add_task(load_web_data, jobs, new_task.uid, file_collection)
+    # Ensure 'file_collection' is defined somewhere in your code
+    background_tasks.add_task(load_web_data, jobs, new_task.uid, request.url, file_collection)
     return new_task
 
 

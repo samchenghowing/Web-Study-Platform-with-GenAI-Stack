@@ -31,7 +31,7 @@ export default function MainComponent() {
 	});
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [loading, setLoading] = React.useState<boolean>(false);
-	const [aiChatWidth, setAiChatWidth] = React.useState<number>(300); // Initial width in pixels
+	const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
 
 	const handleCodeSubmit = async () => {
 		setLoading(true);

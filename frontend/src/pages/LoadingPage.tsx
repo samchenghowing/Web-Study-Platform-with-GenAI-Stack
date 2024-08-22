@@ -11,10 +11,15 @@ const LoadingPage: React.FC = () => {
                 justifyContent: 'center',
                 minHeight: '100vh',
                 backgroundColor: 'background.paper',
+                padding: 3,
             }}
         >
-            <CircularProgress />
-            <Typography variant="h6" sx={{ mt: 2 }}>
+            <CircularProgress color="primary" size={60} />
+            <Typography
+                variant="h6"
+                sx={{ mt: 2 }}
+                aria-live="polite"
+            >
                 Loading...
             </Typography>
         </Box>

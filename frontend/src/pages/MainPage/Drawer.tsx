@@ -128,7 +128,7 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" noWrap component="div">
-                        Mini variant drawer
+                        Web Study Platform
                     </Typography>
                 </Toolbar>
             </AppBar>
