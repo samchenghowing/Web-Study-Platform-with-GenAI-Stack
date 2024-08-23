@@ -1,13 +1,26 @@
+import operator
+
+from typing_extensions import Annotated
+from typing import List, TypedDict, Sequence, TypedDict
+from bs4 import BeautifulSoup as Soup
+
+from langchain_core.messages import ToolMessage, BaseMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
-from langgraph.graph import END, StateGraph, START
+from langchain_core.documents import Document
+from langchain_core.tools import tool
+from typing import List, Tuple
 
 from langchain.prompts import (
     ChatPromptTemplate,
 )
 
-from typing import List, TypedDict
-from bs4 import BeautifulSoup as Soup
+from langchain_core.messages import HumanMessage
+from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
+
+from langgraph.graph import END, StateGraph, START
+
+from langgraph.prebuilt import InjectedState
+from langgraph.prebuilt import ToolNode
 
 
 def self_correction_graph(llm):
@@ -378,4 +391,142 @@ def ollama_test_tools(llm):
     print(tool_results)
 
     return result
+
+
+def ollama_test_graph_tools(llm):
+
+    @tool(parse_docstring=True, response_format="content_and_artifact")
+    def get_context(question: List[str]) -> Tuple[str, List[Document]]:
+        """Get context on the question.
+
+        Args:
+            question: The user question
+        """
+        # return constant dummy output
+        docs = [
+            Document(
+                "FooBar company just raised 1 Billion dollars!",
+                metadata={"source": "twitter"},
+            ),
+            Document(
+                "FooBar company is now only hiring AI's", metadata={"source": "twitter"}
+            ),
+            Document(
+                "FooBar company was founded in 2019", metadata={"source": "wikipedia"}
+            ),
+            Document(
+                "FooBar company makes friendly robots", metadata={"source": "wikipedia"}
+            ),
+        ]
+        return "\n\n".join(doc.page_content for doc in docs), docs
+
+
+    @tool(parse_docstring=True, response_format="content_and_artifact")
+    def cite_context_sources(
+        claim: str, state: Annotated[dict, InjectedState]
+    ) -> Tuple[str, List[Document]]:
+        """Cite which source a claim was based on.
+
+        Args:
+            claim: The claim that was made.
+        """
+        docs = []
+        # We get the potentially cited docs from past ToolMessages in our state.
+        for msg in state["messages"]:
+            if isinstance(msg, ToolMessage) and msg.name == "get_context":
+                docs.extend(msg.artifact)
+
+        class Cite(BaseModel):
+            """Return the index(es) of the documents that justify the claim"""
+
+            indexes: List[int]
+
+        structured_model = llm.with_structured_output(Cite)
+        system = f"Which of the following documents best justifies the claim:\n\n{claim}"
+        context = "\n\n".join(
+            f"Document {i}:\n" + doc.page_content for i, doc in enumerate(docs)
+        )
+        citation = structured_model.invoke([("system", system), ("human", context)])
+        cited_docs = [docs[i] for i in citation.indexes]
+        sources = ", ".join(doc.metadata["source"] for doc in cited_docs)
+        return sources, cited_docs
+    
+    class AgentState(TypedDict):
+        messages: Annotated[Sequence[BaseMessage], operator.add]
+
+    def should_continue(state, config):
+        messages = state["messages"]
+        last_message = messages[-1]
+        # If there is no function call, then we finish
+        if not last_message.tool_calls:
+            return "end"
+        # Otherwise if there is, we continue
+        else:
+            return "continue"
+
+
+    tools = [get_context, cite_context_sources]
+
+
+    # Define the function that calls the model
+    def call_model(state, config):
+        messages = state["messages"]
+        model_with_tools = llm.bind_tools(tools)
+        response = model_with_tools.invoke(messages)
+        # We return a list, because this will get added to the existing list
+        return {"messages": [response]}
+
+
+    # ToolNode will automatically take care of injecting state into tools
+    tool_node = ToolNode(tools)
+        # Define a new graph
+    workflow = StateGraph(AgentState)
+
+    # Define the two nodes we will cycle between
+    workflow.add_node("agent", call_model)
+    workflow.add_node("action", tool_node)
+
+    # Set the entrypoint as `agent`
+    # This means that this node is the first one called
+    workflow.add_edge(START, "agent")
+
+    # We now add a conditional edge
+    workflow.add_conditional_edges(
+        # First, we define the start node. We use `agent`.
+        # This means these are the edges taken after the `agent` node is called.
+        "agent",
+        # Next, we pass in the function that will determine which node is called next.
+        should_continue,
+        # Finally we pass in a mapping.
+        # The keys are strings, and the values are other nodes.
+        # END is a special node marking that the graph should finish.
+        # What will happen is we will call `should_continue`, and then the output of that
+        # will be matched against the keys in this mapping.
+        # Based on which one it matches, that node will then be called.
+        {
+            # If `tools`, then we call the tool node.
+            "continue": "action",
+            # Otherwise we finish.
+            "end": END,
+        },
+    )
+
+    # We now add a normal edge from `tools` to `agent`.
+    # This means that after `tools` is called, `agent` node is called next.
+    workflow.add_edge("action", "agent")
+
+    # Finally, we compile it!
+    # This compiles it into a LangChain Runnable,
+    # meaning you can use it as you would any other runnable
+    app = workflow.compile()
+
+    messages = [HumanMessage("what's the latest news about FooBar")]
+    for output in app.stream({"messages": messages}):
+        # stream() yields dictionaries with output keyed by node name
+        for key, value in output.items():
+            print(f"Output from node '{key}':")
+            print("---")
+            print(value)
+            messages.extend(value["messages"])
+        print("\n---\n")
 
