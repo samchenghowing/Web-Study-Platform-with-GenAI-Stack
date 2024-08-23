@@ -29,6 +29,9 @@ from chains import (
     generate_task,
     summraize_user,
 )
+from graphs import (
+    ollama_test_tools,
+)
 from mongo import (
     QuestionModel,
     StudentModel,
@@ -267,6 +270,12 @@ async def get_quiz(id: str):
 def summraize_api():
     result = summraize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
     return result
+
+@app.get("/toolstest")
+def toolstest_api():
+    result = ollama_test_tools(llm)
+    return result
+
 
 
 # Get status of backgroud task (Process PDF, load data from stackoverflow, verify submission)

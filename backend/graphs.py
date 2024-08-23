@@ -336,3 +336,46 @@ def self_correction_graph(llm):
     question = "How can I directly pass a string to a runnable and use it to construct the input needed for my prompt?"
     app.invoke({"messages": [("user", question)], "iterations": 0})
 
+
+def ollama_test_tools(llm):
+    class add(BaseModel):
+        """Add two integers."""
+
+        a: int = Field(..., description="First integer")
+        b: int = Field(..., description="Second integer")
+
+        def execute(self):
+            return self.a + self.b
+
+
+    class multiply(BaseModel):
+        """Multiply two integers."""
+
+        a: int = Field(..., description="First integer")
+        b: int = Field(..., description="Second integer")
+
+        def execute(self):
+            return self.a * self.b
+
+
+    tools = [add, multiply]
+
+    llm_with_tools = llm.bind_tools(tools)
+
+    query = "What is 3 * 12? Also, what is 11 + 49?"
+
+    result = llm_with_tools.invoke(query)
+    print(result.tool_calls)
+
+    tool_results = {}
+    for call in result.tool_calls:
+        tool_name = call['name']
+        tool_args = call['args']
+        tool_class = next(tool for tool in tools if tool.__name__ == tool_name)
+        tool_instance = tool_class(**tool_args)
+        tool_results[tool_name] = tool_instance.execute()
+
+    print(tool_results)
+
+    return result
+

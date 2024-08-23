@@ -304,7 +304,6 @@ def summraize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
         db_name=DATABASE_NAME,
         collection_name=COLLECTION_NAME,
         filter_criteria={"SessionId": user_id},
-        # field_names=["History"],
     )
     docs = loader.load()
 
