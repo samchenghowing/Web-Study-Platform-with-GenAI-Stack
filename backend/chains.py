@@ -26,9 +26,10 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 
 from langchain.chains.summarize import load_summarize_chain
 from langchain_community.document_loaders.mongodb import MongodbLoader
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 
-from typing import List, Any
+from typing import Optional, List, Any
 from utils import BaseLogger
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
@@ -312,3 +313,43 @@ def summraize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
     print(result["output_text"])
     return result
 
+def generate_quiz(user_summary, llm):
+    # Testing
+    user_summary = """
+    The conversation involves a user named 'test_user' who asks about a linked list. The AI responds with a question asking the user to identify and correct a CSS issue in an HTML code snippet. The HTML code contains an unordered list (ul) with three items (li), styled with incorrect flex-direction and width properties. The AI is using the Mistral model for this task.
+    """
+
+    gen_system_template = f"""
+    You're a programming teacher and you are preparing task on html, css and javascript. 
+    Create quiz for student which related to their learning summary.
+    Here is the learning summary: {user_summary}
+    """
+    # we need jinja2 since the questions themselves contain curly braces
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        gen_system_template, template_format="jinja2"
+    )
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_prompt,
+        ]
+    )
+
+    class MCQ(BaseModel):
+        """Multiple choice questions."""
+
+        question: str = Field(...)
+        type: str = Field(...)  # e.g., 'true-false', 'multiple-choice', 'short-answer'
+        correctAnswer: str = Field(...)
+        choices: Optional[List[str]] = Field(default=None)
+
+        class Config:
+            allow_population_by_field_name = True
+            arbitrary_types_allowed = True
+
+    llm.bind_tools([MCQ])
+    
+    result = llm.invoke("linked list mc question")
+    result.tool_calls
+
+    print(result)
+    return result

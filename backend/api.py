@@ -28,6 +28,7 @@ from chains import (
     configure_qa_rag_chain,
     generate_task,
     summraize_user,
+    generate_quiz,
 )
 from graphs import (
     ollama_test_tools,
@@ -265,6 +266,7 @@ async def get_quiz(id: str):
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 
+
 #testing use only
 @app.get("/summraize")
 def summraize_api():
@@ -273,7 +275,7 @@ def summraize_api():
 
 @app.get("/toolstest")
 def toolstest_api():
-    result = ollama_test_tools(llm)
+    result = generate_quiz("", llm)
     return result
 
 
