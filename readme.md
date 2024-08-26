@@ -36,7 +36,9 @@ No need to install Ollama manually, it will run in a container as
 part of the stack when running with the Linux profile: run `docker compose --profile linux up`.
 Make sure to set the `OLLAMA_BASE_URL=http://llm:11434` in the `.env` file when using Ollama docker container.
 
-To use the Linux-GPU profile: run `docker compose --profile linux-gpu up`. Also change `OLLAMA_BASE_URL=http://llm-gpu:11434` in the `.env` file.
+To use the Linux-GPU profile(NVIDIA): run `docker compose --profile linux-gpu up`. Also change `OLLAMA_BASE_URL=http://llm-gpu:11434` in the `.env` file.
+
+To use the AMD GPU profile: run `docker compose --profile linux-amd up`. Also change `OLLAMA_BASE_URL=http://llm-amd:11434` in the `.env` file.
 
 **Windows**
 Ollama now supports Windows. However, running inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) is prefered and you can follow the exact same guide as above. 

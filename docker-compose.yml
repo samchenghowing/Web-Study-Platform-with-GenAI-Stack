@@ -17,6 +17,16 @@ services:
               count: all
               capabilities: [ gpu ]
 
+  llm-amd:
+    image: ollama/ollama:rocm
+    profiles: [ "linux-amd" ]
+    networks:
+      - net
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    privileged: true
+
   pull-model:
     build:
       context: backend
@@ -117,16 +127,16 @@ services:
       timeout: 3s
       retries: 5
 
-  node:
-    build:
-      context: backend/sandbox
-      dockerfile: node.Dockerfile
-    networks:
-      - net
-    volumes:
-      - $PWD/data:/data/sandbox:/app
-    # Optionally, you can add a command to execute the test script directly.
-    # command: node test.js
+  # node:
+  #   build:
+  #     context: backend/sandbox
+  #     dockerfile: node.Dockerfile
+  #   networks:
+  #     - net
+  #   volumes:
+  #     - $PWD/data:/data/sandbox:/app
+  #   # Optionally, you can add a command to execute the test script directly.
+  #   # command: node test.js
 
   frontend:
     build:
@@ -143,9 +153,9 @@ services:
           path: ./frontend/package.json
           ignore:
             - backend/
-    depends_on:
-      api:
-        condition: service_healthy
+    # depends_on:
+    #   api:
+    #     condition: service_healthy
     networks:
       - frontend-net
     ports:
