@@ -270,8 +270,9 @@ async def get_quiz(id: str):
 #testing use only
 @app.get("/summraize")
 def summraize_api():
-    result = summraize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
-    return result
+    chat_summraize = summraize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
+    result = summraize_user(llm, CONN_STR, DATABASE, "students", "test_user")
+    return chat_summraize, result
 
 @app.get("/toolstest")
 def toolstest_api():
@@ -333,6 +334,15 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
     background_tasks.add_task(load_web_data, jobs, new_task.uid, request.url, file_collection)
     return new_task
 
+# Sample usage
+# curl -X POST "http://localhost:8504/signup/" \
+#      -H "Content-Type: application/json" \
+#      -d '{
+#            "name": "John Doe",
+#            "email": "johndoe@example.com",
+#            "hashed_password": "hashedpassword123",
+#            "answers": []
+#          }'
 
 # CRUD mongodb
 @app.post(
@@ -354,6 +364,8 @@ async def create_student(student: StudentModel = Body(...)):
     created_student = await student_collection.find_one(
         {"_id": new_student.inserted_id}
     )
+    if created_student:
+        created_student["_id"] = str(created_student["_id"])
     return created_student
 
 
@@ -369,7 +381,14 @@ async def list_students():
 
     The response is unpaginated and limited to 1000 results.
     """
-    return StudentCollection(students=await student_collection.find().to_list(1000))
+    raw_students = await student_collection.find().to_list(1000)
+    students = []
+
+    for student in raw_students:
+        student['_id'] = str(student['_id'])
+        students.append(student)
+
+    return StudentCollection(students=students)
 
 
 @app.get(
@@ -389,7 +408,7 @@ async def show_student(id: str):
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
-
+## Untested
 @app.put(
     "/students/{id}",
     response_description="Update a student",
@@ -424,7 +443,7 @@ async def update_student(id: str, student: UpdateStudentModel = Body(...)):
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
-
+## Untested
 @app.delete("/students/{id}", response_description="Delete a student")
 async def delete_student(id: str):
     """
