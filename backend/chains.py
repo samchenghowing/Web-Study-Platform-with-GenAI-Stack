@@ -273,7 +273,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     )
     return llm_response
 
-def summraize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
+def summarize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
     # https://www.reddit.com/r/ChatGPT/comments/11twe7z/prompt_to_summarize/
     # PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents
     # template = """
@@ -307,6 +307,7 @@ def summraize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
         filter_criteria={"SessionId": user_id},
     )
     docs = loader.load()
+    # TODO: reducing input docs size to handle the token size limitation
 
     result = summarize_chain.invoke(docs)
 

@@ -27,7 +27,7 @@ from chains import (
     configure_llm_only_chain,
     configure_qa_rag_chain,
     generate_task,
-    summraize_user,
+    summarize_user,
     generate_quiz,
 )
 from graphs import (
@@ -212,29 +212,31 @@ async def get_quizs():
     fake_questions = [
         QuestionModel(
             id="1",
-            question="The sky is blue.",
-            type="true-false",
-            correctAnswer="true"
+            question="How much web development do you know?",
+            type="multiple-choice",
+            correctAnswer="Blue",
+            choices=["I am a beginner", "I know some basic", "I have tried web editing", "I can discuss advance topic"]
         ),
         QuestionModel(
             id="2",
-            question="The grass is red.",
-            type="true-false",
-            correctAnswer="false"
-        ),
-        QuestionModel(
-            id="3",
-            question="Which color is the sky?",
+            question="What do you prefer to learn",
             type="multiple-choice",
             correctAnswer="Blue",
-            choices=["Red", "Green", "Blue", "Yellow"]
+            choices=["Start from suggested learning pattern", "Find my way"]
         ),
-        QuestionModel(
-            id="4",
-            question="What is the color of the sun?",
-            type="short-answer",
-            correctAnswer="Yellow"
-        )
+        # QuestionModel(
+        #     id="3",
+        #     question="Which color is the sky?",
+        #     type="multiple-choice",
+        #     correctAnswer="Blue",
+        #     choices=["Red", "Green", "Blue", "Yellow"]
+        # ),
+        # QuestionModel(
+        #     id="4",
+        #     question="What is the color of the sun?",
+        #     type="short-answer",
+        #     correctAnswer="Yellow"
+        # )
     ]
     return QuestionCollection(questions=fake_questions)
 
@@ -270,9 +272,9 @@ async def get_quiz(id: str):
 #testing use only
 @app.get("/summraize")
 def summraize_api():
-    chat_summraize = summraize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
-    result = summraize_user(llm, CONN_STR, DATABASE, "students", "test_user")
-    return chat_summraize, result
+    chat_summraize = summarize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
+    # result = summarize_user(llm, CONN_STR, DATABASE, "students", "test_user")
+    return chat_summraize
 
 @app.get("/toolstest")
 def toolstest_api():
