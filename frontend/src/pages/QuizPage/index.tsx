@@ -5,6 +5,7 @@ import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import { Typography, Container, Button } from '@mui/material';
+import { Link } from 'react-router-dom'; // Import Link
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 
@@ -74,10 +75,10 @@ const QuizPage: React.FC = () => {
     if (isQuizCompleted) {
         return (
             <Container style={{ textAlign: 'center', padding: 20 }}>
-                <Typography variant="h4">Quiz Completed!</Typography>
-                <Typography variant="h6">Your Score: {score} / {questions.length}</Typography>
-                <Button variant="contained" color="primary" onClick={handleRestart} sx={{ mt: 2 }}>
-                    Restart Quiz
+                <Typography variant="h4">We are good to go!</Typography>
+                {/* <Typography variant="h6">Your Score: {score} / {questions.length}</Typography> */}
+                <Button variant="contained" color="primary" component={Link} to="/main/editor" sx={{ mt: 2 }}>
+                    Start your journey
                 </Button>
             </Container>
         );

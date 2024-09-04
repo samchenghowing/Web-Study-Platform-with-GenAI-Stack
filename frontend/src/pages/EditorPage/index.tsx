@@ -3,6 +3,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
+import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -29,12 +30,24 @@ export default function MainComponent() {
 		htmlDoc: 'Hello world',
 		cssDoc: '',
 	});
-	const [submissionUID, setSubmissionUID] = React.useState<string>('');
-	const [loading, setLoading] = React.useState<boolean>(false);
 	const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
 
+	const [submissionUID, setSubmissionUID] = React.useState<string>('');
+	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+	const [snackbarText, setSnackbarText] = React.useState<string>('');
+
+
+	const handleClose = (
+		event: React.SyntheticEvent | Event,
+		reason?: SnackbarCloseReason,
+	) => {
+		if (reason === 'clickaway') {
+			return;
+		}
+		setSnackbarOpen(false);
+	};
+
 	const handleCodeSubmit = async () => {
-		setLoading(true);
 		try {
 			const response = await fetch(SUBMIT_API_ENDPOINT, {
 				method: 'POST',
@@ -47,8 +60,11 @@ export default function MainComponent() {
 			setSubmissionUID(json.uid);
 		} catch (error) {
 			console.error(error);
+			setSnackbarText("Quiz submission error");
+			setSnackbarOpen(true);
 		} finally {
-			setLoading(false);
+			setSnackbarText("Quiz submitted and waiting for process");
+			setSnackbarOpen(true);
 		}
 	};
 
@@ -58,6 +74,8 @@ export default function MainComponent() {
 			const response = await fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${submissionUID}/status`);
 			const json = await response.json();
 			console.log(json);
+			setSnackbarText(json.status);
+			setSnackbarOpen(true);
 		} catch (error) {
 			console.error(error);
 		}
@@ -104,6 +122,18 @@ export default function MainComponent() {
 					/>
 				</Grid>
 			</Grid>
+
+			<Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleClose}>
+				<Alert
+					onClose={handleClose}
+					severity="success"
+					variant="filled"
+					sx={{ width: '100%' }}
+				>
+					{snackbarText}
+				</Alert>
+			</Snackbar>
+
 		</Stack>
 	);
 }
