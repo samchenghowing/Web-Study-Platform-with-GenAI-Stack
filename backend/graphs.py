@@ -3,9 +3,9 @@ import operator
 from typing_extensions import Annotated
 from typing import List, TypedDict, Sequence, TypedDict
 from bs4 import BeautifulSoup as Soup
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import ToolMessage, BaseMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.documents import Document
 from langchain_core.tools import tool
 from typing import List, Tuple
