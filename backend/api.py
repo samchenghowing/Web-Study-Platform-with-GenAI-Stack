@@ -30,9 +30,6 @@ from chains import (
     summarize_user,
     generate_quiz,
 )
-from graphs import (
-    ollama_test_tools,
-)
 from mongo import (
     QuestionModel,
     StudentModel,
@@ -155,28 +152,6 @@ class Question(BaseModel):
     text: str
     rag: bool | None = False 
 
-# Chat bot API
-@app.post("/query-stream")
-async def qstream(question: Question):
-    output_function = llm_chain
-    if question.rag:
-        output_function = rag_chain
-
-    q = Queue()
-
-    def cb():
-        output_function(
-            user_id="test_user",
-            question=question.text,
-            callbacks=[QueueCallback(q)],
-        )
-
-    def generate():
-        yield json.dumps({"init": True, "model": llm_name, "token": ""})
-        for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
-
-    return StreamingResponse(generate(), media_type="application/json")
 
 @app.post("/generate-task")
 async def generate_task_api(question: Question):
@@ -332,7 +307,6 @@ async def load_so(background_tasks: BackgroundTasks, request: LoadDataRequest):
 async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataRequest):
     new_task = Job()
     jobs[new_task.uid] = new_task
-    # Ensure 'file_collection' is defined somewhere in your code
     background_tasks.add_task(load_web_data, jobs, new_task.uid, request.url, file_collection)
     return new_task
 
