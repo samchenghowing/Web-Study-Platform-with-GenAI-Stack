@@ -12,6 +12,9 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useAuth } from '../authentication/AuthContext';
+
+const LOGIN_API_ENDPOINT = 'http://localhost:8504/login/';
 
 function Copyright(props: any) {
   return (
@@ -30,16 +33,14 @@ function Copyright(props: any) {
 const defaultTheme = createTheme();
 
 export default function SignIn() {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const { login } = useAuth();
+
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
 
     try {
-      const response = fetch('api/signin', {
+      const response = fetch(LOGIN_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,8 +50,12 @@ export default function SignIn() {
           password: data.get('password'),
         })
       });
-      // TODO: set logined after signin
+      const json = (await response).json();
+      console.log(json);
+      login(json)
 
+      // const userData = { id: '1', name: 'test_user' };
+      // login(userData)
     } catch (error) {
       console.error('There was an error!', error);
     }
@@ -74,7 +79,7 @@ export default function SignIn() {
           <Typography component="h1" variant="h5">
             Sign in
           </Typography>
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+          <Box component="form" onSubmit={handleLogin} noValidate sx={{ mt: 1 }}>
             <TextField
               margin="normal"
               required

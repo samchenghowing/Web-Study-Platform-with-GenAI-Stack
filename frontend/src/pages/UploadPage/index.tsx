@@ -15,7 +15,7 @@ export default function MainPage() {
 
             <Divider />
             <Typography variant="h4" gutterBottom>
-                Data Loading
+                Data Upload
             </Typography>
             <InputFileUpload />
         </Container>

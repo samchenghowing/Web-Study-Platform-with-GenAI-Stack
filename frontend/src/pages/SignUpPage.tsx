@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
-const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup';
+const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup/';
 
 function Copyright(props: any) {
   return (
@@ -32,10 +32,12 @@ function Copyright(props: any) {
 const defaultTheme = createTheme();
 
 export default function SignUp() {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     console.log({
+      firstName: data.get('firstName'),
+      lastName: data.get('lastName'),
       email: data.get('email'),
       password: data.get('password'),
     });
@@ -47,10 +49,13 @@ export default function SignUp() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name: data.get('firstName'),
           email: data.get('email'),
           password: data.get('password'),
         })
       });
+      const json = (await response).json();
+      console.log(json);
       // TODO: set logined after signup
 
     } catch (error) {

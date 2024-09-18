@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Suspense, lazy } from "react";
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import ErrorPage from './pages/ErrorPage';
 import LoadingPage from './pages/LoadingPage';
 import PrivateRoute from './authentication/PrivateRoute';
@@ -54,6 +54,10 @@ const router = createBrowserRouter([
         ),
         errorElement: <ErrorPage />,
         children: [
+            {
+                index: true,
+                element: <Navigate to="/main/editor" replace />,
+            },
             {
                 path: 'editor',
                 element: (
