@@ -51,6 +51,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from bson import ObjectId
 import motor.motor_asyncio
 from pymongo import ReturnDocument
+import bcrypt
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -310,15 +311,28 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
     background_tasks.add_task(load_web_data, jobs, new_task.uid, request.url, file_collection)
     return new_task
 
-# Sample usage
-# curl -X POST "http://localhost:8504/signup/" \
-#      -H "Content-Type: application/json" \
-#      -d '{
-#            "name": "John Doe",
-#            "email": "johndoe@example.com",
-#            "hashed_password": "hashedpassword123",
-#            "answers": []
-#          }'
+class LoginModel(BaseModel):
+    email: str
+    password: str
+
+@app.post(
+    "/login/",
+    response_description="Login student",
+    response_model=UpdateStudentModel,
+    status_code=HTTPStatus.OK,
+)
+async def login_student(login: LoginModel = Body(...)):
+    student = await student_collection.find_one({"email": login.email})
+    if not student:
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid email or password")
+
+    if not bcrypt.checkpw(login.password.encode('utf-8'), student['password'].encode('utf-8')):
+        raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid email or password")
+
+    student["_id"] = str(student["_id"])
+    student.pop("password")  # Remove the hashed password from the response
+    return student
+
 
 # CRUD mongodb
 @app.post(
@@ -329,11 +343,9 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
     response_model_by_alias=False,
 )
 async def create_student(student: StudentModel = Body(...)):
-    """
-    Insert a new student record.
+    hashed_password = bcrypt.hashpw(student.password.encode('utf-8'), bcrypt.gensalt())
+    student.password = hashed_password.decode('utf-8')  # Store the hashed password
 
-    A unique `id` will be created and provided in the response.
-    """
     new_student = await student_collection.insert_one(
         student.model_dump(by_alias=True, exclude=["id"])
     )
