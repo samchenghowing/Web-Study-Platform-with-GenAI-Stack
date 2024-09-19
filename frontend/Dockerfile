@@ -1,5 +1,5 @@
 # Stage 1: Build the React application
-FROM node:20
+FROM node:alpine
 
 # Set the working directory in the container
 WORKDIR /app
