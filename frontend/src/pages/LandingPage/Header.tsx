@@ -12,6 +12,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from '../MainPage/ToggleColorMode';
+import SignInDialog from './SignInDialog';
+import SignUpDialog from './SignUpDialog';
 
 const logoStyle = {
   width: '140px',
@@ -48,7 +50,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
   return (
     <div>
       <AppBar
-        position="fixed"
+        position='fixed'
         sx={{
           boxShadow: 0,
           bgcolor: 'transparent',
@@ -56,9 +58,9 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
           mt: 2,
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth='lg'>
           <Toolbar
-            variant="regular"
+            variant='regular'
             sx={(theme) => ({
               display: 'flex',
               alignItems: 'center',
@@ -93,14 +95,14 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e6faf73568658154dae_SitemarkDefault.svg'
                 }
                 style={logoStyle}
-                alt="logo of sitemark"
+                alt='logo of sitemark'
               />
               <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
                 <MenuItem
                   onClick={() => scrollToSection('features')}
                   sx={{ py: '6px', px: '12px' }}
                 >
-                  <Typography variant="body2" color="text.primary">
+                  <Typography variant='body2' color='text.primary'>
                     Features
                   </Typography>
                 </MenuItem>
@@ -108,7 +110,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   onClick={() => scrollToSection('highlights')}
                   sx={{ py: '6px', px: '12px' }}
                 >
-                  <Typography variant="body2" color="text.primary">
+                  <Typography variant='body2' color='text.primary'>
                     Highlights
                   </Typography>
                 </MenuItem>
@@ -116,7 +118,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   onClick={() => scrollToSection('pricing')}
                   sx={{ py: '6px', px: '12px' }}
                 >
-                  <Typography variant="body2" color="text.primary">
+                  <Typography variant='body2' color='text.primary'>
                     Pricing
                   </Typography>
                 </MenuItem>
@@ -124,7 +126,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   onClick={() => scrollToSection('faq')}
                   sx={{ py: '6px', px: '12px' }}
                 >
-                  <Typography variant="body2" color="text.primary">
+                  <Typography variant='body2' color='text.primary'>
                     FAQ
                   </Typography>
                 </MenuItem>
@@ -138,38 +140,20 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
               }}
             >
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
-              <Button
-                color="primary"
-                variant="text"
-                size="small"
-                component={Link}
-                to="/signin"
-                target="_blank"
-              >
-                Sign in
-              </Button>
-              <Button
-                color="primary"
-                variant="contained"
-                size="small"
-                component={Link}
-                to="/signup"
-                target="_blank"
-              >
-                Sign up
-              </Button>
+              <SignInDialog variant={'text'} sx={{}} size={'small'} />
+              <SignUpDialog variant={'contained'} sx={{}} size={'small'} />
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
               <Button
-                variant="text"
-                color="primary"
-                aria-label="menu"
+                variant='text'
+                color='primary'
+                aria-label='menu'
                 onClick={toggleDrawer(true)}
                 sx={{ minWidth: '30px', p: '4px' }}
               >
                 <MenuIcon />
               </Button>
-              <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}>
+              <Drawer anchor='right' open={open} onClose={toggleDrawer(false)}>
                 <Box
                   sx={{
                     minWidth: '60dvw',
@@ -191,9 +175,6 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   <MenuItem onClick={() => scrollToSection('features')}>
                     Features
                   </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('testimonials')}>
-                    Testimonials
-                  </MenuItem>
                   <MenuItem onClick={() => scrollToSection('highlights')}>
                     Highlights
                   </MenuItem>
@@ -203,28 +184,10 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   <MenuItem onClick={() => scrollToSection('faq')}>FAQ</MenuItem>
                   <Divider />
                   <MenuItem>
-                    <Button
-                      color="primary"
-                      variant="contained"
-                      component={Link}
-                      to="/signup"
-                      target="_blank"
-                      sx={{ width: '100%' }}
-                    >
-                      Sign up
-                    </Button>
+                    <SignInDialog variant={"outlined"} sx={{ width: '100%' }} size={''} />
                   </MenuItem>
                   <MenuItem>
-                    <Button
-                      color="primary"
-                      variant="outlined"
-                      component={Link}
-                      to="/signin"
-                      target="_blank"
-                      sx={{ width: '100%' }}
-                    >
-                      Sign in
-                    </Button>
+                    <SignUpDialog variant={"contained"} sx={{ width: '100%' }} size={''} />
                   </MenuItem>
                 </Box>
               </Drawer>

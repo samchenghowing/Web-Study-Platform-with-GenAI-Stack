@@ -8,8 +8,6 @@ import PrivateRoute from './authentication/PrivateRoute';
 import { AuthProvider } from './authentication/AuthContext';
 
 const HomePage = lazy(() => import('./pages/LandingPage'));
-const SignInPage = lazy(() => import('./pages/SignInPage'));
-const SignUpPage = lazy(() => import('./pages/SignUpPage'));
 const MainPage = lazy(() => import('./pages/MainPage'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const QuizPage = lazy(() => import('./pages/QuizPage'));
@@ -21,24 +19,6 @@ const router = createBrowserRouter([
         element: (
             <Suspense fallback={<LoadingPage />}>
                 <HomePage />
-            </Suspense>
-        ),
-        errorElement: <ErrorPage />,
-    },
-    {
-        path: '/signin',
-        element: (
-            <Suspense fallback={<LoadingPage />}>
-                <SignInPage />
-            </Suspense>
-        ),
-        errorElement: <ErrorPage />,
-    },
-    {
-        path: '/signup',
-        element: (
-            <Suspense fallback={<LoadingPage />}>
-                <SignUpPage />
             </Suspense>
         ),
         errorElement: <ErrorPage />,
