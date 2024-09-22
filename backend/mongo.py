@@ -54,8 +54,7 @@ class StudentModel(BaseModel):
     # This will be aliased to `_id` when sent to MongoDB,
     # but provided as `id` in the API requests and responses.
     id: Optional[str] = Field(default=None, alias="_id")
-    firstName: str = Field(...)
-    lastName: str = Field(...)
+    username: str = Field(...)
     email: str = Field(...)
     password: str = Field(...) # Hashed
     answers: Optional[List[AnswerModel]] = Field(default=None)  # Embedded answers
@@ -70,8 +69,7 @@ class UpdateStudentModel(BaseModel):
     A set of optional updates to be made to a document in the database.
     """
 
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
+    username: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     answers: Optional[List[AnswerModel]] = Field(default=None)  # Embedded answers
@@ -81,9 +79,9 @@ class UpdateStudentModel(BaseModel):
         json_encoders={ObjectId: str},
         json_schema_extra={
             "example": {
-                "firstName": "Jane",
-                "lastName": "Doe",
+                "username": "Jane Doe",
                 "email": "jdoe@example.com",
+                "answers": "",
             }
         },
     )

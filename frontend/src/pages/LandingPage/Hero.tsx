@@ -61,7 +61,7 @@ export default function Hero() {
             sx={{ alignSelf: 'center', width: { sm: '100%', md: '80%' } }}
           >
             With GenAi powered learning platform, you can learn programming in a sec.
-            Just type below and enter what you want to learn. 
+            Just type below and enter what you want to learn.
           </Typography>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -82,9 +82,11 @@ export default function Hero() {
                 'aria-label': 'Enter your email address',
               }}
             />
-            <Button variant="contained" color="primary">
-              Start now
-            </Button>
+            <Link color='inherit' href='/main'>
+              <Button variant="contained" color="primary">
+                Start now
+              </Button>
+            </Link>
           </Stack>
           <Typography variant="caption" textAlign="center" sx={{ opacity: 0.8 }}>
             By clicking &quot;Start now&quot; you agree to our&nbsp;
