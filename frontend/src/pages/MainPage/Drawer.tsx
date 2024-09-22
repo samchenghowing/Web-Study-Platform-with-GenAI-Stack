@@ -21,6 +21,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import UploadIcon from '@mui/icons-material/Upload';
 import { Link } from 'react-router-dom'; // Import Link
 import ToggleColorMode from './ToggleColorMode'; // Import ToggleColorMode
+import { useAuth } from '../../authentication/AuthContext'; // Import useAuth
 
 const drawerWidth = 240;
 
@@ -101,6 +102,7 @@ interface MiniDrawerProps {
 export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDrawerProps) {
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
+    const { user } = useAuth();
 
     const handleDrawerOpen = () => {
         setOpen(true);
@@ -138,6 +140,18 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                         {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
                     </IconButton>
                 </DrawerHeader>
+                <Divider />
+                <Divider />
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                    {user ? (
+                        <>
+                            <Typography variant="body1">{user.name}</Typography>
+                            <Typography variant="body2" color="textSecondary">{user.email}</Typography>
+                        </>
+                    ) : (
+                        <Typography variant="body2" color="textSecondary">Guest</Typography>
+                    )}
+                </Box>
                 <Divider />
                 <List>
                     <ListItem disablePadding sx={{ display: 'block' }}>
