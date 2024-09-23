@@ -8,11 +8,11 @@ import subprocess
 import docker
 from pydantic import BaseModel, Field
 from bs4 import BeautifulSoup as Soup
-from mongo import WebfileModel
+from db.mongo import WebfileModel
 
 client = docker.from_env()
 
-from chains import (
+from services.chains import (
     load_embedding_model,
 )
 from utils import (

@@ -6,14 +6,13 @@ from threading import Thread
 from queue import Queue, Empty
 from collections.abc import Generator
 from http import HTTPStatus
-from pydantic import BaseModel
 
 from utils import (
     create_constraints,
     create_vector_index,
     BaseLogger,
 )
-from background_task import(
+from services.background_task import(
     Job,
     process_files,
     load_so_data,
@@ -21,7 +20,7 @@ from background_task import(
     verify_submission,
     Submission,
 )
-from chains import (
+from services.chains import (
     load_embedding_model,
     load_llm,
     configure_llm_only_chain,
@@ -30,7 +29,13 @@ from chains import (
     summarize_user,
     generate_quiz,
 )
-from mongo import (
+from api.models import (
+    Question,
+    LoadDataRequest,
+    LoadWebDataRequest,
+    LoginModel,
+)
+from db.mongo import (
     QuestionModel,
     StudentModel,
     UpdateStudentModel,
@@ -148,10 +153,6 @@ async def root():
     return {"message": "Hello World"}
 
 jobs: Dict[UUID, Job] = {}
-
-class Question(BaseModel):
-    text: str
-    rag: bool | None = False 
 
 
 @app.post("/generate-task")
@@ -288,11 +289,6 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
-class LoadDataRequest(BaseModel):
-    tag: str
-
-class LoadWebDataRequest(BaseModel):
-    url: str
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
@@ -310,10 +306,6 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
     jobs[new_task.uid] = new_task
     background_tasks.add_task(load_web_data, jobs, new_task.uid, request.url, file_collection)
     return new_task
-
-class LoginModel(BaseModel):
-    email: str
-    password: str
 
 @app.post(
     "/login/",
