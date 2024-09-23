@@ -127,17 +127,6 @@ services:
       timeout: 3s
       retries: 5
 
-  # node:
-  #   build:
-  #     context: backend/sandbox
-  #     dockerfile: node.Dockerfile
-  #   networks:
-  #     - net
-  #   volumes:
-  #     - $PWD/data:/data/sandbox:/app
-  #   # Optionally, you can add a command to execute the test script directly.
-  #   # command: node test.js
-
   frontend:
     build:
       context: frontend
