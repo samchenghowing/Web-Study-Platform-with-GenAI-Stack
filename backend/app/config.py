@@ -12,3 +12,7 @@ class Settings(BaseSettings):
     embedding_model: str = Field('default_model', env='EMBEDDING_MODEL')
     llm: str = Field(..., env='LLM')
 
+
+class BaseLogger:
+    def __init__(self) -> None:
+        self.info = print

@@ -7,12 +7,8 @@ from queue import Queue, Empty
 from collections.abc import Generator
 from http import HTTPStatus
 
-from config import Settings
-from utils import (
-    create_constraints,
-    create_vector_index,
-    BaseLogger,
-)
+from config import Settings, BaseLogger
+
 from services.background_task import(
     Job,
     process_files,
@@ -44,6 +40,10 @@ from db.mongo import (
     ChatHistoryModelCollection,
     WebfileModelCollection,
     QuestionCollection,
+)
+from db.neo4j import (
+    create_constraints,
+    create_vector_index,
 )
 from fastapi import FastAPI
 from fastapi import Body, HTTPException

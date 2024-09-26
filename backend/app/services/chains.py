@@ -29,7 +29,7 @@ from langchain_community.document_loaders.mongodb import MongodbLoader
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any
-from utils import BaseLogger
+from config import BaseLogger
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
