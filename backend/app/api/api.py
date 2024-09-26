@@ -7,6 +7,7 @@ from queue import Queue, Empty
 from collections.abc import Generator
 from http import HTTPStatus
 
+from config import Settings
 from utils import (
     create_constraints,
     create_vector_index,
@@ -58,20 +59,13 @@ import motor.motor_asyncio
 from pymongo import ReturnDocument
 import bcrypt
 
-from dotenv import load_dotenv
-load_dotenv(".env")
 
-url = os.getenv("NEO4J_URI")
-username = os.getenv("NEO4J_USERNAME")
-password = os.getenv("NEO4J_PASSWORD")
-ollama_base_url = os.getenv("OLLAMA_BASE_URL")
-embedding_model_name = os.getenv("EMBEDDING_MODEL")
-llm_name = os.getenv("LLM")
+settings = Settings()
+
 # Remapping for Langchain Neo4j integration
-os.environ["NEO4J_URL"] = url
-CONN_STR = os.getenv("MONGODB_URI")
+os.environ["NEO4J_URL"] = settings.neo4j_uri
 DATABASE = "my_db"
-client = motor.motor_asyncio.AsyncIOMotorClient(CONN_STR)
+client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb_uri)
 db = client[DATABASE]
 student_collection = db.get_collection("students")
 file_collection = db.get_collection("files")
@@ -79,23 +73,23 @@ chat_history_collection = db.get_collection("chat_histories")
 questions_collection = db.get_collection("questions")
 
 embeddings, dimension = load_embedding_model(
-    embedding_model_name,
-    config={"ollama_base_url": ollama_base_url},
+    settings.embedding_model,
+    config={"ollama_base_url": settings.ollama_base_url},
     logger=BaseLogger(),
 )
 
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database
-neo4j_graph = Neo4jGraph(url=url, username=username, password=password)
+neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
 create_constraints(neo4j_graph)
 create_vector_index(neo4j_graph, dimension)
 
 llm = load_llm(
-    llm_name, logger=BaseLogger(), config={"ollama_base_url": ollama_base_url}
+    settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url}
 )
 
-llm_chain = configure_llm_only_chain(llm, CONN_STR, DATABASE, "chat_histories")
+llm_chain = configure_llm_only_chain(llm, settings.mongodb_uri, DATABASE, "chat_histories")
 rag_chain = configure_qa_rag_chain(
-    llm, CONN_STR, DATABASE, "chat_histories", embeddings, embeddings_store_url=url, username=username, password=password
+    llm, settings.mongodb_uri, DATABASE, "chat_histories", embeddings, embeddings_store_url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password
 )
 
 
@@ -169,7 +163,7 @@ async def generate_task_api(question: Question):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": llm_name, "token": ""})
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
             yield json.dumps({"token": token})
 
@@ -249,8 +243,8 @@ async def get_quiz(id: str):
 #testing use only
 @app.get("/summraize")
 def summraize_api():
-    chat_summraize = summarize_user(llm, CONN_STR, DATABASE, "chat_histories", "test_user")
-    # result = summarize_user(llm, CONN_STR, DATABASE, "students", "test_user")
+    chat_summraize = summarize_user(llm, settings.mongodb_uri, DATABASE, "chat_histories", "test_user")
+    # result = summarize_user(llm, settings.mongodb_uri, DATABASE, "students", "test_user")
     return chat_summraize
 
 @app.get("/toolstest")

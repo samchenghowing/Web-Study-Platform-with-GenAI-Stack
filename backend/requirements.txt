@@ -14,11 +14,11 @@ motor
 neo4j
 passlib[bcrypt]
 pydantic[email]
+pydantic-settings
 pyjwt
 python-multipart
 pymongo
 PyPDF2
-python-dotenv
 python-jose[cryptography]
 Requests
 typing_extensions
