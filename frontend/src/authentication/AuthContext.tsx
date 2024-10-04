@@ -2,6 +2,7 @@ import * as React from "react";
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface User {
+    avatarUrl: string | undefined;
     id: string;
     name: string;
     email: string;
@@ -30,7 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = (userData: any) => {
         setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        if (userData != null) localStorage.setItem('user', JSON.stringify(userData));
     };
 
     const logout = () => {

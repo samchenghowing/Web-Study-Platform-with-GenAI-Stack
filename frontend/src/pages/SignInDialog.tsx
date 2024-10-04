@@ -10,7 +10,7 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { useAuth } from '../../authentication/AuthContext';
+import { useAuth } from '../authentication/AuthContext';
 import { SxProps, Theme } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
 
@@ -66,14 +66,14 @@ export default function SignInDialog({ variant, size, sx }) {
         })
       });
 
+      const json = await response.json();
+      console.log(json);
+
       if (!response.ok) {
-        const json = await response.json();
         setErrorMessage(json.detail || 'Login failed');
         return;
       }
 
-      const json = await response.json();
-      console.log(json);
       login(json);
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);

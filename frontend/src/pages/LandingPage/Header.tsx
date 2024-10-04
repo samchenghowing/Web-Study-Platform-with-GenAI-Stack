@@ -12,8 +12,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from '../MainPage/ToggleColorMode';
-import SignInDialog from './SignInDialog';
-import SignUpDialog from './SignUpDialog';
+import SignInDialog from '../SignInDialog';
+import SignUpDialog from '../SignUpDialog';
 
 const logoStyle = {
   width: '140px',
