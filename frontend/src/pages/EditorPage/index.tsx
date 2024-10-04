@@ -28,7 +28,7 @@ export default function MainComponent() {
 	const [task, setTask] = React.useState<EditorDocType>({
 		jsDoc: 'console.log(\'You can learn anything\');',
 		htmlDoc: 'Hello world',
-		cssDoc: '',
+		cssDoc: 'h1 {color: black;text-align: center;}',
 	});
 	const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
 

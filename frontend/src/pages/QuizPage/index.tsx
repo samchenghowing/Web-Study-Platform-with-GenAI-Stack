@@ -4,13 +4,14 @@ import { useState } from 'react';
 import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
+import CodingQuestion from './CodingQuestion'
 import { Typography, Container, Button } from '@mui/material';
 import { Link } from 'react-router-dom'; // Import Link
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 
 // Define a type for the question types
-type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer';
+type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer' | 'coding';
 
 // Update the Question interface
 interface Question {
@@ -104,6 +105,12 @@ const QuizPage: React.FC = () => {
                     />
                 ) : currentQuestion.type === 'short-answer' ? (
                     <ShortAnswerQuestion
+                        question={currentQuestion.question}
+                        correctAnswer={currentQuestion.correctAnswer}
+                        onAnswer={handleAnswer}
+                    />
+                ) : currentQuestion.type === 'coding' ? (
+                    <CodingQuestion
                         question={currentQuestion.question}
                         correctAnswer={currentQuestion.correctAnswer}
                         onAnswer={handleAnswer}
