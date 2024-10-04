@@ -17,19 +17,6 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
     const { editorDoc, editorConfig, setEditorDoc } = props;
     const editorRef = React.useRef(null);
 
-    const getExtensions = React.useMemo(() => {
-        switch (editorConfig.language) {
-            case 'js':
-                return [javascript({ jsx: true })];
-            case 'html':
-                return [html()];
-            case 'css':
-                return [css()];
-            default:
-                return [];
-        }
-    }, [editorConfig.language]);
-
     const getValue = React.useMemo(() => {
         switch (editorConfig.language) {
             case 'js':
@@ -67,7 +54,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
         <CodeMirror
             ref={editorRef}
             value={getValue}
-            extensions={getExtensions}
+            extensions={[javascript({ jsx: true }), html(), css()]}
             onChange={handleChange}
             height="500px"
             theme={useTheme().palette.mode}
