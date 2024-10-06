@@ -13,6 +13,7 @@ langchain_huggingface
 motor
 neo4j
 passlib[bcrypt]
+pdf2image
 pydantic[email]
 pydantic-settings
 pyjwt

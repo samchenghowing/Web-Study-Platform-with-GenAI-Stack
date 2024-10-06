@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CircularProgress from '@mui/material/CircularProgress';
 
+const THUMBNAIL_API_ENDPOINT = "http://localhost:8504/thumbnail";
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 
@@ -26,8 +27,9 @@ export default function InputFileUpload() {
     const [progress, setProgress] = React.useState<string | null>(null);
     const [uploading, setUploading] = React.useState(false);
     const [checkingProgress, setCheckingProgress] = React.useState(false);
+    const [thumbnail, setThumbnail] = React.useState<string | null>(null);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
         if (fileList && fileList.length > 0) {
             const file = fileList[0];
@@ -41,6 +43,26 @@ export default function InputFileUpload() {
             }
             setFileSelected(file);
             setError(null);
+            await getThumbnail(file);
+        }
+    };
+
+    const getThumbnail = async (file: File) => {
+        const formData = new FormData();
+        formData.append("files", file, file.name);
+
+        try {
+            const response = await fetch(`${THUMBNAIL_API_ENDPOINT}/pdf`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!response.ok) throw new Error('Failed to upload file');
+            const blob = await response.blob();
+
+            const imageUrl = URL.createObjectURL(blob);
+            setThumbnail(imageUrl);
+        } catch (error) {
+            setError('Error uploading file');
         }
     };
 
@@ -118,6 +140,7 @@ export default function InputFileUpload() {
             </Button>
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {progress && <p>{progress}</p>}
+            {thumbnail && <img src={thumbnail} alt="PDF Thumbnail" />}
         </>
     );
 }

@@ -1,4 +1,5 @@
 import os
+import io
 import json
 from typing import Dict, List
 from uuid import UUID
@@ -45,9 +46,15 @@ from db.neo4j import (
     create_constraints,
     create_vector_index,
 )
-from fastapi import FastAPI
-from fastapi import Body, HTTPException
-from fastapi import BackgroundTasks, UploadFile, File
+from fastapi import (
+    FastAPI, 
+    Body, 
+    HTTPException, 
+    BackgroundTasks, 
+    UploadFile, 
+    File, 
+    WebSocket,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 
@@ -59,6 +66,7 @@ import motor.motor_asyncio
 from pymongo import ReturnDocument
 import bcrypt
 
+from pdf2image import convert_from_bytes
 
 settings = Settings()
 
@@ -195,13 +203,13 @@ async def get_quizs():
             correctAnswer="Blue",
             choices=["Start from suggested learning pattern", "Find my way"]
         ),
-        # QuestionModel(
-        #     id="3",
-        #     question="Which color is the sky?",
-        #     type="multiple-choice",
-        #     correctAnswer="Blue",
-        #     choices=["Red", "Green", "Blue", "Yellow"]
-        # ),
+        QuestionModel(
+            id="3",
+            question="How to print hello world?",
+            type="coding",
+            correctAnswer="Blue",
+            choices=["Red", "Green", "Blue", "Yellow"]
+        ),
         # QuestionModel(
         #     id="4",
         #     question="What is the color of the sun?",
@@ -283,6 +291,22 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
     return new_task
 
+@app.post("/thumbnail/pdf", status_code=HTTPStatus.ACCEPTED)
+async def thumbnail_pdf(files: List[UploadFile] = File(...)):
+    byte_files = await get_file_content(files)
+
+    try:
+        for filename, content in byte_files.items():
+            images = convert_from_bytes(content)
+            first_page_image = images[0]
+            img_byte_arr = io.BytesIO()
+            first_page_image.save(img_byte_arr, format="PNG")
+            img_byte_arr.seek(0)
+
+            return StreamingResponse(img_byte_arr, media_type="image/png")
+    except Exception as error:
+        return f"Creating thumbnail fails with error: {error}"
+    
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
