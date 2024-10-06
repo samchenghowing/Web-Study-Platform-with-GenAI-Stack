@@ -4,8 +4,8 @@ import { useState } from 'react';
 import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
-import CodingQuestion from './CodingQuestion'
-import { Typography, Container, Button } from '@mui/material';
+import CodingQuestion from './CodingQuestion';
+import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/material';
 import { Link } from 'react-router-dom'; // Import Link
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
@@ -90,32 +90,44 @@ const QuizPage: React.FC = () => {
             {questions.length === 0 ? (
                 <Typography variant="h6">Loading questions...</Typography>
             ) : currentQuestion ? (
-                currentQuestion.type === 'true-false' ? (
-                    <TrueFalseQuestion
-                        question={currentQuestion.question}
-                        correctAnswer={currentQuestion.correctAnswer}
-                        onAnswer={handleAnswer}
-                    />
-                ) : currentQuestion.type === 'multiple-choice' ? (
-                    <MultipleChoiceQuestion
-                        question={currentQuestion.question}
-                        choices={currentQuestion.choices || []} // Handle possible null
-                        correctAnswer={currentQuestion.correctAnswer}
-                        onAnswer={handleAnswer}
-                    />
-                ) : currentQuestion.type === 'short-answer' ? (
-                    <ShortAnswerQuestion
-                        question={currentQuestion.question}
-                        correctAnswer={currentQuestion.correctAnswer}
-                        onAnswer={handleAnswer}
-                    />
-                ) : currentQuestion.type === 'coding' ? (
-                    <CodingQuestion
-                        question={currentQuestion.question}
-                        correctAnswer={currentQuestion.correctAnswer}
-                        onAnswer={handleAnswer}
-                    />
-                ) : null
+                <>
+                    {/* Stepper Component */}
+                    <Stepper activeStep={currentQuestionIndex} alternativeLabel>
+                        {questions.map((_, index) => (
+                            <Step key={index}>
+                                <StepLabel>{`Question ${index + 1}`}</StepLabel>
+                            </Step>
+                        ))}
+                    </Stepper>
+
+                    {/* Question Rendering */}
+                    {currentQuestion.type === 'true-false' ? (
+                        <TrueFalseQuestion
+                            question={currentQuestion.question}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'multiple-choice' ? (
+                        <MultipleChoiceQuestion
+                            question={currentQuestion.question}
+                            choices={currentQuestion.choices || []} // Handle possible null
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'short-answer' ? (
+                        <ShortAnswerQuestion
+                            question={currentQuestion.question}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'coding' ? (
+                        <CodingQuestion
+                            question={currentQuestion.question}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : null}
+                </>
             ) : (
                 <Typography variant="h6">Error: No questions available.</Typography>
             )}
