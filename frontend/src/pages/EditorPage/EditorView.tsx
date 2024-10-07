@@ -5,6 +5,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
+import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { EditorConfigType, EditorDocType } from './utils';
 
 interface EditorViewProps {
@@ -57,7 +58,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
             extensions={[javascript({ jsx: true }), html(), css()]}
             onChange={handleChange}
             height="500px"
-            theme={useTheme().palette.mode}
+            theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
         />
     );
 }

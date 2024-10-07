@@ -51,7 +51,7 @@ export default function FileUploadAndDisplay() {
             if (Array.isArray(json)) {
                 setCardContent(json); // Ensure json is an array
             } else {
-                setError('Failed to fetch PDFs: Invalid response format.');
+                setError(json.detail);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
