@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     embedding_model: str = Field('default_model', env='EMBEDDING_MODEL')
     llm: str = Field(..., env='LLM')
 
+    mongodb_: str = Field(default='my_db')
+
 
 class BaseLogger:
     def __init__(self) -> None:

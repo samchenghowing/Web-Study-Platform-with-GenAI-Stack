@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CircularProgress from '@mui/material/CircularProgress';
 
-const THUMBNAIL_API_ENDPOINT = "http://localhost:8504/thumbnail";
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 
@@ -21,7 +20,6 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 export default function InputFileUpload() {
-    const [fileSelected, setFileSelected] = React.useState<File | null>(null);
     const [uploadTaskUID, setUploadTaskUID] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [progress, setProgress] = React.useState<string | null>(null);
@@ -41,47 +39,32 @@ export default function InputFileUpload() {
                 setError('File size exceeds 10MB limit.');
                 return;
             }
-            setFileSelected(file);
             setError(null);
-            await getThumbnail(file);
+            await uploadFile(file);
         }
     };
 
-    const getThumbnail = async (file: File) => {
-        const formData = new FormData();
-        formData.append("files", file, file.name);
-
-        try {
-            const response = await fetch(`${THUMBNAIL_API_ENDPOINT}/pdf`, {
-                method: "POST",
-                body: formData,
-            });
-            if (!response.ok) throw new Error('Failed to upload file');
-            const blob = await response.blob();
-
-            const imageUrl = URL.createObjectURL(blob);
-            setThumbnail(imageUrl);
-        } catch (error) {
-            setError('Error uploading file');
-        }
-    };
-
-    const uploadFile = async () => {
-        if (!fileSelected) return;
-
+    const uploadFile = async (file: File) => {
         setUploading(true);
         const formData = new FormData();
-        formData.append("files", fileSelected, fileSelected.name);
+        formData.append("files", file, file.name);
 
         try {
             const response = await fetch(`${FILEUPLOAD_API_ENDPOINT}/pdf`, {
                 method: "POST",
                 body: formData,
             });
-            if (!response.ok) throw new Error('Failed to upload file');
             const json = await response.json();
-            setUploadTaskUID(json.uid);
+            console.log(json);
+
+            // Set the upload task UID
+            setUploadTaskUID(json.task_id);
             setError(null);
+
+            // Assuming the thumbnail is part of the response
+            if (json.files && json.files.length > 0) {
+                setThumbnail(json.files[0].thumbnail);
+            }
         } catch (error) {
             setError(error.message);
         } finally {
@@ -115,20 +98,13 @@ export default function InputFileUpload() {
                 component="label"
                 variant="contained"
                 startIcon={<CloudUploadIcon />}
+                disabled={uploading}
             >
-                Select file to upload
+                {uploading ? <CircularProgress size={24} color="inherit" /> : 'Select file to Upload'}
                 <VisuallyHiddenInput
                     type="file"
                     onChange={handleFileChange}
                 />
-            </Button>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={uploadFile}
-                disabled={!fileSelected || uploading}
-            >
-                {uploading ? <CircularProgress size={24} color="inherit" /> : 'Upload'}
             </Button>
             <Button
                 variant="contained"
@@ -140,7 +116,12 @@ export default function InputFileUpload() {
             </Button>
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {progress && <p>{progress}</p>}
-            {thumbnail && <img src={thumbnail} alt="PDF Thumbnail" />}
+            {thumbnail && (
+                <div>
+                    <h3>Uploaded File Thumbnail</h3>
+                    <img src={thumbnail} alt="PDF Thumbnail" style={{ maxWidth: '100%', height: 'auto' }} />
+                </div>
+            )}
         </>
     );
 }

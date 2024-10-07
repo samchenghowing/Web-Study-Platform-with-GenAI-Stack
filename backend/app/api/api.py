@@ -1,22 +1,20 @@
 import os
 import io
 import json
+import base64
 from typing import Dict, List
 from uuid import UUID
-from threading import Thread
-from queue import Queue, Empty
-from collections.abc import Generator
 from http import HTTPStatus
-
+from queue import Queue
 from config import Settings, BaseLogger
 
 from services.background_task import(
     Job,
-    process_files,
+    Submission,
+    save_pdf_to_neo4j,
     load_so_data,
     load_web_data,
     verify_submission,
-    Submission,
 )
 from services.chains import (
     load_embedding_model,
@@ -32,6 +30,10 @@ from api.models import (
     LoadDataRequest,
     LoadWebDataRequest,
     LoginModel,
+)
+from api.utils import (
+    QueueCallback,
+    stream,
 )
 from db.mongo import (
     QuestionModel,
@@ -59,10 +61,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 
 from langchain_community.graphs import Neo4jGraph
-from langchain.callbacks.base import BaseCallbackHandler
 
 from bson import ObjectId
-import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pymongo import ReturnDocument
 import bcrypt
 
@@ -72,13 +73,15 @@ settings = Settings()
 
 # Remapping for Langchain Neo4j integration
 os.environ["NEO4J_URL"] = settings.neo4j_uri
-DATABASE = "my_db"
-client = motor.motor_asyncio.AsyncIOMotorClient(settings.mongodb_uri)
-db = client[DATABASE]
-student_collection = db.get_collection("students")
-file_collection = db.get_collection("files")
-chat_history_collection = db.get_collection("chat_histories")
-questions_collection = db.get_collection("questions")
+
+client = AsyncIOMotorClient(settings.mongodb_uri)
+student_collection = client[settings.mongodb_].get_collection("students")
+file_collection = client[settings.mongodb_].get_collection("files")
+chat_history_collection = client[settings.mongodb_].get_collection("chat_histories")
+questions_collection = client[settings.mongodb_].get_collection("questions")
+
+pdfdb = client.pdfUploads
+fs = AsyncIOMotorGridFSBucket(pdfdb)
 
 embeddings, dimension = load_embedding_model(
     settings.embedding_model,
@@ -95,47 +98,10 @@ llm = load_llm(
     settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url}
 )
 
-llm_chain = configure_llm_only_chain(llm, settings.mongodb_uri, DATABASE, "chat_histories")
+llm_chain = configure_llm_only_chain(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories")
 rag_chain = configure_qa_rag_chain(
-    llm, settings.mongodb_uri, DATABASE, "chat_histories", embeddings, embeddings_store_url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password
+    llm, settings.mongodb_uri, settings.mongodb_, "chat_histories", embeddings, embeddings_store_url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password
 )
-
-
-class QueueCallback(BaseCallbackHandler):
-    """Callback handler for streaming LLM responses to a queue."""
-
-    def __init__(self, q):
-        self.q = q
-
-    def on_llm_new_token(self, token: str, **kwargs) -> None:
-        self.q.put(token)
-
-    def on_llm_end(self, *args, **kwargs) -> None:
-        return self.q.empty()
-
-
-def stream(cb, q) -> Generator:
-    job_done = object()
-
-    def task():
-        x = cb()
-        q.put(job_done)
-
-    t = Thread(target=task)
-    t.start()
-
-    content = ""
-
-    # Get each new token from the queue and yield for our generator
-    while True:
-        try:
-            next_token = q.get(True, timeout=1)
-            if next_token is job_done:
-                break
-            content += next_token
-            yield next_token, content
-        except Empty:
-            continue
 
 
 app = FastAPI()
@@ -251,8 +217,8 @@ async def get_quiz(id: str):
 #testing use only
 @app.get("/summraize")
 def summraize_api():
-    chat_summraize = summarize_user(llm, settings.mongodb_uri, DATABASE, "chat_histories", "test_user")
-    # result = summarize_user(llm, settings.mongodb_uri, DATABASE, "students", "test_user")
+    chat_summraize = summarize_user(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories", "test_user")
+    # result = summarize_user(llm, settings.mongodb_uri, settings.mongodb_, "students", "test_user")
     return chat_summraize
 
 @app.get("/toolstest")
@@ -288,25 +254,37 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     new_task = Job()
     jobs[new_task.uid] = new_task
     byte_files = await get_file_content(files)
-    background_tasks.add_task(process_files, jobs, new_task.uid, byte_files)
-    return new_task
-
-@app.post("/thumbnail/pdf", status_code=HTTPStatus.ACCEPTED)
-async def thumbnail_pdf(files: List[UploadFile] = File(...)):
-    byte_files = await get_file_content(files)
 
     try:
+        response_data = []
         for filename, content in byte_files.items():
+            # Store the PDF in GridFS
+            file_id = await fs.upload_from_stream(
+                        filename,
+                        content,
+                        metadata={"contentType": "pdf"})
+
+            # Generate thumbnail image from the first page
             images = convert_from_bytes(content)
             first_page_image = images[0]
             img_byte_arr = io.BytesIO()
             first_page_image.save(img_byte_arr, format="PNG")
             img_byte_arr.seek(0)
 
-            return StreamingResponse(img_byte_arr, media_type="image/png")
+            # Convert image to base64
+            img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+            
+            response_data.append({
+                "filename": filename,
+                "file_id": str(file_id),
+                "thumbnail": f"data:image/png;base64,{img_base64}"
+            })
+
+        background_tasks.add_task(save_pdf_to_neo4j, jobs, new_task.uid, byte_files)
+        return {"task_id": new_task.uid, "files": response_data}
     except Exception as error:
-        return f"Creating thumbnail fails with error: {error}"
-    
+        return f"Saving pdf fails with error: {error}"
+
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)

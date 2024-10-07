@@ -65,13 +65,9 @@ services:
 
   mongo:
     restart: always
-    image: mongo:4.2.0
+    image: mongo:latest
     volumes:
       - $PWD/data:/data/mongodb
-    # TODO: add authentication 
-    # environment:
-    #   - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_USERNAME-mongodb}
-    #   - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD-password}
     networks:
       - net
     expose:

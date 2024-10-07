@@ -15,7 +15,7 @@ client = docker.from_env()
 from services.chains import (
     load_embedding_model,
 )
-from config import BaseLogger
+from config import Settings, BaseLogger
 
 from langchain_community.vectorstores import Neo4jVector
 from langchain_community.graphs import Neo4jGraph
@@ -24,25 +24,18 @@ from langchain_community.document_loaders.recursive_url_loader import RecursiveU
 
 from PyPDF2 import PdfReader
 
-from dotenv import load_dotenv
-load_dotenv(".env")
+settings = Settings()
 
-url = os.getenv("NEO4J_URI")
-username = os.getenv("NEO4J_USERNAME")
-password = os.getenv("NEO4J_PASSWORD")
-ollama_base_url = os.getenv("OLLAMA_BASE_URL")
-embedding_model_name = os.getenv("EMBEDDING_MODEL")
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database
-neo4j_graph = Neo4jGraph(url=url, username=username, password=password)
+neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
 
 SO_API_BASE_URL = "https://api.stackexchange.com/2.3/search/advanced"
 
 embeddings, dimension = load_embedding_model(
-    embedding_model_name,
-    config={"ollama_base_url": ollama_base_url},
+    settings.embedding_model,
+    config={"ollama_base_url": settings.ollama_base_url},
     logger=BaseLogger(),
 )
-
 
 class Job(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
@@ -56,7 +49,7 @@ class Submission(BaseModel):
 
 
 # Background task for PDF processing
-def process_files(jobs: dict, task_id: UUID, byte_files: List[dict]):
+def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict]):
     for filename, content in byte_files.items():
         try:
             # Create a file-like object from the content
@@ -76,7 +69,7 @@ def process_files(jobs: dict, task_id: UUID, byte_files: List[dict]):
             # Store the chunks part in db (vector)
             Neo4jVector.from_texts(
                 chunks,
-                url=url,
+                url=settings.neo4j_uri,
                 username=username,
                 password=password,
                 embedding=embeddings,
