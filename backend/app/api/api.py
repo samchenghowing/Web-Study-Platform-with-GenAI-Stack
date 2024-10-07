@@ -299,14 +299,15 @@ async def list_pdfs():
     response_data = []
 
     async for thumbnail in thumbnails_collection.find():
+        pdf_file_id = thumbnail['file_id']
         filename = thumbnail['filename']
         img_base64 = thumbnail['thumbnail']
 
-        # pdf_file_id = thumbnail['file_id']
         # pdf_data = await fs.download_to_stream(pdf_file_id, io.BytesIO())        
         # pdf_base64 = base64.b64encode(pdf_data.getvalue()).decode('utf-8')
         
         response_data.append({
+            "file_id": str(pdf_file_id),
             "filename": filename,
             "thumbnail": f"data:image/png;base64,{img_base64}",
             # "pdf_data": f"data:application/pdf;base64,{pdf_base64}"
@@ -489,6 +490,18 @@ async def delete_chat_histories(SessionId: str):
         return Response(status_code=HTTPStatus.OK)
 
     raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
+
+@app.delete("/pdfs/{id}", response_description="Delete a pdf in database")
+async def delete_pdf(id: str):
+    """
+    Remove a pdf with given id from the database.
+    """
+    delete_result = await thumbnails_collection.delete_one({"file_id": id})
+
+    if delete_result.deleted_count > 0:
+        return Response(status_code=HTTPStatus.OK)
+
+    raise HTTPException(status_code=404, detail=f"id {id} not found")
 
 
 @app.get(

@@ -13,6 +13,7 @@ import Grid from '@mui/material/Grid';
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
 const PDF_SUMMARY_API_ENDPOINT = 'http://localhost:8504/pdfs';
+const PDF_DELETE_API_ENDPOINT = 'http://localhost:8504/pdfs';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -27,6 +28,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 interface PDFData {
+    file_id: string;
     filename: string;
     thumbnail: string;
 }
@@ -121,6 +123,20 @@ export default function FileUploadAndDisplay() {
         }
     };
 
+    const deletePDF = async (file_id: string) => {
+        if (!window.confirm('Are you sure you want to delete this PDF?')) return;
+
+        try {
+            const response = await fetch(`${PDF_DELETE_API_ENDPOINT}/${file_id}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) throw new Error('Failed to delete PDF');
+            fetchPDFs(); // Refresh the list after deletion
+        } catch (error) {
+            setError(error.message);
+        }
+    };
+
     return (
         <>
             <Button
@@ -161,6 +177,7 @@ export default function FileUploadAndDisplay() {
                                 </Typography>
                             </CardContent>
                             <CardActions>
+                                <Button size="small" onClick={() => deletePDF(pdf.file_id)}>Delete</Button>
                                 <Button size="small">Share</Button>
                                 <Button size="small">Learn More</Button>
                             </CardActions>
