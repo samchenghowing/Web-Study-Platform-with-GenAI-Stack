@@ -70,8 +70,8 @@ def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict]):
             Neo4jVector.from_texts(
                 chunks,
                 url=settings.neo4j_uri,
-                username=username,
-                password=password,
+                username=settings.neo4j_username,
+                password=settings.neo4j_password,
                 embedding=embeddings,
                 index_name="pdf_bot",
                 node_label="PdfBotChunk",

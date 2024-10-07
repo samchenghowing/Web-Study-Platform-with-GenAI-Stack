@@ -34,7 +34,7 @@ from config import BaseLogger
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     if embedding_model_name == "ollama":
         embeddings = OllamaEmbeddings(
-            base_url=config["ollama_base_url"], model="gemma2:2b"
+            base_url=config["ollama_base_url"], model="llama3.1"
         )
         dimension = 2304
         logger.info("Embedding: Using Ollama")
