@@ -3,9 +3,16 @@ import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CircularProgress from '@mui/material/CircularProgress';
+import Card from '@mui/material/Card';
+import CardActions from '@mui/material/CardActions';
+import CardContent from '@mui/material/CardContent';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import Grid from '@mui/material/Grid';
 
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
+const PDF_SUMMARY_API_ENDPOINT = 'http://localhost:8504/pdfs';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -19,13 +26,42 @@ const VisuallyHiddenInput = styled('input')({
     width: 1,
 });
 
-export default function InputFileUpload() {
+interface PDFData {
+    filename: string;
+    thumbnail: string;
+}
+
+export default function FileUploadAndDisplay() {
     const [uploadTaskUID, setUploadTaskUID] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [progress, setProgress] = React.useState<string | null>(null);
     const [uploading, setUploading] = React.useState(false);
     const [checkingProgress, setCheckingProgress] = React.useState(false);
-    const [thumbnail, setThumbnail] = React.useState<string | null>(null);
+    const [cardContent, setCardContent] = React.useState<PDFData[]>([]); // Initialize as an array
+
+    const fetchPDFs = async () => {
+        const abortController = new AbortController();
+        try {
+            const response = await fetch(PDF_SUMMARY_API_ENDPOINT, {
+                signal: abortController.signal
+            });
+            const json = await response.json();
+            if (Array.isArray(json)) {
+                setCardContent(json); // Ensure json is an array
+            } else {
+                setError('Failed to fetch PDFs: Invalid response format.');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error(error);
+            }
+        }
+        return () => abortController.abort();
+    };
+
+    React.useEffect(() => {
+        fetchPDFs();
+    }, []);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
@@ -55,16 +91,9 @@ export default function InputFileUpload() {
                 body: formData,
             });
             const json = await response.json();
-            console.log(json);
-
-            // Set the upload task UID
             setUploadTaskUID(json.task_id);
             setError(null);
-
-            // Assuming the thumbnail is part of the response
-            if (json.files && json.files.length > 0) {
-                setThumbnail(json.files[0].thumbnail);
-            }
+            fetchPDFs(); // Refresh the list after upload
         } catch (error) {
             setError(error.message);
         } finally {
@@ -116,12 +145,29 @@ export default function InputFileUpload() {
             </Button>
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {progress && <p>{progress}</p>}
-            {thumbnail && (
-                <div>
-                    <h3>Uploaded File Thumbnail</h3>
-                    <img src={thumbnail} alt="PDF Thumbnail" style={{ maxWidth: '100%', height: 'auto' }} />
-                </div>
-            )}
+            <Grid container spacing={2}>
+                {cardContent.map((pdf, index) => (
+                    <Grid item xs={12} sm={6} md={4} key={index}>
+                        <Card sx={{ maxWidth: 345 }}>
+                            <CardMedia
+                                component="img"
+                                alt={pdf.filename}
+                                height="140"
+                                image={pdf.thumbnail}
+                            />
+                            <CardContent>
+                                <Typography gutterBottom variant="h5" component="div">
+                                    {pdf.filename}
+                                </Typography>
+                            </CardContent>
+                            <CardActions>
+                                <Button size="small">Share</Button>
+                                <Button size="small">Learn More</Button>
+                            </CardActions>
+                        </Card>
+                    </Grid>
+                ))}
+            </Grid>
         </>
     );
 }

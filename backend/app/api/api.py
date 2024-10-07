@@ -79,6 +79,7 @@ student_collection = client[settings.mongodb_].get_collection("students")
 file_collection = client[settings.mongodb_].get_collection("files")
 chat_history_collection = client[settings.mongodb_].get_collection("chat_histories")
 questions_collection = client[settings.mongodb_].get_collection("questions")
+thumbnails_collection = client[settings.mongodb_].get_collection("thumbnails")
 
 pdfdb = client.pdfUploads
 fs = AsyncIOMotorGridFSBucket(pdfdb)
@@ -274,9 +275,17 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
             # Convert image to base64
             img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
             
-            response_data.append({
-                "filename": filename,
+            # Store thumbnail in MongoDB
+            thumbnail_data = {
                 "file_id": str(file_id),
+                "filename": filename,
+                "thumbnail": img_base64
+            }
+            await thumbnails_collection.insert_one(thumbnail_data)
+
+            response_data.append({
+                "file_id": str(file_id),
+                "filename": filename,
                 "thumbnail": f"data:image/png;base64,{img_base64}"
             })
 
@@ -285,6 +294,28 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     except Exception as error:
         return f"Saving pdf fails with error: {error}"
 
+@app.get("/pdfs", status_code=HTTPStatus.ACCEPTED)
+async def list_pdfs():
+    response_data = []
+
+    async for thumbnail in thumbnails_collection.find():
+        filename = thumbnail['filename']
+        img_base64 = thumbnail['thumbnail']
+
+        # pdf_file_id = thumbnail['file_id']
+        # pdf_data = await fs.download_to_stream(pdf_file_id, io.BytesIO())        
+        # pdf_base64 = base64.b64encode(pdf_data.getvalue()).decode('utf-8')
+        
+        response_data.append({
+            "filename": filename,
+            "thumbnail": f"data:image/png;base64,{img_base64}",
+            # "pdf_data": f"data:application/pdf;base64,{pdf_base64}"
+        })
+
+    if not response_data:
+        raise HTTPException(status_code=404, detail="No thumbnails or PDFs found.")
+
+    return response_data
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
