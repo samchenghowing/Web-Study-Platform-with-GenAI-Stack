@@ -6,10 +6,7 @@ langchain_community
 langchain_core
 langgraph
 langchain-ollama
-langchain_google_genai
 langchain_mongodb
-langchain_openai
-langchain_huggingface
 motor
 neo4j
 passlib[bcrypt]
