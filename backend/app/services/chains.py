@@ -1,6 +1,4 @@
-from langchain_community.embeddings import OllamaEmbeddings
-
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
 
 from langchain_community.vectorstores import Neo4jVector
 
@@ -27,7 +25,8 @@ from config import BaseLogger
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     embeddings = OllamaEmbeddings(
-        base_url=config["ollama_base_url"], model=embedding_model_name
+        base_url=config["ollama_base_url"], 
+        model=embedding_model_name,
     )
     dimension = 2304
     logger.info("Embedding: Using ", embedding_model_name)
@@ -300,7 +299,7 @@ def generate_quiz(user_summary, llm):
         choices: Optional[List[str]] = Field(default=None)
 
         class Config:
-            allow_population_by_field_name = True
+            populate_by_name = True
             arbitrary_types_allowed = True
 
     llm.bind_tools([MCQ])

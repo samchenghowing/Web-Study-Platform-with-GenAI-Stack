@@ -33,7 +33,8 @@ services:
       dockerfile: pull_model.Dockerfile
     environment:
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-      - LLM=${LLM-llama2}
+      - LLM=${LLM-llama3.1}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL-nomic-embed-text}
     networks:
       - net
     tty: true
@@ -88,8 +89,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL-http://host.docker.internal:11434}
-      - LLM=${LLM-llama2}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL-sentence_transformer}
+      - LLM=${LLM-llama3.1}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL-nomic-embed-text}
       - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT-"https://api.smith.langchain.com"}
       - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2-false}
       - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT}

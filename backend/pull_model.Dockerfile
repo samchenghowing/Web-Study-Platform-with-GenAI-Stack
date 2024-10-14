@@ -13,8 +13,10 @@ COPY <<EOF pull_model.clj
 
 (try
   (let [llm (get (System/getenv) "LLM")
+        embedding_model (get (System/getenv) "EMBEDDING_MODEL")
         url (get (System/getenv) "OLLAMA_BASE_URL")]
-    (println (format "pulling ollama model %s using %s" llm url))
+    (println "Environment Variables:" (System/getenv))
+    (println (format "pulling ollama model %s, embedding model %s using %s" llm embedding_model url))
     (if (and llm url (not (#{"gpt-4" "gpt-3.5" "claudev2"} llm)))
 
       ;; ----------------------------------------------------------------------
@@ -27,6 +29,7 @@ COPY <<EOF pull_model.clj
           (let [[v _] (async/alts! [done (async/timeout 5000)])]
             (if (= :stop v) :stopped (do (println (format "... pulling model (%ss) - will take several minutes" (* n 10))) (recur (inc n))))))
         (process/shell {:env {"OLLAMA_HOST" url "HOME" (System/getProperty "user.home")} :out :inherit :err :inherit} (format "bash -c './bin/ollama show %s --modelfile > /dev/null || ./bin/ollama pull %s'" llm llm))
+        (process/shell {:env {"OLLAMA_HOST" url "HOME" (System/getProperty "user.home")} :out :inherit :err :inherit} (format "bash -c './bin/ollama show %s --modelfile > /dev/null || ./bin/ollama pull %s'" embedding_model embedding_model))
         (async/>!! done :stop))
 
       (println "OLLAMA model only pulled if both LLM and OLLAMA_BASE_URL are set and the LLM model is not gpt")))

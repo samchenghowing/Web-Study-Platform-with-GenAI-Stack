@@ -6,28 +6,22 @@
 Create a `.env` file from the environment template file `env.example`
 
 Available variables:
-| Variable Name          | Default value                      | Description                                                             |
-|------------------------|------------------------------------|-------------------------------------------------------------------------|
-| OLLAMA_BASE_URL        | http://host.docker.internal:11434  | REQUIRED - URL to Ollama LLM API                                        |   
-| NEO4J_URI              | neo4j://neo4j-database:7687        | REQUIRED - URL to Neo4j database                                        |
-| NEO4J_USERNAME         | neo4j                              | REQUIRED - Username for Neo4j database                                  |
-| NEO4J_PASSWORD         | password                           | REQUIRED - Password for Neo4j database                                  |
-| MONGODB_URI            | mongodb://mongo:27017              | REQUIRED - URL to Mongo database                                        |
-| LLM                    | llama2                             | REQUIRED - Can be any Ollama model tag, or gpt-4 or gpt-3.5 or claudev2 |
-| EMBEDDING_MODEL        | sentence_transformer               | REQUIRED - Can be sentence_transformer, openai, aws, ollama or google-genai-embedding-001|
-| AWS_ACCESS_KEY_ID      |                                    | REQUIRED - Only if LLM=claudev2 or embedding_model=aws                  |
-| AWS_SECRET_ACCESS_KEY  |                                    | REQUIRED - Only if LLM=claudev2 or embedding_model=aws                  |
-| AWS_DEFAULT_REGION     |                                    | REQUIRED - Only if LLM=claudev2 or embedding_model=aws                  |
-| OPENAI_API_KEY         |                                    | REQUIRED - Only if LLM=gpt-4 or LLM=gpt-3.5 or embedding_model=openai   |
-| GOOGLE_API_KEY         |                                    | REQUIRED - Only required when using GoogleGenai LLM or embedding model google-genai-embedding-001|
-| LANGCHAIN_ENDPOINT     | "https://api.smith.langchain.com"  | OPTIONAL - URL to Langchain Smith API                                   |
-| LANGCHAIN_TRACING_V2   | false                              | OPTIONAL - Enable Langchain tracing v2                                  |
-| LANGCHAIN_PROJECT      |                                    | OPTIONAL - Langchain project name                                       |
-| LANGCHAIN_API_KEY      |                                    | OPTIONAL - Langchain API key                                            |
+| Variable Name          | Default value                        | Description                                                             |
+|------------------------|--------------------------------------|-------------------------------------------------------------------------|
+| OLLAMA_BASE_URL        | http://host.docker.internal:11434    | REQUIRED - URL to Ollama LLM API                                        |   
+| NEO4J_URI              | neo4j://neo4j-database:7687          | REQUIRED - URL to Neo4j database                                        |
+| NEO4J_USERNAME         | neo4j                                | REQUIRED - Username for Neo4j database                                  |
+| NEO4J_PASSWORD         | password                             | REQUIRED - Password for Neo4j database                                  |
+| MONGODB_URI            | mongodb://mongo:27017                | REQUIRED - URL to Mongo database                                        |
+| LLM                    | llama3.1                             | REQUIRED - Can be any Ollama model tag |
+| EMBEDDING_MODEL        | nomic-embed-text                     | REQUIRED - Can be nomic-embed-text, or any Ollama model tag |
+| LANGCHAIN_ENDPOINT     | "https://api.smith.langchain.com"    | OPTIONAL - URL to Langchain Smith API                                   |
+| LANGCHAIN_TRACING_V2   | false                                | OPTIONAL - Enable Langchain tracing v2                                  |
+| LANGCHAIN_PROJECT      |                                      | OPTIONAL - Langchain project name                                       |
+| LANGCHAIN_API_KEY      |                                      | OPTIONAL - Langchain API key                                            |
 
 ## LLM Configuration
 MacOS and Linux users can use any LLM that's available via Ollama. Check the "tags" section under the model page you want to use on https://ollama.ai/library and write the tag for the value of the environment variable `LLM=` in the `.env` file.
-All platforms can use GPT-3.5-turbo and GPT-4 (bring your own API keys for OpenAI models).
 
 **MacOS**
 Install [Ollama](https://ollama.ai) on MacOS and start it before running `docker compose up` using `ollama serve` in a separate terminal.
@@ -44,7 +38,8 @@ To use the AMD GPU profile: run `docker compose --profile linux-amd up`. Also ch
 **Windows**
 Ollama now supports Windows. However, running inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) is prefered and you can follow the exact same guide as above. 
 
-If you still prefer running in Windows, install [Ollama](https://ollama.ai) on Windows and start it before running `docker compose up` using `ollama serve` in a separate terminal. Alternatively, Windows users can generate an OpenAI API key and configure the stack to use `gpt-3.5` or `gpt-4` in the `.env` file.
+If you still prefer running in Windows, install [Ollama](https://ollama.ai) on Windows and start it before running `docker compose up` using `ollama serve` in a separate terminal. 
+
 # Develop
 
 > [!WARNING]
@@ -101,7 +96,7 @@ its contents and have the LLM answer them using vector similarity
 search.
 
 ### - Quiz (TODO: Backend)
-- Let user take quiz in frontend, save result in mongo db
+- Let user take quiz in frontend, save result in mongo db, then analysis the result with neo4j
 - Analyze the result and suggest relavent tasks for user
 
 ### - Loader
@@ -144,7 +139,6 @@ The auto-reload on changes are instant using the Docker watch `sync` config.
 - [LangChain](https://python.langchain.com/v0.2/docs/introduction/)
 - [Neo4j](https://neo4j.com/docs/getting-started/introduction/)
 - [Ollama](https://ollama.ai)
-- [gemma2:2b](https://developers.googleblog.com/en/smaller-safer-more-transparent-advancing-responsible-ai-with-gemma/)
 - [llama3.1](https://ai.meta.com/blog/meta-llama-3-1/)
 - [Error when runnig some llm inside container](https://github.com/docker/genai-stack/issues/170)
 

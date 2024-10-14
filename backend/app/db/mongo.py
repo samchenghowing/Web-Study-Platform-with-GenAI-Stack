@@ -20,7 +20,7 @@ class QuestionModel(BaseModel):
     choices: Optional[List[str]] = Field(default=None)
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         arbitrary_types_allowed = True
 
 
@@ -41,7 +41,7 @@ class AnswerModel(BaseModel):
     timestamp: str = Field(...)    # When the answer was submitted
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         arbitrary_types_allowed = True
 
 
@@ -60,7 +60,7 @@ class StudentModel(BaseModel):
     answers: Optional[List[AnswerModel]] = Field(default=None)  # Embedded answers
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         arbitrary_types_allowed = True
 
 
