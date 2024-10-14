@@ -1,0 +1,31 @@
+[
+    {
+        "id": "1",
+        "question": "How much web development do you know?",
+        "type": "multiple-choice",
+        "correctAnswer": "Blue",
+        "choices": [
+            "I am a beginner",
+            "I know some basic",
+            "I have tried web editing",
+            "I can discuss advance topic"
+        ]
+    },
+    {
+        "id": "2",
+        "question": "What do you prefer to learn?",
+        "type": "multiple-choice",
+        "correctAnswer": "Blue",
+        "choices": [
+            "Start from suggested learning pattern",
+            "Find my way"
+        ]
+    },
+    {
+        "id": "3",
+        "question": "How to print hello world?",
+        "type": "coding",
+        "correctAnswer": "console.log('hello world!');",
+        "choices": []
+    }
+]

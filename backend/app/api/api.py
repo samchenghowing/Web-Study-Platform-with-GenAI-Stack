@@ -155,36 +155,18 @@ async def get_quizs():
     """
     Get the quiz.
     """
-    fake_questions = [
-        QuestionModel(
-            id="1",
-            question="How much web development do you know?",
-            type="multiple-choice",
-            correctAnswer="Blue",
-            choices=["I am a beginner", "I know some basic", "I have tried web editing", "I can discuss advance topic"]
-        ),
-        QuestionModel(
-            id="2",
-            question="What do you prefer to learn",
-            type="multiple-choice",
-            correctAnswer="Blue",
-            choices=["Start from suggested learning pattern", "Find my way"]
-        ),
-        QuestionModel(
-            id="3",
-            question="How to print hello world?",
-            type="coding",
-            correctAnswer="Blue",
-            choices=["Red", "Green", "Blue", "Yellow"]
-        ),
-        # QuestionModel(
-        #     id="4",
-        #     question="What is the color of the sun?",
-        #     type="short-answer",
-        #     correctAnswer="Yellow"
-        # )
-    ]
-    return QuestionCollection(questions=fake_questions)
+    def load_questions_from_file(file_path: str):
+        with open(file_path, 'r') as file:
+            questions = json.load(file)
+        return questions
+    
+    questions_file_path = './api/landing_questions.json'
+    try:
+        fake_questions = load_questions_from_file(questions_file_path)
+        question_models = [QuestionModel(**q) for q in fake_questions]
+        return QuestionCollection(questions=question_models)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading questions: {str(e)}")
 
 
 @app.get(
