@@ -1,6 +1,7 @@
 beautifulsoup4
 docker
 fastapi
+jinja2
 langchain
 langchain_community
 langchain_core

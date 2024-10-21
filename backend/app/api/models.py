@@ -13,3 +13,8 @@ class LoadWebDataRequest(BaseModel):
 class LoginModel(BaseModel):
     email: str
     password: str
+
+class Quiz_submission(BaseModel):
+    user: str
+    question: str
+    answer: str # user's answer (need to check and provide feedback to user)

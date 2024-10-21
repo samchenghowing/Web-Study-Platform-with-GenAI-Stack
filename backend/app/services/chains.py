@@ -228,6 +228,33 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     )
     return llm_response
 
+def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
+    gen_system_template = f"""
+    You're a programming teacher and you have created below question for student. 
+    {task}
+    Your evulation should only follow the scope of your question.
+    You must not include response which does not in the scope of your question.
+
+    Your coding hints should include all the original code from student.
+    """
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        gen_system_template, template_format="jinja2"
+    )
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_prompt,
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template("{question}"),
+        ]
+    )
+    llm_response = llm_chain(
+        user_id=user_id,
+        question=answer, # student's answer send to llm
+        callbacks=callbacks,
+        prompt=chat_prompt,
+    )
+    return llm_response
+
 def summarize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
     # https://www.reddit.com/r/ChatGPT/comments/11twe7z/prompt_to_summarize/
     # PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents

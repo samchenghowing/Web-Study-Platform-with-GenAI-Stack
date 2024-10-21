@@ -33,11 +33,12 @@ const QuizPage: React.FC = () => {
     // (Create question by textbook content, then verify and save it to db)
     React.useEffect(() => {
         const abortController = new AbortController();
+        // TODO if user is not new, fetch his questions
+        // const response = await fetch(`${QUIZ_API_ENDPOINT}/${userID}`, {
+
         const fetchQuestions = async () => {
             try {
-                // TODO
-                // const response = await fetch(`${QUIZ_API_ENDPOINT}/${userID}`, {
-                const response = await fetch(`${QUIZ_API_ENDPOINT}`, {
+                const response = await fetch(`${QUIZ_API_ENDPOINT}/landing`, {
                     signal: abortController.signal
                 });
                 const json = await response.json();
@@ -123,7 +124,7 @@ const QuizPage: React.FC = () => {
                     ) : currentQuestion.type === 'coding' ? (
                         <CodingQuestion
                             question={currentQuestion.question}
-                            correctAnswer={currentQuestion.correctAnswer}
+                            codeEval={currentQuestion.correctAnswer}
                             onAnswer={handleAnswer}
                         />
                     ) : null}

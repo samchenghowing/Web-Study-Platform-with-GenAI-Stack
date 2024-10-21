@@ -13,6 +13,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 
 const CHAT_API_ENDPOINT = 'http://localhost:8504/query-stream';
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
@@ -57,6 +58,36 @@ function InfoCard({ data, AIChatprops }) {
                 </CardActions>
             )}
         </StyledCard>
+    );
+}
+
+function ChatInput({ userQuestion, setUserQuestion, handleChat }) {
+    return (
+        <Box sx={{ mt: 2 }}>
+            <TextField
+                fullWidth
+                multiline
+                id='user-prompt'
+                placeholder='How to print hello world in javascript?'
+                value={userQuestion}
+                onChange={e => setUserQuestion(e.target.value)}
+                onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleChat();
+                    }
+                }}
+                InputProps={{
+                    endAdornment: (
+                        <InputAdornment position='end'>
+                            <IconButton edge='end' color='primary' onClick={handleChat}>
+                                <SendIcon />
+                            </IconButton>
+                        </InputAdornment>
+                    ),
+                }}
+            />
+        </Box>
     );
 }
 
@@ -197,33 +228,20 @@ export default function AIChat(props: AIChatProps) {
     }, [cardContent]);
 
     return (
-        <BackgroundPaper ref={cardRef} sx={{ maxHeight: 500, minHeight: 500, overflow: 'auto' }}>
-            {cardContent.map(data => (
-                <InfoCard key={data.id} data={data} AIChatprops={props} />
-            ))}
-            <TextField
-                fullWidth
-                multiline
-                id='user-prompt'
-                placeholder='How to print hello world in javascript?'
-                value={userQuestion}
-                onChange={e => setUserQuestion(e.target.value)}
-                onKeyDown={e => {
-                    if (e.key === 'Enter') handleChat();
-                }}
-                InputProps={{
-                    endAdornment: (
-                        <InputAdornment position='end'>
-                            <IconButton edge='end' color='primary' onClick={handleChat}>
-                                <SendIcon />
-                            </IconButton>
-                        </InputAdornment>
-                    ),
-                }}
+        <Box>
+            <BackgroundPaper ref={cardRef} sx={{ maxHeight: 500, minHeight: 500, overflow: 'auto' }}>
+                {cardContent.map(data => (
+                    <InfoCard key={data.id} data={data} AIChatprops={props} />
+                ))}
+            </BackgroundPaper>
+            <ChatInput
+                userQuestion={userQuestion}
+                setUserQuestion={setUserQuestion}
+                handleChat={handleChat}
             />
-            <Button size='large' onClick={() => deleteChatHistory('test_user')}>
+            <Button size='large' onClick={() => deleteChatHistory('test_user')} sx={{ mt: 2 }}>
                 Delete Chat History
             </Button>
-        </BackgroundPaper>
+        </Box>
     );
 }

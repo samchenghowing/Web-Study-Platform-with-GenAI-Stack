@@ -22,15 +22,11 @@ from services.chains import (
     configure_llm_only_chain,
     configure_qa_rag_chain,
     generate_task,
+    check_quiz_correctness,
     summarize_user,
     generate_quiz,
 )
-from api.models import (
-    Question,
-    LoadDataRequest,
-    LoadWebDataRequest,
-    LoginModel,
-)
+from api.models import *
 from api.utils import (
     QueueCallback,
     stream,
@@ -146,12 +142,12 @@ async def generate_task_api(question: Question):
 
 
 @app.get(
-    "/quiz",
-    response_description="Get quiz (Fake)",
+    "/quiz/landing",
+    response_description="Get landing quiz",
     response_model=QuestionCollection,
     response_model_by_alias=False,
 )
-async def get_quizs():
+async def get_landing_quiz():
     """
     Get the quiz.
     """
@@ -167,6 +163,28 @@ async def get_quizs():
         return QuestionCollection(questions=question_models)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading questions: {str(e)}")
+
+@app.post("/submit/quiz")
+async def submit_quiz(task: Quiz_submission):
+    # TODO: first, response where the user is correct or wrong, then save the result to neo4j/ mongo
+
+    q = Queue()
+
+    def cb():
+        check_quiz_correctness(
+            user_id=task.user,
+            llm_chain=llm_chain,
+            task=task.question,
+            answer=task.answer,
+            callbacks=[QueueCallback(q)],
+        )
+
+    def generate():
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+
+    return StreamingResponse(generate(), media_type="application/json")
 
 
 @app.get(
