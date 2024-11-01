@@ -27,11 +27,11 @@ from PyPDF2 import PdfReader
 settings = Settings()
 
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database
-neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
+neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, refresh_schema=False)
 
 SO_API_BASE_URL = "https://api.stackexchange.com/2.3/search/advanced"
 
-embeddings, dimension = load_embedding_model(
+embeddings = load_embedding_model(
     settings.embedding_model,
     config={"ollama_base_url": settings.ollama_base_url},
     logger=BaseLogger(),

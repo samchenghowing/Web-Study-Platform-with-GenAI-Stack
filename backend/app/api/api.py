@@ -80,16 +80,16 @@ thumbnails_collection = client[settings.mongodb_].get_collection("thumbnails")
 pdfdb = client.pdfUploads
 fs = AsyncIOMotorGridFSBucket(pdfdb)
 
-embeddings, dimension = load_embedding_model(
+embeddings = load_embedding_model(
     settings.embedding_model,
     config={"ollama_base_url": settings.ollama_base_url},
     logger=BaseLogger(),
 )
 
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database
-neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
+neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, refresh_schema=False)
 create_constraints(neo4j_graph)
-create_vector_index(neo4j_graph, dimension)
+create_vector_index(neo4j_graph)
 
 llm = load_llm(
     settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url}

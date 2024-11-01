@@ -28,9 +28,8 @@ def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config=
         base_url=config["ollama_base_url"], 
         model=embedding_model_name,
     )
-    dimension = 2304
     logger.info("Embedding: Using ", embedding_model_name)
-    return embeddings, dimension
+    return embeddings
 
 def load_llm(llm_name: str, logger=BaseLogger(), config={}):
     logger.info(f"LLM: Using Ollama: {llm_name}")
