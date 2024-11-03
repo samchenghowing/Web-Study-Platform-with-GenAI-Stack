@@ -21,7 +21,10 @@ from langchain_community.document_loaders.mongodb import MongodbLoader
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any
-from config import BaseLogger
+from config import Settings, BaseLogger
+from db.neo4j import Neo4jDatabase
+
+settings = Settings()
 
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     embeddings = OllamaEmbeddings(
@@ -252,6 +255,13 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         callbacks=callbacks,
         prompt=chat_prompt,
     )
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+
+    is_correct = True # TODO:
+    neo4j_db.save_answer(user_id, task, answer, is_correct)
+    neo4j_db.close()
+
     return llm_response
 
 def summarize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):

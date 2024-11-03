@@ -54,7 +54,7 @@ const QuizPage: React.FC = () => {
         return () => abortController.abort();
     }, []);
 
-    const handleAnswer = (isCorrect: boolean) => {
+    const handleAnswer = async (isCorrect: boolean) => {
         if (isCorrect) {
             setScore(score + 1);
         }

@@ -166,8 +166,6 @@ async def get_landing_quiz():
 
 @app.post("/submit/quiz")
 async def submit_quiz(task: Quiz_submission):
-    # TODO: first, response where the user is correct or wrong, then save the result to neo4j/ mongo
-
     q = Queue()
 
     def cb():

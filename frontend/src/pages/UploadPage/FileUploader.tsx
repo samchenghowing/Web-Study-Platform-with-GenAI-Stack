@@ -12,8 +12,7 @@ import Grid from '@mui/material/Grid';
 
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
-const PDF_SUMMARY_API_ENDPOINT = 'http://localhost:8504/pdfs';
-const PDF_DELETE_API_ENDPOINT = 'http://localhost:8504/pdfs';
+const PDF_API_ENDPOINT = 'http://localhost:8504/pdfs';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -44,7 +43,7 @@ export default function FileUploadAndDisplay() {
     const fetchPDFs = async () => {
         const abortController = new AbortController();
         try {
-            const response = await fetch(PDF_SUMMARY_API_ENDPOINT, {
+            const response = await fetch(PDF_API_ENDPOINT, {
                 signal: abortController.signal
             });
             const json = await response.json();
@@ -127,7 +126,7 @@ export default function FileUploadAndDisplay() {
         if (!window.confirm('Are you sure you want to delete this PDF?')) return;
 
         try {
-            const response = await fetch(`${PDF_DELETE_API_ENDPOINT}/${file_id}`, {
+            const response = await fetch(`${PDF_API_ENDPOINT}/${file_id}`, {
                 method: 'DELETE',
             });
             if (!response.ok) throw new Error('Failed to delete PDF');
