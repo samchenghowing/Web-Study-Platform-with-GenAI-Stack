@@ -10,18 +10,31 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { useAuth } from '../authentication/AuthContext';
-import { SxProps, Theme } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Fade from '@mui/material/Fade'; // Transition for smoothness
+import { useAuth } from '../authentication/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+const theme = createTheme({
+  typography: {
+    fontFamily: '"Roboto", sans-serif',
+  },
+  palette: {
+    primary: {
+      main: '#3f51b5', // Set primary color for buttons
+    },
+  },
+});
 
 const LOGIN_API_ENDPOINT = 'http://localhost:8504/login/';
 
 function Copyright(props: any) {
   return (
-    <Typography variant='body2' color='text.secondary' align='center' {...props}>
+    <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {'Copyright © '}
-      <Link color='inherit' href='https://mui.com/'>
-        Your Website
+      <Link color="inherit" href="https://mui.com/">
+        WebGenie 
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
@@ -29,15 +42,11 @@ function Copyright(props: any) {
   );
 }
 
-interface SignInDialogProps {
-  variant: 'text' | 'outlined' | 'contained';
-  size: 'small' | '';
-  sx?: SxProps<Theme>;
-}
-
 export default function SignInDialog({ variant, size, sx }) {
   const [open, setOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate(); // Initialize the useNavigate hook
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -47,8 +56,6 @@ export default function SignInDialog({ variant, size, sx }) {
   const handleClose = () => {
     setOpen(false);
   };
-
-  const { login } = useAuth();
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,13 +82,14 @@ export default function SignInDialog({ variant, size, sx }) {
       }
 
       login(json);
+      navigate('/main/editor'); // Redirect to /main/editor on successful login
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }
   };
 
   return (
-    <React.Fragment>
+    <ThemeProvider theme={theme}>
       <Button
         color='primary'
         variant={variant}
@@ -89,11 +97,12 @@ export default function SignInDialog({ variant, size, sx }) {
         size={size}
         onClick={handleClickOpen}
       >
-        Sign in
+        Login
       </Button>
       <Dialog
         open={open}
         onClose={handleClose}
+        TransitionComponent={Fade}
       >
         <Container component='main' maxWidth='xs'>
           <Box
@@ -107,8 +116,8 @@ export default function SignInDialog({ variant, size, sx }) {
             <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
               <LockOutlinedIcon />
             </Avatar>
-            <Typography component='h1' variant='h5'>
-              Sign in
+            <Typography component="h1" variant="h5">
+              Login
             </Typography>
             {errorMessage && (
               <Typography color="error" variant="body2">
@@ -144,9 +153,10 @@ export default function SignInDialog({ variant, size, sx }) {
                 type='submit'
                 fullWidth
                 variant='contained'
+                color='primary'
                 sx={{ mt: 3, mb: 2 }}
               >
-                Sign In
+                Login
               </Button>
               <Grid container>
                 <Grid item xs>
@@ -156,7 +166,7 @@ export default function SignInDialog({ variant, size, sx }) {
                 </Grid>
                 <Grid item>
                   <Link href='#' variant='body2'>
-                    {"Don't have an account? Sign Up"}
+                    {"Don't have an account? Register"}
                   </Link>
                 </Grid>
               </Grid>
@@ -165,6 +175,6 @@ export default function SignInDialog({ variant, size, sx }) {
           <Copyright sx={{ mt: 8, mb: 4 }} />
         </Container>
       </Dialog>
-    </React.Fragment>
+    </ThemeProvider>
   );
 }

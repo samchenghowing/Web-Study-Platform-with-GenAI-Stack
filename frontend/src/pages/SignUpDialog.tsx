@@ -8,9 +8,21 @@ import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { useAuth } from '../authentication/AuthContext';
-import { SxProps, Theme } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
+import Fade from '@mui/material/Fade'; // Transition for smoothness
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { useAuth } from '../authentication/AuthContext';
+
+const theme = createTheme({
+  typography: {
+    fontFamily: '"Roboto", sans-serif',
+  },
+  palette: {
+    primary: {
+      main: '#3f51b5', // Set primary color for buttons
+    },
+  },
+});
 
 const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup/';
 
@@ -19,18 +31,12 @@ function Copyright(props: any) {
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {'Copyright © '}
       <Link color="inherit" href="https://mui.com/">
-        Your Website
+        WebGenie 
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
     </Typography>
   );
-}
-
-interface SignUpDialogProps {
-  variant: 'text' | 'outlined' | 'contained';
-  size: 'small' | '';
-  sx?: SxProps<Theme>;
 }
 
 export default function SignUpDialog({ variant, size, sx }) {
@@ -49,6 +55,7 @@ export default function SignUpDialog({ variant, size, sx }) {
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    
 
     try {
       const response = await fetch(SIGNUP_API_ENDPOINT, {
@@ -78,7 +85,7 @@ export default function SignUpDialog({ variant, size, sx }) {
   };
 
   return (
-    <React.Fragment>
+    <ThemeProvider theme={theme}>
       <Button
         color='primary'
         variant={variant}
@@ -86,11 +93,12 @@ export default function SignUpDialog({ variant, size, sx }) {
         size={size}
         onClick={handleClickOpen}
       >
-        Sign up
+        Register
       </Button>
       <Dialog
         open={open}
         onClose={handleClose}
+        TransitionComponent={Fade} // Smooth transition for the dialog
       >
         <Container component='main' maxWidth='xs'>
           <Box
@@ -105,7 +113,7 @@ export default function SignUpDialog({ variant, size, sx }) {
               <LockOutlinedIcon />
             </Avatar>
             <Typography component='h1' variant='h5'>
-              Sign up
+              Register
             </Typography>
             {errorMessage && (
               <Typography color="error" variant="body2">
@@ -145,14 +153,15 @@ export default function SignUpDialog({ variant, size, sx }) {
                 type='submit'
                 fullWidth
                 variant='contained'
+                color='primary'
                 sx={{ mt: 3, mb: 2 }}
               >
-                Sign Up
+                Register
               </Button>
               <Grid container>
                 <Grid item xs>
                   <Link href='#' variant='body2'>
-                    Already have an account? Sign In
+                    Already have an account? Login
                   </Link>
                 </Grid>
               </Grid>
@@ -161,6 +170,6 @@ export default function SignUpDialog({ variant, size, sx }) {
           <Copyright sx={{ mt: 8, mb: 4 }} />
         </Container>
       </Dialog>
-    </React.Fragment>
+    </ThemeProvider>
   );
 }

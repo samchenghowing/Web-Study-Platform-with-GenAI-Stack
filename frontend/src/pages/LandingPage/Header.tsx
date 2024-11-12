@@ -14,9 +14,11 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from '../MainPage/ToggleColorMode';
 import SignInDialog from '../SignInDialog';
 import SignUpDialog from '../SignUpDialog';
+import imageToAdd from "./title.png";
+
 
 const logoStyle = {
-  width: '140px',
+  width: '180px',
   height: 'auto',
   cursor: 'pointer',
 };
@@ -57,6 +59,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
           backgroundImage: 'none',
           mt: 2,
         }}
+        
       >
         <Container maxWidth='lg'>
           <Toolbar
@@ -75,6 +78,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
               maxHeight: 40,
               border: '1px solid',
               borderColor: 'divider',
+              mt: 3, // Adjust the number to control the amount of spacing 
               boxShadow:
                 theme.palette.mode === 'light'
                   ? `0 0 1px rgba(85, 166, 246, 0.1), 1px 1.5px 2px -1px rgba(85, 166, 246, 0.15), 4px 4px 12px -2.5px rgba(85, 166, 246, 0.15)`
@@ -90,58 +94,19 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                 px: 0,
               }}
             >
-              <img
-                src={
-                  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e6faf73568658154dae_SitemarkDefault.svg'
-                }
-                style={logoStyle}
-                alt='logo of sitemark'
-              />
-              <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-                <MenuItem
-                  onClick={() => scrollToSection('features')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant='body2' color='text.primary'>
-                    Features
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('highlights')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant='body2' color='text.primary'>
-                    Highlights
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('pricing')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant='body2' color='text.primary'>
-                    Pricing
-                  </Typography>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => scrollToSection('faq')}
-                  sx={{ py: '6px', px: '12px' }}
-                >
-                  <Typography variant='body2' color='text.primary'>
-                    FAQ
-                  </Typography>
-                </MenuItem>
-              </Box>
+              
+            <img src={imageToAdd} style={logoStyle}  alt='logo of WebGenie' />
+            
             </Box>
             <Box
               sx={{
                 display: { xs: 'none', md: 'flex' },
-                gap: 0.5,
+                gap: 1, // Slightly increased gap between buttons
                 alignItems: 'center',
               }}
             >
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
-              <SignInDialog variant={'text'} sx={{}} size={'small'} />
-              <SignUpDialog variant={'contained'} sx={{}} size={'small'} />
+              
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
               <Button
@@ -172,23 +137,8 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   >
                     <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
                   </Box>
-                  <MenuItem onClick={() => scrollToSection('features')}>
-                    Features
-                  </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('highlights')}>
-                    Highlights
-                  </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('pricing')}>
-                    Pricing
-                  </MenuItem>
-                  <MenuItem onClick={() => scrollToSection('faq')}>FAQ</MenuItem>
+                  
                   <Divider />
-                  <MenuItem>
-                    <SignInDialog variant={"outlined"} sx={{ width: '100%' }} size={''} />
-                  </MenuItem>
-                  <MenuItem>
-                    <SignUpDialog variant={"contained"} sx={{ width: '100%' }} size={''} />
-                  </MenuItem>
                 </Box>
               </Drawer>
             </Box>

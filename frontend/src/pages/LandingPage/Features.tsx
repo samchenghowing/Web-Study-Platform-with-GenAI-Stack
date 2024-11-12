@@ -13,32 +13,50 @@ import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
 import EdgesensorHighRoundedIcon from '@mui/icons-material/EdgesensorHighRounded';
 import ViewQuiltRoundedIcon from '@mui/icons-material/ViewQuiltRounded';
 
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import RateReviewIcon from '@mui/icons-material/RateReview';
+
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
 const items = [
   {
-    icon: <ViewQuiltRoundedIcon />,
-    title: 'Dashboard',
+    icon: <SmartToyIcon />,
+    title: 'AI-Assisted Coding',
     description:
-      'This item could provide a snapshot of the most important metrics or data points related to the product.',
-    imageLight: 'url("/static/images/templates/templates-images/dash-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/dash-dark.png")',
+      'Learn web development languages like HTML, CSS, and JavaScript with AI guidance to boost efficiency.',
+    imageLight: 'url("/static/images/templates/templates-images/coding-light.png")',
+    imageDark: 'url("/static/images/templates/templates-images/coding-dark.png")',
   },
   {
-    icon: <EdgesensorHighRoundedIcon />,
-    title: 'Mobile integration',
+    icon: <AssignmentIcon />,
+    title: 'Real-Time Code Validation',
     description:
-      'This item could provide information about the mobile app version of the product.',
-    imageLight: 'url("/static/images/templates/templates-images/mobile-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/mobile-dark.png")',
+      'Write code online and get instant feedback on syntax and structure.',
+    imageLight: 'url("/static/images/templates/templates-images/validation-light.png")',
+    imageDark: 'url("/static/images/templates/templates-images/validation-dark.png")',
   },
   {
-    icon: <DevicesRoundedIcon />,
-    title: 'Available on all platforms',
+    icon: <RateReviewIcon />,
+    title: 'Adaptive Learning Quizzes',
     description:
-      'This item could let users know the product is available on all platforms, such as web, mobile, and desktop.',
-    imageLight: 'url("/static/images/templates/templates-images/devices-light.png")',
-    imageDark: 'url("/static/images/templates/templates-images/devices-dark.png")',
+      'Take quizzes tailored to your past questions and progress, enhancing your learning experience.',
+    imageLight: 'url("/static/images/templates/templates-images/quiz-light.png")',
+    imageDark: 'url("/static/images/templates/templates-images/quiz-dark.png")',
   },
 ];
+
+
+const theme = createTheme({
+  typography: {
+    fontFamily: '"Roboto", sans-serif',
+  },
+  palette: {
+    primary: {
+      main: '#3f51b5', // Set primary color for buttons
+    },
+  },
+});
 
 export default function Features() {
   const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
@@ -50,21 +68,20 @@ export default function Features() {
   const selectedFeature = items[selectedItemIndex];
 
   return (
+    <ThemeProvider theme={theme}>
     <Container id="features" sx={{ py: { xs: 8, sm: 16 } }}>
       <Grid container spacing={6}>
         <Grid item xs={12} md={6}>
           <div>
             <Typography component="h2" variant="h4" color="text.primary">
-              Product features
+              Website features
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
-              sx={{ mb: { xs: 2, sm: 4 } }}
+              sx={{ mb: { xs: 2, sm: 3 } }}
             >
-              Here you can provide a brief overview of the key features of the
-              product. For example, you could list the number of features, the types
-              of features, add-ons, or the benefits of the features.
+              Our platform offers a powerful set of features to enhance learning in web development with AI assistance:
             </Typography>
           </div>
           <Grid container item gap={1} sx={{ display: { xs: 'auto', sm: 'none' } }}>
@@ -268,5 +285,6 @@ export default function Features() {
         </Grid>
       </Grid>
     </Container>
+    </ThemeProvider>
   );
 }
