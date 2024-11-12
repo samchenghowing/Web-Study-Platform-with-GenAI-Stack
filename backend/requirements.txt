@@ -20,5 +20,6 @@ pymongo
 PyPDF2
 python-jose[cryptography]
 Requests
+streamlit
 typing_extensions
 uvicorn

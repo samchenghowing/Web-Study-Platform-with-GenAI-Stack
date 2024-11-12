@@ -8,14 +8,13 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
-import Markdown from 'react-markdown';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import MarkdownRenderer from '../../components/MarkdownRenderer'
 
-const CHAT_API_ENDPOINT = 'http://localhost:8504/query-stream';
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
 
@@ -42,7 +41,7 @@ function InfoCard({ data, AIChatprops }) {
                     {data.role}
                 </Typography>
                 <Typography component={'span'} variant='h5'>
-                    <Markdown>{data.question}</Markdown>
+                    <MarkdownRenderer content={data.question} />
                 </Typography>
             </CardContent>
             {data.role === 'ai' && (
