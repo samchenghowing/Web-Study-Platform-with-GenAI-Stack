@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { PaletteMode } from '@mui/material';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -16,7 +16,7 @@ import SignInDialog from '../SignInDialog';
 import SignUpDialog from '../SignUpDialog';
 import imageToAdd from "./title.png";
 
-
+// Logo Deatil
 const logoStyle = {
   width: '180px',
   height: 'auto',
@@ -49,6 +49,13 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
     }
   };
 
+  // Navigate to the /main route
+  const navigate = useNavigate();
+  const handleOnClick = () => {
+    navigate('/main'); 
+  };
+
+  // *****
   return (
     <div>
       <AppBar
@@ -93,11 +100,17 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                 ml: '-18px',
                 px: 0,
               }}
-            >
-              
-            <img src={imageToAdd} style={logoStyle}  alt='logo of WebGenie' />
+            >       
+
+            
+            <img // The logo
+              src={imageToAdd}  
+              style={logoStyle} 
+              onClick={handleOnClick} 
+              alt='logo of WebGenie' />
             
             </Box>
+            
             <Box
               sx={{
                 display: { xs: 'none', md: 'flex' },
