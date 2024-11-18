@@ -6,7 +6,6 @@ import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import List from '@mui/material/List';
 import CssBaseline from '@mui/material/CssBaseline';
-import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -19,11 +18,19 @@ import ListItemText from '@mui/material/ListItemText';
 import EditIcon from '@mui/icons-material/Edit';
 import QuizIcon from '@mui/icons-material/Quiz';
 import UploadIcon from '@mui/icons-material/Upload';
-import { Link } from 'react-router-dom';
+import DatasetIcon from '@mui/icons-material/Dataset';
+import FaceIcon from '@mui/icons-material/Face';
+import Button from '@mui/material/Button';
+import { Link, useNavigate } from 'react-router-dom';
 import ToggleColorMode from './ToggleColorMode';
 import AccountMenu from './AccountMenu';
+import imageToAdd from "../LandingPage/title.png";
 
 const drawerWidth = 240;
+const logoStyle = {
+    width: '150px',
+    height: 'auto',
+};
 
 const openedMixin = (theme: Theme): CSSObject => ({
     width: drawerWidth,
@@ -110,6 +117,10 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
     const handleDrawerClose = () => {
         setOpen(false);
     };
+    const navigate = useNavigate();
+    const handleOnClick = () => {
+        navigate('/');
+    };
 
     return (
         <Box sx={{ display: 'flex' }}>
@@ -128,9 +139,13 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap component="div">
-                        Web Study Platform
-                    </Typography>
+                    <Button onClick={handleOnClick} sx={{ padding: 0 }}>
+                        <img // The logo
+                            src={imageToAdd}
+                            style={logoStyle}
+                            alt='logo of WebGenie'
+                        />
+                    </Button>
                     <Box sx={{ flexGrow: 1 }} />
                     <AccountMenu />
                 </Toolbar>
@@ -144,14 +159,6 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                 <Divider />
                 <List>
                     <ListItem disablePadding sx={{ display: 'block' }}>
-                        <ListItemButton component={Link} to="/main/editor">
-                            <ListItemIcon>
-                                <EditIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Editor" />
-                        </ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding sx={{ display: 'block' }}>
                         <ListItemButton component={Link} to="/main/quiz">
                             <ListItemIcon>
                                 <QuizIcon />
@@ -160,11 +167,35 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/editor">
+                            <ListItemIcon>
+                                <EditIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Editor" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
                         <ListItemButton component={Link} to="/main/upload">
                             <ListItemIcon>
                                 <UploadIcon />
                             </ListItemIcon>
                             <ListItemText primary="Upload" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/progress">
+                            <ListItemIcon>
+                                <DatasetIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="My progress" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ display: 'block' }}>
+                        <ListItemButton component={Link} to="/main/friends">
+                            <ListItemIcon>
+                                <FaceIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Friends" />
                         </ListItemButton>
                     </ListItem>
                 </List>

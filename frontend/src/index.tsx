@@ -12,6 +12,8 @@ const MainPage = lazy(() => import('./pages/MainPage'));
 const EditorPage = lazy(() => import('./pages/EditorPage'));
 const QuizPage = lazy(() => import('./pages/QuizPage'));
 const UploadPage = lazy(() => import('./pages/UploadPage'));
+const ProgressPage = lazy(() => import('./pages/ProgressPage'));
+const FriendsPage = lazy(() => import('./pages/FriendsPage'));
 
 const router = createBrowserRouter([
     {
@@ -36,7 +38,7 @@ const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Navigate to="/main/editor" replace />,
+                element: <Navigate to="/main/quiz" replace />,
             },
             {
                 path: 'editor',
@@ -61,6 +63,24 @@ const router = createBrowserRouter([
                 element: (
                     <Suspense fallback={<LoadingPage />}>
                         <UploadPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'progress',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <ProgressPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'friends',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <FriendsPage />
                     </Suspense>
                 ),
                 errorElement: <ErrorPage />,

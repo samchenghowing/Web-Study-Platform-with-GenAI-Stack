@@ -7,13 +7,9 @@ import Toolbar from '@mui/material/Toolbar';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import MenuItem from '@mui/material/MenuItem';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import ToggleColorMode from '../MainPage/ToggleColorMode';
-import SignInDialog from '../SignInDialog';
-import SignUpDialog from '../SignUpDialog';
 import imageToAdd from "./title.png";
 
 // Logo Deatil
@@ -52,7 +48,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
   // Navigate to the /main route
   const navigate = useNavigate();
   const handleOnClick = () => {
-    navigate('/main'); 
+    navigate('/main');
   };
 
   // *****
@@ -66,7 +62,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
           backgroundImage: 'none',
           mt: 2,
         }}
-        
+
       >
         <Container maxWidth='lg'>
           <Toolbar
@@ -100,17 +96,17 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                 ml: '-18px',
                 px: 0,
               }}
-            >       
+            >
 
-            
-            <img // The logo
-              src={imageToAdd}  
-              style={logoStyle} 
-              onClick={handleOnClick} 
-              alt='logo of WebGenie' />
-            
+
+              <img // The logo
+                src={imageToAdd}
+                style={logoStyle}
+                onClick={handleOnClick}
+                alt='logo of WebGenie' />
+
             </Box>
-            
+
             <Box
               sx={{
                 display: { xs: 'none', md: 'flex' },
@@ -119,7 +115,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
               }}
             >
               <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
-              
+
             </Box>
             <Box sx={{ display: { sm: '', md: 'none' } }}>
               <Button
@@ -150,7 +146,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
                   >
                     <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
                   </Box>
-                  
+
                   <Divider />
                 </Box>
               </Drawer>
