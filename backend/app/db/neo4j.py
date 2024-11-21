@@ -25,6 +25,25 @@ class Neo4jDatabase:
             is_correct=is_correct
         )
 
+    def update_user_model(self, user_id, learning_level, preferences):
+        with self.driver.session() as session:
+            session.write_transaction(
+                self._update_user_record, user_id, learning_level, preferences
+            )
+
+    @staticmethod
+    def _update_user_record(tx, user_id, learning_level, preferences):
+        tx.run(
+            """
+            MERGE (u:User {id: $user_id})
+            SET u.learning_level = $learning_level,
+                u.preferences = $preferences
+            """,
+            user_id=user_id,
+            learning_level=learning_level,
+            preferences=preferences
+        )
+
 def create_vector_index(driver) -> None:
     index_query = "CREATE VECTOR INDEX stackoverflow IF NOT EXISTS FOR (m:Question) ON m.embedding"
     try:
