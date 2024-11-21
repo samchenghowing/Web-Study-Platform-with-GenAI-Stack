@@ -23,8 +23,7 @@ from services.chains import (
     configure_qa_rag_chain,
     generate_task,
     check_quiz_correctness,
-    summarize_user,
-    generate_quiz,
+    generate_quiz_tools,
 )
 from api.models import *
 from api.utils import (
@@ -213,16 +212,9 @@ async def get_quiz(id: str):
 
 
 
-#testing use only
-@app.get("/summraize")
-def summraize_api():
-    chat_summraize = summarize_user(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories", "test_user")
-    # result = summarize_user(llm, settings.mongodb_uri, settings.mongodb_, "students", "test_user")
-    return chat_summraize
-
 @app.get("/toolstest")
 def toolstest_api():
-    result = generate_quiz("", llm)
+    result = generate_quiz_tools("", llm)
     return result
 
 

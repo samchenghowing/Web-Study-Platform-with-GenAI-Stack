@@ -179,14 +179,11 @@ def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, emb
     return generate_llm_output
 
 def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[]):
-    # Get high ranked questions
-    records = neo4j_graph.query(
-        "MATCH (q:Question) RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3"
-    )
-    questions = []
-    for i, question in enumerate(records, start=1):
-        questions.append((question["title"], question["body"]))
-    # Ask LLM to generate new question in the same style
+    learning_level, preferences = get_user_preferences(neo4j_graph, user_id)
+    if not learning_level or not preferences:
+        return "User preferences not found."
+
+    questions = fetch_questions_based_on_preferences(neo4j_graph, learning_level, preferences)
     questions_prompt = ""
     for i, question in enumerate(questions, start=1):
         questions_prompt += f"{i}. \n{question[0]}\n----\n\n"
@@ -264,48 +261,25 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
 
     return llm_response
 
-def summarize_user(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, user_id):
-    # https://www.reddit.com/r/ChatGPT/comments/11twe7z/prompt_to_summarize/
-    # PersonaRAG: Enhancing Retrieval-Augmented Generation Systems with User-Centric Agents
-    # template = """
-    # Your task is to help the User Profile Agent improve its understanding of user preferences based on conversation history and the shared global memory pool.
+def get_user_preferences(neo4j_graph, user_id):
+    query = "MATCH (u:User {id: $user_id}) RETURN u.learning_level AS level, u.preferences AS preferences"
+    result = neo4j_graph.query(query, user_id=user_id)
+    if result:
+        return result[0]['level'], result[0]['preferences']
+    return None, None
 
-    # Question:
-    # {question}
-    # Passages:
-    # {passages}
-    # Global Memory:
-    # {global_memory}
+def fetch_questions_based_on_preferences(neo4j_graph, learning_level, preferences):
+    preference_conditions = " OR ".join([f"t.name = '{pref}'" for pref in preferences])
+    query = f"""
+    MATCH (q:Question)-[:TAGGED]->(t:Tag)
+    WHERE q.difficulty = '{learning_level}' AND ({preference_conditions})
+    RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3
+    """
+    records = neo4j_graph.query(query)
+    return [(record['title'], record['body']) for record in records]
 
-    # Task Description:
-    # From the provided passages and global memory pool, analyze clues about the user's learning preferences and level. Look for themes, types of documents, and navigation behaviors that reveal user interest. Use these insights to recommend how the User Profile Agent can refine and expand the user profile to deliver better-personalized results.
-    # """
-    # # human_template = "{question}"
-    # chat_prompt = ChatPromptTemplate.from_messages([
-    #     SystemMessagePromptTemplate.from_template(template),
-    #     # MessagesPlaceholder(variable_name="chat_history"),
-    #     # HumanMessagePromptTemplate.from_template(human_template),
-    # ])
 
-    # chain = chat_prompt | llm
-
-    summarize_chain = load_summarize_chain(llm, chain_type="stuff")
-
-    loader = MongodbLoader(
-        connection_string=CONN_STRING,
-        db_name=DATABASE_NAME,
-        collection_name=COLLECTION_NAME,
-        filter_criteria={"SessionId": user_id},
-    )
-    docs = loader.load()
-    # TODO: reducing input docs size to handle the token size limitation
-
-    result = summarize_chain.invoke(docs)
-
-    print(result["output_text"])
-    return result
-
-def generate_quiz(user_summary, llm):
+def generate_quiz_tools(user_summary, llm):
     # Testing
     user_summary = """
     The conversation involves a user named 'test_user' who asks about a linked list. The AI responds with a question asking the user to identify and correct a CSS issue in an HTML code snippet. The HTML code contains an unordered list (ul) with three items (li), styled with incorrect flex-direction and width properties. The AI is using the Mistral model for this task.
