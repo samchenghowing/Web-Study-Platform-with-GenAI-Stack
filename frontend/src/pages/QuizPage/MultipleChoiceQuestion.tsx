@@ -21,7 +21,7 @@ interface CardContentType {
     code: string;
 }
 
-export function InfoCard({ data }) {
+const InfoCard: React.FC<{ data: CardContentType }> = React.memo(({ data }) => {
     return (
         <CardContent>
             <Typography component={'span'} variant='h5'>
@@ -29,15 +29,16 @@ export function InfoCard({ data }) {
             </Typography>
         </CardContent>
     );
-}
+});
 
 const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ question, choices, correctAnswer, onAnswer }) => {
     const { user } = useAuth(); // Accessing user from AuthContext
     const [selectedChoice, setSelectedChoice] = useState<string>('');
-    const [cardContent, setCardContent] = React.useState<CardContentType[]>([]);
+    const [currentCard, setCurrentCard] = useState<CardContentType>({ id: 1, role: 'human', question: '', code: '' });
 
     React.useEffect(() => {
-        setSelectedChoice(''); // Reset selected choice when question changes
+        setSelectedChoice('');
+        setCurrentCard({ id: 1, role: 'human', question: '', code: '' });
     }, [question]);
 
     const handleChoiceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,19 +59,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                 }),
             });
             const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('Stream reader is not available');
-            }
-
-            setCardContent((prev) => [
-                ...prev,
-                {
-                    id: 1,
-                    role: 'human',
-                    question: '',
-                    code: '',
-                },
-            ]);
+            if (!reader) throw new Error('Stream reader is not available');
 
             const readStream = async () => {
                 let { done, value } = await reader.read();
@@ -84,17 +73,11 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                         const jsonChunk = JSON.parse(jsonString);
                         const token = jsonChunk.token;
 
-                        setCardContent((prev) =>
-                            prev.map((card) => {
-                                if (card.id === 1) {
-                                    let updatedCard = { ...card };
-                                    updatedCard.question += token;
+                        setCurrentCard((prevCard) => ({
+                            ...prevCard,
+                            question: prevCard.question + token,
+                        }));
 
-                                    return updatedCard;
-                                }
-                                return card;
-                            })
-                        );
                     } catch (error) {
                         console.error('Error parsing JSON chunk', error);
                     }
@@ -127,9 +110,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                 </RadioGroup>
 
 
-                {cardContent.map((data) => (
-                    <InfoCard key={data.id} data={data} />
-                ))}
+                <InfoCard data={currentCard} />
 
                 <Button
                     variant="outlined"
