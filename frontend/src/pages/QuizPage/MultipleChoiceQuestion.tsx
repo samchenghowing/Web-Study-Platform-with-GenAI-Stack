@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Radio, RadioGroup, FormControl, FormControlLabel, FormLabel, Button, Typography } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
 import CardContent from '@mui/material/CardContent';
-import MarkdownRenderer from '../../components/MarkdownRenderer'
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 
@@ -32,13 +32,15 @@ const InfoCard: React.FC<{ data: CardContentType }> = React.memo(({ data }) => {
 });
 
 const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ question, choices, correctAnswer, onAnswer }) => {
-    const { user } = useAuth(); // Accessing user from AuthContext
+    const { user } = useAuth();
     const [selectedChoice, setSelectedChoice] = useState<string>('');
     const [currentCard, setCurrentCard] = useState<CardContentType>({ id: 1, role: 'human', question: '', code: '' });
+    const [isReadingComplete, setIsReadingComplete] = useState<boolean>(false); // New state
 
     React.useEffect(() => {
         setSelectedChoice('');
         setCurrentCard({ id: 1, role: 'human', question: '', code: '' });
+        setIsReadingComplete(false); // Reset when question changes
     }, [question]);
 
     const handleChoiceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,48 +48,52 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
     };
 
     const handleSubmit = async () => {
-        if (onAnswer) {
-            const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user: user ? user.id : 'test_user',
-                    question: question, // Assuming you have this in your state
-                    answer: selectedChoice,
-                }),
+        const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user: user ? user._id : 'test_user',
+                question: question,
+                answer: selectedChoice,
+            }),
+        });
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('Stream reader is not available');
+
+        const readStream = async () => {
+            let { done, value } = await reader.read();
+            if (done) {
+                setIsReadingComplete(true); // Mark reading as complete
+                return;
+            }
+
+            const chunk = new TextDecoder('utf-8').decode(value);
+            const jsonStrings = chunk.split('\n').filter(Boolean);
+
+            jsonStrings.forEach((jsonString) => {
+                try {
+                    const jsonChunk = JSON.parse(jsonString);
+                    const token = jsonChunk.token;
+
+                    setCurrentCard((prevCard) => ({
+                        ...prevCard,
+                        question: prevCard.question + token,
+                    }));
+
+                } catch (error) {
+                    console.error('Error parsing JSON chunk', error);
+                }
             });
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error('Stream reader is not available');
-
-            const readStream = async () => {
-                let { done, value } = await reader.read();
-                if (done) return;
-
-                const chunk = new TextDecoder('utf-8').decode(value);
-                const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                jsonStrings.forEach((jsonString) => {
-                    try {
-                        const jsonChunk = JSON.parse(jsonString);
-                        const token = jsonChunk.token;
-
-                        setCurrentCard((prevCard) => ({
-                            ...prevCard,
-                            question: prevCard.question + token,
-                        }));
-
-                    } catch (error) {
-                        console.error('Error parsing JSON chunk', error);
-                    }
-                });
-                await readStream();
-            };
-
             await readStream();
-            // go to next question
-            const isCorrect = true;
+        };
+        await readStream();
+    };
+
+    const gotoNextQuestion = async () => {
+        if (onAnswer) {
+            const isCorrect = selectedChoice === correctAnswer;
             await onAnswer(isCorrect);
         }
     };
@@ -109,7 +115,6 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     ))}
                 </RadioGroup>
 
-
                 <InfoCard data={currentCard} />
 
                 <Button
@@ -117,10 +122,21 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     color="primary"
                     onClick={handleSubmit}
                     disabled={!selectedChoice} // Disable button if no choice is selected
-                    sx={{ mt: 2 }} // MUI v5 syntax for margin-top
+                    sx={{ mt: 2 }}
                 >
                     Submit
                 </Button>
+
+                {isReadingComplete && ( // Only show if reading is complete
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={gotoNextQuestion}
+                        sx={{ mt: 2 }}
+                    >
+                        Next question
+                    </Button>
+                )}
             </FormControl>
         </div>
     );

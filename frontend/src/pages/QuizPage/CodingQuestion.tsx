@@ -87,7 +87,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    user: user ? user.id : 'test_user',
+                    user: user ? user._id : 'test_user',
                     question: question,
                     answer: value,
                 }),

@@ -7,9 +7,18 @@ export default function MainPage() {
     return (
         <Container>
             <Typography variant="h4" gutterBottom>
-                What do I learn?
+                TODO: This show be a dash board page showing below
             </Typography>
-
+            "Encouragement/ Achievement system"
+            <Typography variant="h4" gutterBottom>
+                My Score/ correct rate/ level
+            </Typography>
+            <Typography variant="h4" gutterBottom>
+                My question and answer history
+            </Typography>
+            <Typography variant="h4" gutterBottom>
+                My topics/ preference
+            </Typography>
             <Divider />
         </Container>
     );

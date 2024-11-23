@@ -39,7 +39,6 @@ const QuizPage: React.FC = () => {
             try {
                 let questionSource = "test_user";
                 if (user != null) questionSource = user._id;
-                console.log(user._id)
 
                 // if user is not null, fetch his questions
                 const response = await fetch(`${QUIZ_API_ENDPOINT}/${questionSource}`, {

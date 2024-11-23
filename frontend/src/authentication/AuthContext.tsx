@@ -2,8 +2,8 @@ import * as React from "react";
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface User {
+    _id: string;
     avatarUrl: string | undefined;
-    id: string;
     name: string;
     email: string;
 }
