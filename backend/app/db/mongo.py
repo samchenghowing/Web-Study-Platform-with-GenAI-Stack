@@ -68,7 +68,7 @@ class UpdateStudentModel(BaseModel):
     """
     A set of optional updates to be made to a document in the database.
     """
-
+    id: Optional[str] = Field(default=None, alias="_id")
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None

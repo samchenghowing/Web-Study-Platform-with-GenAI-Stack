@@ -141,27 +141,46 @@ async def generate_task_api(question: Question):
 
 
 @app.get(
-    "/quiz/landing",
-    response_description="Get landing quiz",
+    "/quiz/{id}",
+    response_description="Get quiz",
     response_model=QuestionCollection,
     response_model_by_alias=False,
 )
-async def get_landing_quiz():
+async def get_quiz(id: str):
     """
-    Get the quiz.
+    Get the quiz designed for the specific student, looked up by `id`.
     """
+
     def load_questions_from_file(file_path: str):
         with open(file_path, 'r') as file:
             questions = json.load(file)
         return questions
-    
-    questions_file_path = './api/landing_questions.json'
-    try:
-        fake_questions = load_questions_from_file(questions_file_path)
-        question_models = [QuestionModel(**q) for q in fake_questions]
-        return QuestionCollection(questions=question_models)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error loading questions: {str(e)}")
+
+    if (
+        student_data := await student_collection.find_one({"_id": ObjectId(id)})
+    ) is not None:
+        print(student_data)
+        student_data['id'] = str(student_data['_id'])  # Convert ObjectId to string
+        student_data.pop('_id')  # Optionally remove the original ObjectId field
+
+        student = StudentModel(**student_data)
+        question_ids = [answer.question_id for answer in student.answers or []]
+        questions = await questions_collection.find({"_id": {"$in": question_ids}}).to_list(length=None)
+
+        if questions:
+            question_models = [QuestionModel(**q) for q in questions]
+            return QuestionCollection(questions=question_models)
+        else:
+            # raise HTTPException(status_code=404, detail=f"No question found for Student {id}")
+            try:
+                questions_file_path = './api/landing_questions.json'
+                fake_questions = load_questions_from_file(questions_file_path)
+                question_models = [QuestionModel(**q) for q in fake_questions]
+                return QuestionCollection(questions=question_models)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error loading questions: {str(e)}")
+
+    raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 @app.post("/submit/quiz")
 async def submit_quiz(task: Quiz_submission):
@@ -182,33 +201,6 @@ async def submit_quiz(task: Quiz_submission):
             yield json.dumps({"token": token})
 
     return StreamingResponse(generate(), media_type="application/json")
-
-
-@app.get(
-    "/quiz/{id}",
-    response_description="Get quiz",
-    response_model=QuestionCollection,
-    response_model_by_alias=False,
-)
-async def get_quiz(id: str):
-    """
-    Get the quiz designed for the specific student, looked up by `id`.
-    """
-    if (
-        student_data := await student_collection.find_one({"_id": ObjectId(id)})
-    ) is not None:
-        student = StudentModel(**student_data)
-        question_ids = [answer.question_id for answer in student.answers or []]
-
-        if (
-            questions := await questions_collection.find({"_id": {"$in": question_ids}})
-        ) is not None:
-            question_models = [QuestionModel(**q) for q in questions]
-            return QuestionCollection(questions=question_models)
-        else:
-            raise HTTPException(status_code=404, detail=f"No question found for Student {id}")
-
-    raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 
 
