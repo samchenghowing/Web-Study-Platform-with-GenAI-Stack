@@ -87,7 +87,7 @@ def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict]):
     jobs[task_id].status = "completed"
 
 
-def insert_so_data(driver, embeddings, data: dict) -> None:
+def insert_so_data(data: dict) -> None:
     # Calculate embedding values for questions and answers
     for q in data["items"]:
         question_text = q["title"] + "\n" + q["body_markdown"]
@@ -128,17 +128,18 @@ def insert_so_data(driver, embeddings, data: dict) -> None:
                   owner.reputation = q.owner.reputation
     MERGE (owner)-[:ASKED]->(question)
     """
-    driver.query(import_query, {"data": data["items"]})
+    neo4j_graph.query(import_query, {"data": data["items"]})
 
 # Background task for loading stackoverflow data to neo4j
 def load_so_data(jobs: dict, task_id: UUID, tag: str = "javascript", page: int = 10) -> None:
     try:
         parameters = (
-            f"?pagesize=100&page={page}&order=desc&sort=creation&answers=1&tagged={tag}"
+            f"?pagesize=10&page={page}&order=desc&sort=creation&answers=1&tagged={tag}"
             "&site=stackoverflow&filter=!*236eb_eL9rai)MOSNZ-6D3Q6ZKb0buI*IVotWaTb"
         )
         data = requests.get(SO_API_BASE_URL + parameters).json()
-        insert_so_data(neo4j_graph, embeddings, data)
+        print(data)
+        insert_so_data(data)
     except Exception as error:
         jobs[task_id].status = f"Importing {tag} from so fails with error: {error}"
         return
@@ -152,7 +153,7 @@ def load_high_score_so_data() -> None:
         "filter=!.DK56VBPooplF.)bWW5iOX32Fh1lcCkw1b_Y6Zkb7YD8.ZMhrR5.FRRsR6Z1uK8*Z5wPaONvyII"
     )
     data = requests.get(SO_API_BASE_URL + parameters).json()
-    insert_so_data(neo4j_graph, embeddings, data)
+    insert_so_data(data)
 
 # Background task for crawling web data to mongodb
 def load_web_data(jobs: dict, task_id: UUID, file_collection, url: str = "https://python.langchain.com/v0.2/docs/concepts/#langchain-expression-language-lcel"):
