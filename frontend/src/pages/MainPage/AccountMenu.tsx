@@ -17,6 +17,8 @@ export default function AccountMenu() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const { user, logout } = useAuth();
+    const navigate = useNavigate(); // Initialize the useNavigate hook
+
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };
@@ -25,7 +27,6 @@ export default function AccountMenu() {
     };
     const handleLogout = () => {
         logout();
-        let navigate = useNavigate();
         navigate('/login');
     };
     return (
@@ -81,7 +82,7 @@ export default function AccountMenu() {
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-                {/* {user ? (
+                {user ? (
                     <>
                         <MenuItem disabled>{user.name}</MenuItem>
                         <MenuItem disabled>{user.email}</MenuItem>
@@ -90,7 +91,7 @@ export default function AccountMenu() {
                     <>
                         <MenuItem disabled>Guest</MenuItem>
                     </>
-                )} */}
+                )}
                 <MenuItem onClick={handleClose}>
                     <Avatar alt={user ? user.name : 'Guest'} src={user ? user.avatarUrl : undefined} /> Profile
                 </MenuItem>

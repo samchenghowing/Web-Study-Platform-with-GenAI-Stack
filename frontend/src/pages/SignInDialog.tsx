@@ -82,7 +82,7 @@ export default function SignInDialog({ variant, size, sx }) {
       }
 
       login(json);
-      navigate('/main/editor'); // Redirect to /main/editor on successful login
+      navigate('/main'); // Redirect to /main on successful login
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }

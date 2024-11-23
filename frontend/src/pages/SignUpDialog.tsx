@@ -12,6 +12,7 @@ import Dialog from '@mui/material/Dialog';
 import Fade from '@mui/material/Fade'; // Transition for smoothness
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useAuth } from '../authentication/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const theme = createTheme({
   typography: {
@@ -31,7 +32,7 @@ function Copyright(props: any) {
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {'Copyright © '}
       <Link color="inherit" href="https://mui.com/">
-        WebGenie 
+        WebGenie
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
@@ -42,6 +43,8 @@ function Copyright(props: any) {
 export default function SignUpDialog({ variant, size, sx }) {
   const [open, setOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState('');
+  const { login } = useAuth(); // Get the login function from context
+  const navigate = useNavigate(); // Initialize the useNavigate hook
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -55,7 +58,6 @@ export default function SignUpDialog({ variant, size, sx }) {
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    
 
     try {
       const response = await fetch(SIGNUP_API_ENDPOINT, {
@@ -67,18 +69,19 @@ export default function SignUpDialog({ variant, size, sx }) {
           email: data.get('email'),
           password: data.get('password'),
           username: data.get('username'),
-        })
+        }),
       });
 
+      const json = await response.json();
+
       if (!response.ok) {
-        const json = await response.json();
         setErrorMessage(json.detail || 'Sign up failed');
         return;
       }
 
-      const json = await response.json();
       console.log(json);
-      // Handle successful signup (e.g., log in the user or show a success message)
+      login(json);
+      navigate('/main'); // Redirect to /main on successful login
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }
