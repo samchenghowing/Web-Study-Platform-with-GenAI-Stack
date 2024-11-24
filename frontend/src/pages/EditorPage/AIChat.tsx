@@ -14,6 +14,7 @@ import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import MarkdownRenderer from '../../components/MarkdownRenderer'
+import { useAuth } from '../../authentication/AuthContext';
 
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
@@ -112,6 +113,7 @@ export default function AIChat(props: AIChatProps) {
     const [userQuestion, setUserQuestion] = React.useState('');
     const [cardContent, setCardContent] = React.useState<CardContentType[]>([]);
     const cardRef = React.useRef<HTMLDivElement>(null);
+    const { user } = useAuth(); // Accessing user from AuthContext
 
     React.useEffect(() => {
         const abortController = new AbortController();
@@ -146,9 +148,9 @@ export default function AIChat(props: AIChatProps) {
         return () => abortController.abort();
     }, []);
 
-    const deleteChatHistory = async (user_id: string) => {
+    const deleteChatHistory = async () => {
         try {
-            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user_id}`, { method: 'DELETE' });
+            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user?.id}`, { method: 'DELETE' });
             setCardContent([]);
         } catch (error) {
             console.error(error);
@@ -238,7 +240,7 @@ export default function AIChat(props: AIChatProps) {
                 setUserQuestion={setUserQuestion}
                 handleChat={handleChat}
             />
-            <Button size='large' onClick={() => deleteChatHistory('test_user')} sx={{ mt: 2 }}>
+            <Button size='large' onClick={() => deleteChatHistory()} sx={{ mt: 2 }}>
                 Delete Chat History
             </Button>
         </Box>
