@@ -35,10 +35,11 @@ const QuizPage: React.FC = () => {
     // (Create question by textbook content, then verify and save it to db)
     React.useEffect(() => {
         const abortController = new AbortController();
-        const fetchQuestions = async (user) => {
+        const fetchQuestions = async () => {
             try {
+                console.log(user)
                 let questionSource = "test_user";
-                if (user != null) questionSource = user._id;
+                if (user != null) questionSource = user.id;
 
                 // if user is not null, fetch his questions
                 const response = await fetch(`${QUIZ_API_ENDPOINT}/${questionSource}`, {
@@ -53,7 +54,7 @@ const QuizPage: React.FC = () => {
             }
         };
 
-        fetchQuestions(user);
+        fetchQuestions();
         return () => abortController.abort();
     }, []);
 
