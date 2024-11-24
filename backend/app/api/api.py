@@ -61,6 +61,7 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pymongo import ReturnDocument
 import bcrypt
+from db.neo4j import Neo4jDatabase
 
 from pdf2image import convert_from_bytes
 
@@ -356,6 +357,12 @@ async def create_student(student: StudentModel = Body(...)):
     )
     if created_student:
         created_student["_id"] = str(created_student["_id"])
+
+    # create user in neo4j 
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    neo4j_db.update_user_model(created_student["_id"], "beginner", "html")
+    neo4j_db.close()
+
     return created_student
 
 
