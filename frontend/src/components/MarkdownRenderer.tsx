@@ -1,19 +1,15 @@
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useTheme } from '@mui/material/styles';
-import CodeMirror from '@uiw/react-codemirror';
-import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
-import { languages } from '@codemirror/language-data';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { coldarkCold, coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const CodeBlock = ({ language, value }) => {
+    const theme = useTheme().palette.mode === 'light' ? coldarkCold : coldarkDark;
     return (
-        <CodeMirror
-            value={value}
-            extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
-            readOnly={true}
-            theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
-        />
+        <SyntaxHighlighter language={language} style={theme} showLineNumbers={true}>
+            {value}
+        </SyntaxHighlighter>
     );
 };
 
@@ -22,8 +18,8 @@ const MarkdownRenderer = ({ content }) => {
         <ReactMarkdown
             components={{
                 code(props) {
-                    const { children, className, node, ...rest } = props
-                    const match = /language-(\w+)/.exec(className || '')
+                    const { children, className, ...rest } = props;
+                    const match = /language-(\w+)/.exec(className || '');
                     return match ? (
                         <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} />
                     ) : (
@@ -38,4 +34,5 @@ const MarkdownRenderer = ({ content }) => {
         </ReactMarkdown>
     );
 };
+
 export default MarkdownRenderer;
