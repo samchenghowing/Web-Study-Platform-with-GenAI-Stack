@@ -263,7 +263,8 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
 
 def get_user_preferences(neo4j_graph, user_id):
     query = "MATCH (u:User {id: $user_id}) RETURN u.learning_level AS level, u.preferences AS preferences"
-    result = neo4j_graph.query(query, user_id=user_id)
+    params = {'user_id': user_id}  # Create a dictionary for parameters
+    result = neo4j_graph.query(query, params)  # Pass params dictionary
     if result:
         return result[0]['level'], result[0]['preferences']
     return None, None

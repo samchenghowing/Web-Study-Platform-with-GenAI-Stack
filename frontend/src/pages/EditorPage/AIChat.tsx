@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { SetStateAction, Dispatch } from 'react';
-import { extract_task } from './utils';
+import { extract_task, extractQuestion } from './utils';
 import { styled } from '@mui/material/styles';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
@@ -24,6 +24,9 @@ const BackgroundPaper = styled(Paper)(({ theme }) => ({
     ...theme.typography.body2,
     padding: theme.spacing(1),
     color: theme.palette.text.secondary,
+    width: '100%', // Set width to 70%
+    height: '50vh', // Set height to 70% of the viewport height
+    margin: 'auto', // Center it horizontally
 }));
 
 const StyledCard = styled(Card)(({ theme, role }) => ({
@@ -50,7 +53,7 @@ function InfoCard({ data, AIChatprops }) {
                     <Button size='large' onClick={() => {
                         const [jsCode, htmlCode, cssCode] = extract_task(data.question);
                         data.task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
-                        AIChatprops.setQuestion(data.question);
+                        AIChatprops.setQuestion(extractQuestion(data.question));
                         AIChatprops.setTask(data.task);
                     }}>
                         Take this task!
@@ -181,7 +184,7 @@ export default function AIChat(props: AIChatProps) {
                 const response = await fetch(TASK_API_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: userQuestion, rag: false })
+                    body: JSON.stringify({ user: user?.id, text: userQuestion, rag: false })
                 });
 
                 const reader = response.body?.getReader();
@@ -230,7 +233,7 @@ export default function AIChat(props: AIChatProps) {
 
     return (
         <Box>
-            <BackgroundPaper ref={cardRef} sx={{ maxHeight: 500, minHeight: 500, overflow: 'auto' }}>
+            <BackgroundPaper ref={cardRef} sx={{ overflow: 'auto' }}>
                 {cardContent.map(data => (
                     <InfoCard key={data.id} data={data} AIChatprops={props} />
                 ))}

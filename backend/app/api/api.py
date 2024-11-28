@@ -126,7 +126,7 @@ async def generate_task_api(question: Question):
 
     def cb():
         generate_task(
-            user_id="test_user",
+            user_id=question.user,
             neo4j_graph=neo4j_graph,
             llm_chain=llm_chain,
             input_question=question.text,

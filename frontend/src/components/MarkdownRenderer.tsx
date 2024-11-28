@@ -7,7 +7,7 @@ import { coldarkCold, coldarkDark } from 'react-syntax-highlighter/dist/esm/styl
 const CodeBlock = ({ language, value }) => {
     const theme = useTheme().palette.mode === 'light' ? coldarkCold : coldarkDark;
     return (
-        <SyntaxHighlighter language={language} style={theme} showLineNumbers={true}>
+        <SyntaxHighlighter language={language} style={theme} showLineNumbers={true} wrapLines={true}>
             {value}
         </SyntaxHighlighter>
     );

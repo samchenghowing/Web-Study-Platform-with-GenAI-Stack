@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 class Question(BaseModel):
+    user: str
     text: str
     rag: bool | None = False 
 

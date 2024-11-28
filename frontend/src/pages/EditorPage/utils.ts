@@ -33,3 +33,9 @@ export function extract_task(input: string) {
 
     return [jsCode, htmlCode, cssCode];
 }
+
+export function extractQuestion(markdown: string): string | null {
+    const questionRegex = /(?<=\*\*Question:\*\* )(.+?)(?=\n\*\*\w+)/s;
+    const match = markdown.match(questionRegex);
+    return match ? match[0].trim() : null;
+}
