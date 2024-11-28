@@ -18,6 +18,7 @@ class QuestionModel(BaseModel):
     type: str = Field(...)  # e.g., 'true-false', 'multiple-choice', 'short-answer'
     correctAnswer: str = Field(...)
     choices: Optional[List[str]] = Field(default=None)
+    isLanding: Optional[bool] = Field(default=False)
 
     class Config:
         populate_by_name = True

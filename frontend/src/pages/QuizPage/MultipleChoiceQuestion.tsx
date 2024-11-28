@@ -11,6 +11,7 @@ interface MultipleChoiceQuestionProps {
     question: string;
     choices: string[];
     correctAnswer: string;
+    isLanding: boolean;
     onAnswer: (isCorrect: boolean) => void;
 }
 
@@ -31,7 +32,7 @@ const InfoCard: React.FC<{ data: CardContentType }> = React.memo(({ data }) => {
     );
 });
 
-const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ question, choices, correctAnswer, onAnswer }) => {
+const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ question, choices, correctAnswer, isLanding, onAnswer }) => {
     const { user } = useAuth();
     const [selectedChoice, setSelectedChoice] = useState<string>('');
     const [currentCard, setCurrentCard] = useState<CardContentType>({ id: 1, role: 'human', question: '', code: '' });
@@ -105,14 +106,18 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     <Typography variant="h6">{question}</Typography>
                 </FormLabel>
                 <RadioGroup value={selectedChoice} onChange={handleChoiceChange}>
-                    {choices.map((choice, index) => (
-                        <FormControlLabel
-                            key={index}
-                            value={choice}
-                            control={<Radio />}
-                            label={choice}
-                        />
-                    ))}
+                    {choices && choices.length > 0 ? (
+                        choices.map((choice, index) => (
+                            <FormControlLabel
+                                key={index}
+                                value={choice}
+                                control={<Radio />}
+                                label={choice}
+                            />
+                        ))
+                    ) : (
+                        <Typography>No choices available</Typography>
+                    )}
                 </RadioGroup>
 
                 <InfoCard data={currentCard} />

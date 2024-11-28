@@ -9,7 +9,8 @@
             "I know some basic",
             "I have tried web editing",
             "I can discuss advance topic"
-        ]
+        ],
+        "isLanding": "true"
     },
     {
         "id": "2",
@@ -19,13 +20,15 @@
         "choices": [
             "Start from suggested learning pattern",
             "Find my way"
-        ]
+        ],
+        "isLanding": "true"
     },
     {
         "id": "3",
         "question": "How to print hello world in javascript?",
         "type": "coding",
         "correctAnswer": "console.log('hello world!');",
-        "choices": []
+        "choices": [],
+        "isLanding": "true"
     }
 ]

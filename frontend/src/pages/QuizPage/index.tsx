@@ -8,21 +8,9 @@ import CodingQuestion from './CodingQuestion';
 import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/material';
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
+import { Question } from './utils';
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
-
-// Define a type for the question types
-type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer' | 'coding';
-
-// Update the Question interface
-interface Question {
-    id: number;
-    question: string;
-    type: QuestionType;
-    correctAnswer: string;
-    choices?: string[]; // Only used for multiple-choice questions
-}
-
 
 const QuizPage: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -37,12 +25,7 @@ const QuizPage: React.FC = () => {
         const abortController = new AbortController();
         const fetchQuestions = async () => {
             try {
-                console.log(user)
-                let questionSource = "test_user";
-                if (user != null) questionSource = user.id;
-
-                // if user is not null, fetch his questions
-                const response = await fetch(`${QUIZ_API_ENDPOINT}/${questionSource}`, {
+                const response = await fetch(`${QUIZ_API_ENDPOINT}/${user?.id}`, {
                     signal: abortController.signal
                 });
                 const json = await response.json();
@@ -68,12 +51,6 @@ const QuizPage: React.FC = () => {
         } else {
             setIsQuizCompleted(true);
         }
-    };
-
-    const handleRestart = () => {
-        setCurrentQuestionIndex(0);
-        setScore(0);
-        setIsQuizCompleted(false);
     };
 
     const currentQuestion = questions[currentQuestionIndex];
@@ -117,6 +94,7 @@ const QuizPage: React.FC = () => {
                             question={currentQuestion.question}
                             choices={currentQuestion.choices || []} // Handle possible null
                             correctAnswer={currentQuestion.correctAnswer}
+                            isLanding={currentQuestion.isLanding}
                             onAnswer={handleAnswer}
                         />
                     ) : currentQuestion.type === 'short-answer' ? (
