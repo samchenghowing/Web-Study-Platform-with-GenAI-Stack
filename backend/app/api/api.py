@@ -16,15 +16,7 @@ from services.background_task import(
     load_web_data,
     verify_submission,
 )
-from services.chains import (
-    load_embedding_model,
-    load_llm,
-    configure_llm_only_chain,
-    configure_qa_rag_chain,
-    generate_task,
-    check_quiz_correctness,
-    generate_quiz_tools,
-)
+from services.chains import *
 from api.models import *
 from api.utils import (
     QueueCallback,
@@ -94,8 +86,8 @@ create_vector_index(neo4j_graph)
 llm = load_llm(
     settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url}
 )
-
-llm_chain = configure_llm_only_chain(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories")
+llm_chain = configure_llm_only_chain(llm)
+llm_history_chain = configure_llm_history_chain(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories")
 rag_chain = configure_qa_rag_chain(
     llm, settings.mongodb_uri, settings.mongodb_, "chat_histories", embeddings, embeddings_store_url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password
 )
@@ -128,7 +120,7 @@ async def generate_task_api(question: Question):
         generate_task(
             user_id=question.user,
             neo4j_graph=neo4j_graph,
-            llm_chain=llm_chain,
+            llm_chain=llm_history_chain,
             input_question=question.text,
             callbacks=[QueueCallback(q)],
         )
@@ -190,7 +182,7 @@ async def submit_quiz(task: Quiz_submission):
     def cb():
         check_quiz_correctness(
             user_id=task.user,
-            llm_chain=llm_chain,
+            llm_chain=llm_history_chain,
             task=task.question,
             answer=task.answer,
             callbacks=[QueueCallback(q)],
@@ -203,6 +195,20 @@ async def submit_quiz(task: Quiz_submission):
 
     return StreamingResponse(generate(), media_type="application/json")
 
+@app.post("/submit/settings")
+async def submit_settings(task: Quiz_submission):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    user_node = neo4j_db.get_user_by_id(task.user)
+    if user_node:
+        attr = convert_question_to_attribute(task.question, llm_chain)
+        print(attr)
+        neo4j_db.update_user_model(task.user, {attr: task.answer})
+        neo4j_db.close()
+        return user_node
+    else:
+        print("User not found.")
+        neo4j_db.close()
+        return HTTPException(status_code=404, detail=f"Student {task.user} not found")
 
 
 @app.get("/toolstest")
@@ -360,7 +366,7 @@ async def create_student(student: StudentModel = Body(...)):
 
     # create user in neo4j 
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    neo4j_db.update_user_model(created_student["_id"], "beginner", "html")
+    neo4j_db.update_user_model(created_student["_id"], {"login": 0})
     neo4j_db.close()
 
     return created_student

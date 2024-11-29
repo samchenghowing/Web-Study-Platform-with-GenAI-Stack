@@ -49,47 +49,68 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
     };
 
     const handleSubmit = async () => {
-        const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                user: user ? user.id : 'test_user',
-                question: question,
-                answer: selectedChoice,
-            }),
-        });
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error('Stream reader is not available');
-
-        const readStream = async () => {
-            let { done, value } = await reader.read();
-            if (done) {
-                setIsReadingComplete(true); // Mark reading as complete
-                return;
-            }
-
-            const chunk = new TextDecoder('utf-8').decode(value);
-            const jsonStrings = chunk.split('\n').filter(Boolean);
-
-            jsonStrings.forEach((jsonString) => {
-                try {
-                    const jsonChunk = JSON.parse(jsonString);
-                    const token = jsonChunk.token;
-
-                    setCurrentCard((prevCard) => ({
-                        ...prevCard,
-                        question: prevCard.question + token,
-                    }));
-
-                } catch (error) {
-                    console.error('Error parsing JSON chunk', error);
-                }
+        if (isLanding) {
+            const response = await fetch(`${SUBMIT_API_ENDPOINT}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user: user ? user.id : 'test_user',
+                    question: question,
+                    answer: selectedChoice,
+                }),
             });
+
+            const json = await response.json();
+            console.log(json);
+
+            if (!response.ok) alert(json.detail);
+            setIsReadingComplete(true);
+        }
+        else {
+            const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user: user ? user.id : 'test_user',
+                    question: question,
+                    answer: selectedChoice,
+                }),
+            });
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('Stream reader is not available');
+
+            const readStream = async () => {
+                let { done, value } = await reader.read();
+                if (done) {
+                    setIsReadingComplete(true); // Mark reading as complete
+                    return;
+                }
+
+                const chunk = new TextDecoder('utf-8').decode(value);
+                const jsonStrings = chunk.split('\n').filter(Boolean);
+
+                jsonStrings.forEach((jsonString) => {
+                    try {
+                        const jsonChunk = JSON.parse(jsonString);
+                        const token = jsonChunk.token;
+
+                        setCurrentCard((prevCard) => ({
+                            ...prevCard,
+                            question: prevCard.question + token,
+                        }));
+
+                    } catch (error) {
+                        console.error('Error parsing JSON chunk', error);
+                    }
+                });
+                await readStream();
+            };
             await readStream();
-        };
-        await readStream();
+        }
     };
 
     const gotoNextQuestion = async () => {

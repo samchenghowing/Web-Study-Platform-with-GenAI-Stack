@@ -47,7 +47,31 @@ def load_llm(llm_name: str, logger=BaseLogger(), config={}):
         num_ctx=3072,  # Sets the size of the context window used to generate the next token.
     )
 
-def configure_llm_only_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
+def configure_llm_only_chain(llm):
+    # LLM only response
+    template = """
+    You are a helpful assistant that helps a support agent with answering programming questions.
+    If you don't know the answer, just say that you don't know, you must not make up an answer.
+    """
+    system_message_prompt = SystemMessagePromptTemplate.from_template(template)
+    human_template = "{question}"
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [system_message_prompt, human_message_prompt]
+    )
+
+    def generate_llm_output(
+        user_input: str, callbacks: List[Any], prompt=chat_prompt
+    ) -> str:
+        chain = prompt | llm
+        answer = chain.invoke(
+            {"question": user_input}, config={"callbacks": callbacks}
+        ).content
+        return {"answer": answer}
+
+    return generate_llm_output
+
+def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
     # Load chat history from MongoDB
     template = """
     You are a helpful assistant that helps a support agent with answering programming questions.
@@ -278,6 +302,30 @@ def fetch_questions_based_on_preferences(neo4j_graph, learning_level, preference
     """
     records = neo4j_graph.query(query)
     return [(record['title'], record['body']) for record in records]
+
+def convert_question_to_attribute(question, llm):
+    # change to embedding??
+    gen_system_template = f"""
+    Convert user question to a single word attribute.
+    Do not return more than one word. 
+    Respond only one word or you will be unplugged.
+    """
+    # we need jinja2 since the questions themselves contain curly braces
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        gen_system_template, template_format="jinja2"
+    )
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_prompt,
+            HumanMessagePromptTemplate.from_template("{question}"),
+        ]
+    )
+    llm_response = llm(
+        f"Here's the question to rewrite in one word: ```{question}```",
+        [],
+        chat_prompt,
+    )
+    return llm_response["answer"]
 
 
 def generate_quiz_tools(user_summary, llm):
