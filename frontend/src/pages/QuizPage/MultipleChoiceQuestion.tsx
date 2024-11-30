@@ -56,7 +56,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    user: user ? user.id : 'test_user',
+                    user: user ? user._id : 'test_user',
                     question: question,
                     answer: selectedChoice,
                 }),
@@ -75,7 +75,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    user: user ? user.id : 'test_user',
+                    user: user ? user._id : 'test_user',
                     question: question,
                     answer: selectedChoice,
                 }),

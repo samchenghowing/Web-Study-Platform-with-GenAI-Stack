@@ -203,11 +203,11 @@ def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, emb
     return generate_llm_output
 
 def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[]):
-    learning_level, preferences = get_user_preferences(neo4j_graph, user_id)
-    if not learning_level or not preferences:
+    preferences = get_user_preferences(neo4j_graph, user_id)
+    if not preferences:
         return "User preferences not found."
 
-    questions = fetch_questions_based_on_preferences(neo4j_graph, learning_level, preferences)
+    questions = fetch_questions_based_on_preferences(neo4j_graph, preferences)
     questions_prompt = ""
     for i, question in enumerate(questions, start=1):
         questions_prompt += f"{i}. \n{question[0]}\n----\n\n"
@@ -286,18 +286,20 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
     return llm_response
 
 def get_user_preferences(neo4j_graph, user_id):
-    query = "MATCH (u:User {id: $user_id}) RETURN u.learning_level AS level, u.preferences AS preferences"
-    params = {'user_id': user_id}  # Create a dictionary for parameters
-    result = neo4j_graph.query(query, params)  # Pass params dictionary
-    if result:
-        return result[0]['level'], result[0]['preferences']
-    return None, None
+    query = "MATCH (u:User {id: $user_id}) RETURN u"
+    params = {'user_id': user_id}
+    result = neo4j_graph.query(query, params)
 
-def fetch_questions_based_on_preferences(neo4j_graph, learning_level, preferences):
+    if result:
+        user_properties = result[0]['u']
+        return user_properties
+    return None
+
+def fetch_questions_based_on_preferences(neo4j_graph, preferences):
     preference_conditions = " OR ".join([f"t.name = '{pref}'" for pref in preferences])
     query = f"""
     MATCH (q:Question)-[:TAGGED]->(t:Tag)
-    WHERE q.difficulty = '{learning_level}' AND ({preference_conditions})
+    WHERE ({preference_conditions})
     RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3
     """
     records = neo4j_graph.query(query)
@@ -308,6 +310,7 @@ def convert_question_to_attribute(question, llm):
     gen_system_template = f"""
     Convert user question to a single word attribute.
     Do not return more than one word. 
+    Do not return any Punctuation Marks. 
     Respond only one word or you will be unplugged.
     """
     # we need jinja2 since the questions themselves contain curly braces

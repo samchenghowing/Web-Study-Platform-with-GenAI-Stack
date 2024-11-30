@@ -13,6 +13,9 @@ import IconButton from '@mui/material/IconButton';
 import SendIcon from '@mui/icons-material/Send';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
+import DeleteIcon from '@mui/icons-material/Delete';
+
 import MarkdownRenderer from '../../components/MarkdownRenderer'
 import { useAuth } from '../../authentication/AuthContext';
 
@@ -22,7 +25,6 @@ const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
     ...theme.typography.body2,
-    padding: theme.spacing(1),
     color: theme.palette.text.secondary,
     width: '100%', // Set width to 70%
     height: '50vh', // Set height to 70% of the viewport height
@@ -41,10 +43,10 @@ function InfoCard({ data, AIChatprops }) {
     return (
         <StyledCard role={data.role} sx={{ minWidth: 275, marginBottom: 2 }}>
             <CardContent>
-                <Typography sx={{ fontSize: 14 }} gutterBottom>
+                <Typography sx={{ fontSize: 16 }} gutterBottom>
                     {data.role}
                 </Typography>
-                <Typography component={'span'} variant='h5'>
+                <Typography component={'span'} sx={{ fontSize: 14 }} >
                     <MarkdownRenderer content={data.question} />
                 </Typography>
             </CardContent>
@@ -153,7 +155,7 @@ export default function AIChat(props: AIChatProps) {
 
     const deleteChatHistory = async () => {
         try {
-            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user?.id}`, { method: 'DELETE' });
+            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user?._id}`, { method: 'DELETE' });
             setCardContent([]);
         } catch (error) {
             console.error(error);
@@ -184,7 +186,7 @@ export default function AIChat(props: AIChatProps) {
                 const response = await fetch(TASK_API_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user: user?.id, text: userQuestion, rag: false })
+                    body: JSON.stringify({ user: user?._id, text: userQuestion, rag: false })
                 });
 
                 const reader = response.body?.getReader();
@@ -238,14 +240,20 @@ export default function AIChat(props: AIChatProps) {
                     <InfoCard key={data.id} data={data} AIChatprops={props} />
                 ))}
             </BackgroundPaper>
-            <ChatInput
-                userQuestion={userQuestion}
-                setUserQuestion={setUserQuestion}
-                handleChat={handleChat}
-            />
-            <Button size='large' onClick={() => deleteChatHistory()} sx={{ mt: 2 }}>
-                Delete Chat History
-            </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Tooltip title="Delete chat history" arrow>
+                    <IconButton onClick={deleteChatHistory} color="secondary">
+                        <DeleteIcon />
+                    </IconButton>
+                </Tooltip>
+                <Box sx={{ flexGrow: 1, ml: 1 }}>
+                    <ChatInput
+                        userQuestion={userQuestion}
+                        setUserQuestion={setUserQuestion}
+                        handleChat={handleChat}
+                    />
+                </Box>
+            </Box>
         </Box>
     );
 }

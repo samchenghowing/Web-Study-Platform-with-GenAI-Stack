@@ -8,14 +8,7 @@ from http import HTTPStatus
 from queue import Queue
 from config import Settings, BaseLogger
 
-from services.background_task import(
-    Job,
-    Submission,
-    save_pdf_to_neo4j,
-    load_so_data,
-    load_web_data,
-    verify_submission,
-)
+from services.background_task import *
 from services.chains import *
 from api.models import *
 from api.utils import (
@@ -203,6 +196,7 @@ async def submit_settings(task: Quiz_submission):
         attr = convert_question_to_attribute(task.question, llm_chain)
         print(attr)
         neo4j_db.update_user_model(task.user, {attr: task.answer})
+        user_node = neo4j_db.get_user_by_id(task.user)
         neo4j_db.close()
         return user_node
     else:
@@ -349,7 +343,6 @@ async def login_student(login: LoginModel = Body(...)):
     response_description="Add new student",
     response_model=StudentModel,
     status_code=HTTPStatus.CREATED,
-    response_model_by_alias=False,
 )
 async def create_student(student: StudentModel = Body(...)):
     hashed_password = bcrypt.hashpw(student.password.encode('utf-8'), bcrypt.gensalt())

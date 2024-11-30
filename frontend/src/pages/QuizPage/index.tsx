@@ -25,7 +25,7 @@ const QuizPage: React.FC = () => {
         const abortController = new AbortController();
         const fetchQuestions = async () => {
             try {
-                const response = await fetch(`${QUIZ_API_ENDPOINT}/${user?.id}`, {
+                const response = await fetch(`${QUIZ_API_ENDPOINT}/${user?._id}`, {
                     signal: abortController.signal
                 });
                 const json = await response.json();

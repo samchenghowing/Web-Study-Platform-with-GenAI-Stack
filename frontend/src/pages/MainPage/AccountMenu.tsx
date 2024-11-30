@@ -27,7 +27,7 @@ export default function AccountMenu() {
     };
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
     return (
         <React.Fragment>

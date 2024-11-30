@@ -12,6 +12,8 @@ import Markdown from 'react-markdown';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { Button, Typography, Snackbar } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 
@@ -37,19 +39,6 @@ export function InfoCard({ data, value, InfoCardProps }) {
             <Typography component={'span'} variant='h5'>
                 <Markdown>{data.question}</Markdown>
             </Typography>
-
-            {/* {data.code && (
-                    <CodeMirrorMerge
-                        orientation="a-b"
-                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
-                    >
-                        <Original value={value} />
-                        <Modified
-                            value={data.code}
-                            extensions={[EditorView.editable.of(false), EditorState.readOnly.of(true)]}
-                        />
-                    </CodeMirrorMerge>
-                )} */}
         </CardContent>
     );
 }
@@ -61,23 +50,6 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState('');
     const isInCodeBlock = React.useRef(false);
-    const codeBlockMarkerCount = React.useRef(0);
-
-    function processChunk(chunk) {
-        for (let i = 0; i < chunk.length; i++) {
-            if (chunk[i] === '`') {
-                codeBlockMarkerCount.current += 1;
-            } else {
-                codeBlockMarkerCount.current = 0;
-            }
-
-            // Check if we have three consecutive backticks
-            if (codeBlockMarkerCount.current === 3) {
-                isInCodeBlock.current = !isInCodeBlock.current; // Toggle state
-                codeBlockMarkerCount.current = 0; // Reset stack after processing
-            }
-        }
-    }
 
     const handleSubmit = async () => {
         try {
@@ -87,7 +59,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    user: user ? user.id : 'test_user',
+                    user: user ? user._id : 'test_user',
                     question: question,
                     answer: value,
                 }),
@@ -119,8 +91,6 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     try {
                         const jsonChunk = JSON.parse(jsonString);
                         const token = jsonChunk.token;
-
-                        processChunk(token);
 
                         setCardContent((prev) =>
                             prev.map((card) => {
@@ -169,7 +139,8 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     />
                     <Modified
                         value={cardContent[0].code}
-                        extensions={[EditorView.editable.of(false), EditorState.readOnly.of(true)]}
+                        extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
+                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
                     />
                 </CodeMirrorMerge>
             ) : (
