@@ -12,12 +12,9 @@ from langchain.prompts import (
     MessagesPlaceholder,
 )
 
-from langchain_mongodb.chat_message_histories import MongoDBChatMessageHistory
+from langchain_neo4j import Neo4jChatMessageHistory
 from langchain.memory import ConversationBufferMemory
 from langchain_core.runnables.history import RunnableWithMessageHistory
-
-from langchain.chains.summarize import load_summarize_chain
-from langchain_community.document_loaders.mongodb import MongodbLoader
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any
@@ -71,7 +68,7 @@ def configure_llm_only_chain(llm):
 
     return generate_llm_output
 
-def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME):
+def configure_llm_history_chain(llm, url, username, password):
     # Load chat history from MongoDB
     template = """
     You are a helpful assistant that helps a support agent with answering programming questions.
@@ -90,11 +87,11 @@ def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME
         chain = prompt | llm
         chain_with_history = RunnableWithMessageHistory(
             chain,
-            lambda session_id: MongoDBChatMessageHistory(
+            lambda session_id: Neo4jChatMessageHistory(
                 session_id=session_id,
-                connection_string=CONN_STRING,
-                database_name=DATABASE_NAME,
-                collection_name=COLLECTION_NAME,
+                url=url,
+                username=username,
+                password=password,
             ),
             input_messages_key="question",
             history_messages_key="chat_history",
@@ -109,7 +106,7 @@ def configure_llm_history_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME
 
     return generate_llm_output
 
-def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, embeddings, embeddings_store_url, username, password):
+def configure_qa_rag_chain(llm, url, username, password, embeddings):
     # RAG response
     #   System: Always talk in pirate speech.
     general_system_template = """ 
@@ -147,15 +144,14 @@ def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, emb
             prompt=prompt,
         )
 
-        # chat history
-        mongo_history = MongoDBChatMessageHistory(
+        neo4j_history = Neo4jChatMessageHistory(
             session_id=user_id,
-            connection_string=CONN_STRING,
-            database_name=DATABASE_NAME,
-            collection_name=COLLECTION_NAME,
-        )
+            url=url,
+            username=username,
+            password=password,
+        ),
         conversational_memory = ConversationBufferMemory(
-            chat_memory=mongo_history,
+            chat_memory=neo4j_history,
             memory_key="chat_history",
             return_messages=True,
             output_key="answer"
@@ -164,7 +160,7 @@ def configure_qa_rag_chain(llm, CONN_STRING, DATABASE_NAME, COLLECTION_NAME, emb
         # Vector + Knowledge Graph response
         kg = Neo4jVector.from_existing_index(
             embedding=embeddings,
-            url=embeddings_store_url,
+            url=url,
             username=username,
             password=password,
             database="neo4j",  # neo4j by default
@@ -277,11 +273,10 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         prompt=chat_prompt,
     )
 
-    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-
-    is_correct = True # TODO:
-    neo4j_db.save_answer(user_id, task, answer, is_correct)
-    neo4j_db.close()
+    # neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    # is_correct = True # TODO:
+    # neo4j_db.save_answer(user_id, task, answer, is_correct)
+    # neo4j_db.close()
 
     return llm_response
 
@@ -330,17 +325,20 @@ def convert_question_to_attribute(question, llm):
     )
     return llm_response["answer"]
 
+def create_questions_based_on_preferences(neo4j_graph, preferences):
+    # TODO with TOOLS
 
-def generate_quiz_tools(user_summary, llm):
-    # Testing
-    user_summary = """
-    The conversation involves a user named 'test_user' who asks about a linked list. The AI responds with a question asking the user to identify and correct a CSS issue in an HTML code snippet. The HTML code contains an unordered list (ul) with three items (li), styled with incorrect flex-direction and width properties. The AI is using the Mistral model for this task.
-    """
+
+    return None
+
+def create_quiz(llm, user_id, neo4j_graph):
+    preferences = get_user_preferences(neo4j_graph, user_id)
+    if not preferences:
+        return "User preferences not found."
 
     gen_system_template = f"""
-    You're a programming teacher and you are preparing task on html, css and javascript. 
-    Create quiz for student which related to their learning summary.
-    Here is the learning summary: {user_summary}
+    You're a programming teacher and you are preparing question on html, css and javascript. 
+    Create quiz for student which related to their learning history, preference and level.
     """
     # we need jinja2 since the questions themselves contain curly braces
     system_prompt = SystemMessagePromptTemplate.from_template(

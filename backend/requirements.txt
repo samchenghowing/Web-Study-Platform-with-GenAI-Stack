@@ -8,6 +8,7 @@ langchain_core
 langgraph
 langchain-ollama
 langchain_mongodb
+langchain-neo4j
 motor
 neo4j
 passlib[bcrypt]

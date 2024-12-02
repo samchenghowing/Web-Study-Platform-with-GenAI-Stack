@@ -16,10 +16,7 @@ from api.utils import (
     stream,
 )
 from db.mongo import *
-from db.neo4j import (
-    create_constraints,
-    create_vector_index,
-)
+from db.neo4j import *
 from fastapi import (
     FastAPI, 
     Body, 
@@ -37,7 +34,6 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pymongo import ReturnDocument
 import bcrypt
-from db.neo4j import Neo4jDatabase
 
 from pdf2image import convert_from_bytes
 
@@ -49,7 +45,6 @@ os.environ["NEO4J_URL"] = settings.neo4j_uri
 client = AsyncIOMotorClient(settings.mongodb_uri)
 student_collection = client[settings.mongodb_].get_collection("students")
 file_collection = client[settings.mongodb_].get_collection("files")
-chat_history_collection = client[settings.mongodb_].get_collection("chat_histories")
 questions_collection = client[settings.mongodb_].get_collection("questions")
 thumbnails_collection = client[settings.mongodb_].get_collection("thumbnails")
 
@@ -67,14 +62,10 @@ neo4j_graph = Neo4jGraph(url=settings.neo4j_uri, username=settings.neo4j_usernam
 create_constraints(neo4j_graph)
 create_vector_index(neo4j_graph)
 
-llm = load_llm(
-    settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url}
-)
+llm = load_llm(settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url})
 llm_chain = configure_llm_only_chain(llm)
-llm_history_chain = configure_llm_history_chain(llm, settings.mongodb_uri, settings.mongodb_, "chat_histories")
-rag_chain = configure_qa_rag_chain(
-    llm, settings.mongodb_uri, settings.mongodb_, "chat_histories", embeddings, embeddings_store_url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password
-)
+llm_history_chain = configure_llm_history_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
+rag_chain = configure_qa_rag_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 
 
 app = FastAPI()
@@ -159,6 +150,12 @@ async def get_quiz(id: str):
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
+@app.post("/quiz/generate")
+def generate_quiz(user_id: str):
+    result = create_quiz(llm, user_id, neo4j_graph)
+    return result
+
+
 @app.post("/submit/quiz")
 async def submit_quiz(task: Quiz_submission):
     q = Queue()
@@ -194,12 +191,6 @@ async def submit_settings(task: Quiz_submission):
         print("User not found.")
         neo4j_db.close()
         return HTTPException(status_code=404, detail=f"Student {task.user} not found")
-
-
-@app.get("/toolstest")
-def toolstest_api():
-    result = generate_quiz_tools("", llm)
-    return result
 
 
 
@@ -447,23 +438,21 @@ async def delete_student(id: str):
 @app.get(
     "/chat_histories/",
     response_description="List all chat histories",
-    response_model=ChatHistoryModelCollection,
-    response_model_by_alias=False,
 )
 async def list_chat_histories():
-    """
-    List all of the chat histories data in the database.
-
-    The response is unpaginated and limited to 1000 results.
-    """
-    return ChatHistoryModelCollection(chat_histories=await chat_history_collection.find().to_list(1000))
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    chat_histories = neo4j_db.get_all_chat_histories()
+    if not chat_histories:
+        raise HTTPException(status_code=404, detail="No chat histories found")
+    return chat_histories
 
 @app.delete("/chat_histories/{SessionId}", response_description="Delete a session's chat histories")
 async def delete_chat_histories(SessionId: str):
     """
     Remove a session's chat histories from the database.
     """
-    delete_result = await chat_history_collection.delete_many({"SessionId": SessionId})
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    delete_result = neo4j_db.delete_chat_history(SessionId)
 
     if delete_result.deleted_count > 1:
         return Response(status_code=HTTPStatus.OK)

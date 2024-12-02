@@ -25,6 +25,7 @@ class Neo4jDatabase:
             is_correct=is_correct
         )
 
+
     def update_user_model(self, user_id, properties):
         with self.driver.session() as session:
             session.write_transaction(self._update_user_record, user_id, properties)
@@ -56,6 +57,39 @@ class Neo4jDatabase:
         record = result.single()
         return record["u"] if record else None
 
+
+    def get_all_chat_histories(self):
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (m:Message)
+                RETURN m.session_id AS session_id, m.content AS content, m.type AS type
+                ORDER BY m.timestamp
+                """
+            )
+            # Group messages by session_id
+            chat_histories = {}
+            for record in result:
+                session_id = record["session_id"]
+                if session_id not in chat_histories:
+                    chat_histories[session_id] = []
+                chat_histories[session_id].append({
+                    "session_id": record["session_id"],
+                    "content": record["content"],
+                    "type": record["type"]
+                })
+            return chat_histories
+
+    def delete_chat_history(self, session_id):
+        with self.driver.session() as session:
+            result = session.run(
+                "MATCH (m:Message {session_id: $session_id}) DELETE m",
+                session_id=session_id
+            )
+            return result
+
+
+# stackoverflow questions
 def create_vector_index(driver) -> None:
     index_query = "CREATE VECTOR INDEX stackoverflow IF NOT EXISTS FOR (m:Question) ON m.embedding"
     try:
@@ -68,7 +102,7 @@ def create_vector_index(driver) -> None:
     except:  # Already exists
         pass
 
-
+# stackoverflow questions
 def create_constraints(driver):
     driver.query(
         "CREATE CONSTRAINT question_id IF NOT EXISTS FOR (q:Question) REQUIRE (q.id) IS UNIQUE"

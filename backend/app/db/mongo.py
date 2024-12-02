@@ -98,33 +98,6 @@ class StudentCollection(BaseModel):
     students: List[StudentModel]
 
 
-class ChatMessageModel(BaseModel):
-    """
-    Container for a chat message record.
-    """
-
-    # The primary key for the ChatMessageModel, stored as a `str` on the instance.
-    # This will be aliased to `_id` when sent to MongoDB,
-    # but provided as `id` in the API requests and responses.
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    SessionId: str = Field(...)
-    History: Json = Field(...)
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-    )
-
-
-class ChatHistoryModelCollection(BaseModel):
-    """
-    A container holding a list of `ChatMessageModel` instances.
-
-    This exists because providing a top-level array in a JSON response can be a [vulnerability](https://haacked.com/archive/2009/06/25/json-hijacking.aspx/)
-    """
-
-    chat_histories: List[ChatMessageModel]
-
-
 class WebfileModel(BaseModel):
     """
     Container for a web site in plain text.
