@@ -15,15 +15,7 @@ from api.utils import (
     QueueCallback,
     stream,
 )
-from db.mongo import (
-    QuestionModel,
-    StudentModel,
-    UpdateStudentModel,
-    StudentCollection,
-    ChatHistoryModelCollection,
-    WebfileModelCollection,
-    QuestionCollection,
-)
+from db.mongo import *
 from db.neo4j import (
     create_constraints,
     create_vector_index,
@@ -34,8 +26,7 @@ from fastapi import (
     HTTPException, 
     BackgroundTasks, 
     UploadFile, 
-    File, 
-    WebSocket,
+    File,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
