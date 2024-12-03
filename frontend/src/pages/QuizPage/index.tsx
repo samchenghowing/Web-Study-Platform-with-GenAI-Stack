@@ -67,53 +67,61 @@ const QuizPage: React.FC = () => {
         );
     }
 
+    if (questions.length === 0) {
+        return (
+            <Container>
+                <Typography variant="h6">Loading questions...</Typography>
+            </Container>
+        );
+    }
+
+    if (!currentQuestion) {
+        return (
+            <Container>
+                <Typography variant="h6">Error: No questions available.</Typography>
+            </Container>
+        );
+    }
+
     return (
         <Container>
-            {questions.length === 0 ? (
-                <Typography variant="h6">Loading questions...</Typography>
-            ) : currentQuestion ? (
-                <>
-                    {/* Stepper Component */}
-                    <Stepper activeStep={currentQuestionIndex} alternativeLabel>
-                        {questions.map((_, index) => (
-                            <Step key={index}>
-                                <StepLabel>{`Question ${index + 1}`}</StepLabel>
-                            </Step>
-                        ))}
-                    </Stepper>
+            {/* Stepper Component */}
+            <Stepper activeStep={currentQuestionIndex} alternativeLabel>
+                {questions.map((_, index) => (
+                    <Step key={index}>
+                        <StepLabel>{`Question ${index + 1}`}</StepLabel>
+                    </Step>
+                ))}
+            </Stepper>
 
-                    {/* Question Rendering */}
-                    {currentQuestion.type === 'true-false' ? (
-                        <TrueFalseQuestion
-                            question={currentQuestion.question}
-                            correctAnswer={currentQuestion.correctAnswer}
-                            onAnswer={handleAnswer}
-                        />
-                    ) : currentQuestion.type === 'multiple-choice' ? (
-                        <MultipleChoiceQuestion
-                            question={currentQuestion.question}
-                            choices={currentQuestion.choices || []} // Handle possible null
-                            correctAnswer={currentQuestion.correctAnswer}
-                            isLanding={currentQuestion.isLanding}
-                            onAnswer={handleAnswer}
-                        />
-                    ) : currentQuestion.type === 'short-answer' ? (
-                        <ShortAnswerQuestion
-                            question={currentQuestion.question}
-                            correctAnswer={currentQuestion.correctAnswer}
-                            onAnswer={handleAnswer}
-                        />
-                    ) : currentQuestion.type === 'coding' ? (
-                        <CodingQuestion
-                            question={currentQuestion.question}
-                            codeEval={currentQuestion.correctAnswer}
-                            onAnswer={handleAnswer}
-                        />
-                    ) : null}
-                </>
-            ) : (
-                <Typography variant="h6">Error: No questions available.</Typography>
-            )}
+            {/* Question Rendering */}
+            {currentQuestion.type === 'true-false' ? (
+                <TrueFalseQuestion
+                    question={currentQuestion.question}
+                    correctAnswer={currentQuestion.correctAnswer}
+                    onAnswer={handleAnswer}
+                />
+            ) : currentQuestion.type === 'multiple-choice' ? (
+                <MultipleChoiceQuestion
+                    question={currentQuestion.question}
+                    choices={currentQuestion.choices || []}
+                    correctAnswer={currentQuestion.correctAnswer}
+                    isLanding={currentQuestion.isLanding}
+                    onAnswer={handleAnswer}
+                />
+            ) : currentQuestion.type === 'short-answer' ? (
+                <ShortAnswerQuestion
+                    question={currentQuestion.question}
+                    correctAnswer={currentQuestion.correctAnswer}
+                    onAnswer={handleAnswer}
+                />
+            ) : currentQuestion.type === 'coding' ? (
+                <CodingQuestion
+                    question={currentQuestion.question}
+                    codeEval={currentQuestion.correctAnswer}
+                    onAnswer={handleAnswer}
+                />
+            ) : null}
         </Container>
     );
 };
