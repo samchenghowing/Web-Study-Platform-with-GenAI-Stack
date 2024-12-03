@@ -128,17 +128,11 @@ export default function AIChat(props: AIChatProps) {
                     signal: abortController.signal
                 });
                 const json = await response.json();
-                const updatedContent = json.chat_histories.map(element => {
-                    const [jsCode, htmlCode, cssCode] = extract_task(element.History.data.content);
+                const updatedContent = json.map(element => {
                     return {
                         id: element.id,
-                        role: element.History.type,
-                        question: element.History.data.content,
-                        task: {
-                            jsDoc: jsCode,
-                            htmlDoc: htmlCode,
-                            cssDoc: cssCode,
-                        },
+                        role: element.type,
+                        question: element.content,
                     };
                 });
                 setCardContent(updatedContent);

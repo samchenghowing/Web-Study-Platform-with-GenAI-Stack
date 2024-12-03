@@ -67,14 +67,9 @@ class Neo4jDatabase:
                 ORDER BY m.timestamp
                 """
             )
-            # Group messages by session_id
-            chat_histories = {}
+            chat_histories = []
             for record in result:
-                session_id = record["session_id"]
-                if session_id not in chat_histories:
-                    chat_histories[session_id] = []
-                chat_histories[session_id].append({
-                    "session_id": record["session_id"],
+                chat_histories.append({
                     "content": record["content"],
                     "type": record["type"]
                 })
@@ -83,7 +78,10 @@ class Neo4jDatabase:
     def delete_chat_history(self, session_id):
         with self.driver.session() as session:
             result = session.run(
-                "MATCH (m:Message {session_id: $session_id}) DELETE m",
+                """
+                MATCH p=(n:Session {id: $session_id})-[:LAST_MESSAGE]->()<-[:NEXT*0..3]-() 
+                DELETE p
+                """,
                 session_id=session_id
             )
             return result

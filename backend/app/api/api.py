@@ -28,7 +28,7 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
 
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
@@ -454,7 +454,7 @@ async def delete_chat_histories(SessionId: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     delete_result = neo4j_db.delete_chat_history(SessionId)
 
-    if delete_result.deleted_count > 1:
+    if delete_result:
         return Response(status_code=HTTPStatus.OK)
 
     raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
