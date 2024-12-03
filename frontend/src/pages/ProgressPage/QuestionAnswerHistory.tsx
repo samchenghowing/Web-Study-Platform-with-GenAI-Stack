@@ -4,6 +4,8 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 
+const QUIZ_HISTORIES_API_ENDPOINT = 'http://localhost:8504/quiz/history';
+
 interface QuestionAnswer {
     question: string;
     answer: string;
@@ -16,7 +18,7 @@ const QuestionAnswerHistory = () => {
         // Fetch the question and answer history from the backend
         const fetchHistory = async () => {
             try {
-                const response = await fetch('/history');
+                const response = await fetch(QUIZ_HISTORIES_API_ENDPOINT);
                 const data = await response.json();
                 setHistory(data);
             } catch (error) {

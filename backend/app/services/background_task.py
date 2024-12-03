@@ -18,7 +18,7 @@ from services.chains import (
 from config import Settings, BaseLogger
 
 from langchain_community.vectorstores import Neo4jVector
-from langchain_community.graphs import Neo4jGraph
+from langchain_neo4j import Neo4jGraph
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
