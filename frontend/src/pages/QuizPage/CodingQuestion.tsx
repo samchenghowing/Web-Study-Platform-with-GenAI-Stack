@@ -50,6 +50,12 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState('');
     const isInCodeBlock = React.useRef(false);
+    const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false); // New state
+
+    React.useEffect(() => {
+        setIsReadingComplete(false); // Reset when question changes
+    }, [question]);
+
 
     const handleSubmit = async () => {
         try {
@@ -82,7 +88,10 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
 
             const readStream = async () => {
                 let { done, value } = await reader.read();
-                if (done) return;
+                if (done) {
+                    setIsReadingComplete(true); // Mark reading as complete
+                    return;
+                }
 
                 const chunk = new TextDecoder('utf-8').decode(value);
                 const jsonStrings = chunk.split('\n').filter(Boolean);
@@ -115,6 +124,12 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             await readStream();
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const gotoNextQuestion = async () => {
+        if (onAnswer) {
+            await onAnswer(true);
         }
     };
 
@@ -160,6 +175,16 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                 Submit
             </Button>
 
+            {isReadingComplete && ( // Only show if reading is complete
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={gotoNextQuestion}
+                    sx={{ mt: 2 }}
+                >
+                    Next question
+                </Button>
+            )}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}

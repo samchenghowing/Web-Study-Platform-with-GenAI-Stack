@@ -9,8 +9,11 @@ import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/ma
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
 import { Question } from './utils';
+import CreateSessionDialog from './CreateSessionDialog'
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
+const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
+const CHECK_NEWSTUDENT_API_ENDPOINT = 'http://localhost:8504/check_new_student';
 
 const QuizPage: React.FC = () => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -19,10 +22,44 @@ const QuizPage: React.FC = () => {
     const [questions, setQuestions] = React.useState<Question[]>([]);
     const { user } = useAuth();
 
-    // TODO: Generate questions by langchain tools/ sturucted output 
-    // (Create question by textbook content, then verify and save it to db)
+    // TODO: Generate questions by prompting user's answer and textbook content
+    // Save the created session in db, real time generation
     React.useEffect(() => {
         const abortController = new AbortController();
+        // get user's login first, if login = 0, get landing quiz
+        const fetchStudent = async () => {
+            try {
+                const response = await fetch(`${CHECK_NEWSTUDENT_API_ENDPOINT}/${user?._id}`, {
+                    signal: abortController.signal
+                });
+                const student = await response.json();
+                if (student.is_new) {
+                    fetchQuestions();
+                }
+                else {
+                    fetchSession();
+                }
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+        };
+
+        const fetchSession = async () => {
+            try {
+                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
+                    signal: abortController.signal
+                });
+                const json = await response.json();
+                console.log("Session info:"+json)
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+        };
+
         const fetchQuestions = async () => {
             try {
                 const response = await fetch(`${QUIZ_API_ENDPOINT}/${user?._id}`, {
@@ -37,7 +74,7 @@ const QuizPage: React.FC = () => {
             }
         };
 
-        fetchQuestions();
+        fetchStudent();
         return () => abortController.abort();
     }, []);
 
@@ -85,6 +122,11 @@ const QuizPage: React.FC = () => {
 
     return (
         <Container>
+            <CreateSessionDialog></CreateSessionDialog>
+            {/* If new user => landing session */}
+
+            {/* else => get existing session/ create new session */}
+
             {/* Stepper Component */}
             <Stepper activeStep={currentQuestionIndex} alternativeLabel>
                 {questions.map((_, index) => (
