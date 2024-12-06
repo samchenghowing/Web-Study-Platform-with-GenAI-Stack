@@ -1,4 +1,5 @@
 from neo4j import GraphDatabase
+import uuid
 
 class Neo4jDatabase:
     def __init__(self, uri, user, password):
@@ -85,6 +86,68 @@ class Neo4jDatabase:
                 session_id=session_id
             )
             return result
+
+    def get_session(self, user_id):
+        with self.driver.session() as session:
+            existing_session = session.read_transaction(self._get_latest_user_session, user_id)
+            if not existing_session:
+                session_id = session.write_transaction(self._create_user_session, user_id)
+                return {"message": "Session created for user", "user_id": user_id, "session_id": session_id}
+            else:
+                # Extract session details from the existing session record
+                session_id = existing_session["s"]["id"]
+                return {
+                    "message": "Latest session already exists for user",
+                    "user_id": user_id,
+                    "session_id": session_id
+                }
+
+    @staticmethod
+    def _get_latest_user_session(tx, user_id):
+        query = """
+        MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        RETURN s
+        ORDER BY s.timestamp DESC
+        LIMIT 1
+        """
+        result = tx.run(query, user_id=user_id)
+        return result.single()
+
+    @staticmethod
+    def _create_user_session(tx, user_id):
+        session_id = str(uuid.uuid4())  # Generate a unique session ID
+        tx.run(
+            """
+            MERGE (u:User {id: $user_id})
+            CREATE (s:Session {id: $session_id, timestamp: datetime()})
+            CREATE (u)-[:HAS_SESSION]->(s)
+            """,
+            user_id=user_id,
+            session_id=session_id
+        )
+        return session_id
+    
+    # get all sessions for a user
+    def get_sessions_for_user(self, user_id):
+        with self.driver.session() as session:
+            sessions = session.read_transaction(self._find_sessions_for_user, user_id)
+            return sessions
+
+    @staticmethod
+    def _find_sessions_for_user(tx, user_id):
+        query = """
+        MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        RETURN s.id AS session_id, s.question AS question, s.timestamp AS timestamp
+        """
+        result = tx.run(query, user_id=user_id)
+        sessions = []
+        for record in result:
+            sessions.append({
+                "session_id": record["session_id"],
+                "question": record["question"],
+                "timestamp": record["timestamp"]
+            })
+        return sessions
 
 
 # stackoverflow questions

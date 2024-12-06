@@ -26,7 +26,6 @@ const QuizPage: React.FC = () => {
     // Save the created session in db, real time generation
     React.useEffect(() => {
         const abortController = new AbortController();
-        // get user's login first, if login = 0, get landing quiz
         const fetchStudent = async () => {
             try {
                 const response = await fetch(`${CHECK_NEWSTUDENT_API_ENDPOINT}/${user?._id}`, {
@@ -34,25 +33,12 @@ const QuizPage: React.FC = () => {
                 });
                 const student = await response.json();
                 if (student.is_new) {
+                    // get user's login first, if login = 0, get landing quiz
                     fetchQuestions();
                 }
                 else {
                     fetchSession();
                 }
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error(error);
-                }
-            }
-        };
-
-        const fetchSession = async () => {
-            try {
-                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
-                    signal: abortController.signal
-                });
-                const json = await response.json();
-                console.log("Session info:"+json)
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error(error);
@@ -67,6 +53,20 @@ const QuizPage: React.FC = () => {
                 });
                 const json = await response.json();
                 setQuestions(json.questions);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+        };
+
+        const fetchSession = async () => {
+            try {
+                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
+                    signal: abortController.signal
+                });
+                const json = await response.json();
+                console.log(json)
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     console.error(error);

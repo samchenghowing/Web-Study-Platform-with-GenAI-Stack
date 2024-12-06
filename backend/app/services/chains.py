@@ -82,7 +82,7 @@ def configure_llm_history_chain(llm, url, username, password):
     ])
 
     def generate_llm_output(
-        user_id: str, question: str, callbacks: List[Any], prompt=chat_prompt
+        sid: str, question: str, callbacks: List[Any], prompt=chat_prompt
     ) -> str:
         chain = prompt | llm
         chain_with_history = RunnableWithMessageHistory(
@@ -99,7 +99,7 @@ def configure_llm_history_chain(llm, url, username, password):
 
         answer = chain_with_history.invoke(
             {"question": question}, 
-            config={"callbacks": callbacks, "configurable": {"session_id": user_id}}
+            config={"callbacks": callbacks, "configurable": {"session_id": sid}}
         ).content
 
         return {"answer": answer}
@@ -135,7 +135,7 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
     qa_prompt = ChatPromptTemplate.from_messages(messages)
 
     def generate_llm_output(
-        user_id: str, question: str, callbacks: List[Any], prompt=qa_prompt
+        sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
     ) -> str:
 
         qa_chain = load_qa_with_sources_chain(
@@ -145,7 +145,7 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
         )
 
         neo4j_history = Neo4jChatMessageHistory(
-            session_id=user_id,
+            session_id=sid,
             url=url,
             username=username,
             password=password,
@@ -192,7 +192,7 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
         )
         answer = kg_qa.invoke(
             {"question": question}, 
-            config={"callbacks": callbacks, "configurable": {"session_id": user_id}}
+            config={"callbacks": callbacks, "configurable": {"session_id": sid}}
         )
         return {"answer": answer}
 
@@ -239,8 +239,13 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    sid = neo4j_db.get_session(user_id).get("session_id")
+    neo4j_db.close()
+
     llm_response = llm_chain(
-        user_id=user_id,
+        sid=sid,
         question=input_question,
         callbacks=callbacks,
         prompt=chat_prompt,
@@ -266,8 +271,12 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    sid = neo4j_db.get_session(user_id).get("session_id")
+    neo4j_db.close()
+
     llm_response = llm_chain(
-        user_id=user_id,
+        sid=sid,
         question=answer, # student's answer send to llm
         callbacks=callbacks,
         prompt=chat_prompt,

@@ -107,6 +107,27 @@ async def generate_task_api(question: Question):
 
     return StreamingResponse(generate(), media_type="application/json")
 
+@app.get("/get_session/{user_id}")
+async def get_session(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    session = neo4j_db.get_session(user_id)
+    neo4j_db.close()
+    return session
+
+@app.get("/check_new_student/{user_id}", response_model=StudentCheckResponse)
+async def check_new_student(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    user = neo4j_db.get_user_by_id(user_id)
+    neo4j_db.close()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the login count is zero
+    is_new = user.get("login", 1) == 0
+
+    return {"is_new": is_new}
+
 
 @app.get(
     "/quiz/{id}",
@@ -182,9 +203,9 @@ async def submit_settings(task: Quiz_submission):
     user_node = neo4j_db.get_user_by_id(task.user)
     if user_node:
         attr = convert_question_to_attribute(task.question, llm_chain)
-        print(attr)
-        neo4j_db.update_user_model(task.user, {attr: task.answer})
-        user_node = neo4j_db.get_user_by_id(task.user)
+        login = int(dict(user_node).get("login"))
+        neo4j_db.update_user_model(task.user, {attr: task.answer, "login": login+1})
+        user_node = neo4j_db.get_user_by_id(task.user) # get updated user
         neo4j_db.close()
         return user_node
     else:
