@@ -21,6 +21,7 @@ import { useAuth } from '../../authentication/AuthContext';
 
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
+const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -149,8 +150,18 @@ export default function AIChat(props: AIChatProps) {
 
     const deleteChatHistory = async () => {
         try {
-            await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${user?._id}`, { method: 'DELETE' });
-            setCardContent([]);
+            try {
+                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {});
+                const json = await response.json();
+
+                await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${json.session_id}`, { method: 'DELETE' });
+                setCardContent([]);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error(error);
+                }
+            }
+
         } catch (error) {
             console.error(error);
         }

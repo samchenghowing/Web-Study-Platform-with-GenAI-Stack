@@ -13,6 +13,7 @@ motor
 neo4j
 passlib[bcrypt]
 pdf2image
+pycryptodome
 pydantic[email]
 pydantic-settings
 pyjwt

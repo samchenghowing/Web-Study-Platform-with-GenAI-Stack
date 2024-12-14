@@ -80,8 +80,10 @@ class Neo4jDatabase:
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH p=(n:Session {id: $session_id})-[:LAST_MESSAGE]->()<-[:NEXT*0..3]-() 
-                DELETE p
+                MATCH p=(n:Session {id: $session_id})-[:LAST_MESSAGE]->(m)<-[:NEXT*0..3]-(x)
+                WITH p, collect(m) as nodes
+                UNWIND nodes as node
+                DETACH DELETE node
                 """,
                 session_id=session_id
             )
