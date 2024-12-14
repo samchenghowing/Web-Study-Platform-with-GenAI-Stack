@@ -8,7 +8,7 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
 import CardContent from '@mui/material/CardContent';
-import Markdown from 'react-markdown';
+import MarkdownRenderer from '../../components/MarkdownRenderer'
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { Button, Typography, Snackbar } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
@@ -37,7 +37,7 @@ export function InfoCard({ data, value, InfoCardProps }) {
     return (
         <CardContent>
             <Typography component={'span'} variant='h5'>
-                <Markdown>{data.question}</Markdown>
+                <MarkdownRenderer content={data.question} />
             </Typography>
         </CardContent>
     );
