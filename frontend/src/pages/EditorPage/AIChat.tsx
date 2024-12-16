@@ -125,7 +125,10 @@ export default function AIChat(props: AIChatProps) {
         const abortController = new AbortController();
         const fetchChatHistory = async () => {
             try {
-                const response = await fetch(CHAT_HISTORIES_API_ENDPOINT, {
+                const session = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {});
+                const sessionJjson = await session.json();
+
+                const response = await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${sessionJjson.session_id}`, {
                     signal: abortController.signal
                 });
                 const json = await response.json();
@@ -133,7 +136,7 @@ export default function AIChat(props: AIChatProps) {
                     return {
                         id: element.id,
                         role: element.type,
-                        question: element.content,
+                        question: element.data.content,
                     };
                 });
                 setCardContent(updatedContent);

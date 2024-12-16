@@ -455,12 +455,12 @@ async def delete_student(id: str):
 
 
 @app.get(
-    "/chat_histories/",
+    "/chat_histories/{SessionId}",
     response_description="List all chat histories",
 )
-async def list_chat_histories():
+async def list_chat_histories(SessionId: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    chat_histories = neo4j_db.get_all_chat_histories()
+    chat_histories = neo4j_db.get_all_chat_histories(SessionId)
     if not chat_histories:
         raise HTTPException(status_code=404, detail="No chat histories found")
     return chat_histories

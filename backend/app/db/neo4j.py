@@ -59,31 +59,36 @@ class Neo4jDatabase:
         return record["u"] if record else None
 
 
-    def get_all_chat_histories(self):
+    def get_all_chat_histories(self, session_id):
         with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (m:Message)
-                RETURN m.session_id AS session_id, m.content AS content, m.type AS type
-                ORDER BY m.timestamp
-                """
-            )
-            chat_histories = []
-            for record in result:
-                chat_histories.append({
-                    "content": record["content"],
-                    "type": record["type"]
-                })
-            return chat_histories
+            query = """
+            MATCH (s:Session)-[:LAST_MESSAGE]->(last_message)
+            WHERE s.id = $session_id
+            WITH last_message
+            MATCH p=(last_message)<-[:NEXT*0..6]-(previous_messages)
+            WITH p, length(p) AS path_length
+            ORDER BY path_length DESC
+            LIMIT 1
+            UNWIND reverse(nodes(p)) AS node
+            RETURN {data: {content: node.content}, type: node.type} AS result
+            """
+            result = session.run(query, session_id=session_id)
+            return [record["result"] for record in result]
 
     def delete_chat_history(self, session_id):
         with self.driver.session() as session:
             result = session.run(
                 """
-                MATCH p=(n:Session {id: $session_id})-[:LAST_MESSAGE]->(m)<-[:NEXT*0..3]-(x)
-                WITH p, collect(m) as nodes
-                UNWIND nodes as node
-                DETACH DELETE node
+                MATCH (s:Session {id: $session_id})-[:LAST_MESSAGE]->(last_message)
+                OPTIONAL MATCH (last_message)<-[:NEXT*0..]-(messages)
+                WITH last_message, COLLECT(messages) AS all_messages
+                // Delete relationships first
+                FOREACH (msg IN all_messages | 
+                    DETACH DELETE msg
+                )
+                // Now delete the last message
+                DETACH DELETE last_message
+                RETURN COUNT(all_messages) AS deleted_count
                 """,
                 session_id=session_id
             )
