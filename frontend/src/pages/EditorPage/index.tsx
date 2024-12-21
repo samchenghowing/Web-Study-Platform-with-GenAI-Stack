@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Grid from '@mui/material/Unstable_Grid2';
+import Grid from '@mui/material/Grid2';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -107,7 +107,7 @@ export default function MainComponent() {
 						/>
 					</ResizablePanel>
 				</Grid>
-				<Grid xs>
+				<Grid>
 					<EditorConfig
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}
