@@ -1,6 +1,39 @@
 from neo4j import GraphDatabase
 import uuid
 
+'''
+neo4j.py [Database Operation]
+
+1.  `__init__`:                 Initializes the Neo4j database connection.  
+2.  `close`:                    Closes the database connection.
+
+[ User Anw Node ]
+3.  `save_answer`:              (Creates) Saves a user's answer to a question in the database.  
+4.  `_create_answer_record`:    (Creates) an `Answer` node linked to a `User` node.  
+
+[ User Node ]
+5.  `update_user_model`:        (Updates) properties of a user node.  
+6.  `_update_user_record`:      (Updates) properties dynamically.  
+7.  `get_user_by_id`:           (Read) retirve a user node by its ID.  
+8.  `_find_user_by_id`:         (Read) fetch a user node by ID. 
+
+[ Chat History Node ]
+9.  `get_all_chat_histories`:   (Read) Fetches the latest chat history for a session.  
+10. `delete_chat_history`:      (Deletes) chat history associated with a session. 
+
+[ Session Node ]
+11. `get_session`:              (Read) Retrieves or creates a user session.  
+12. `_get_latest_user_session`: (Read) Fetches the most recent session for a user.  
+13. `_create_user_session`:     (Creates) a new session node for a user.  
+14. `get_sessions_for_user`:    (Read) Retrieves all sessions associated with a user.  
+15. `_find_sessions_for_user`:  (Read) fetch user sessions.  
+
+[ ? ]
+16. `create_vector_index`:      Creates vector indexes for `Question` and `Answer` nodes.  
+17. `create_constraints`:       Creates uniqueness constraints for nodes (`Question`, `Answer`, `User`, `Tag`).  
+
+'''
+
 class Neo4jDatabase:
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
@@ -26,7 +59,6 @@ class Neo4jDatabase:
             is_correct=is_correct
         )
 
-
     def update_user_model(self, user_id, properties):
         with self.driver.session() as session:
             session.write_transaction(self._update_user_record, user_id, properties)
@@ -41,7 +73,6 @@ class Neo4jDatabase:
         """
         properties['user_id'] = user_id
         tx.run(query, **properties)
-
 
     def get_user_by_id(self, user_id):
         with self.driver.session() as session:

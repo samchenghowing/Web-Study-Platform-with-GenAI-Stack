@@ -1,16 +1,14 @@
 import * as React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import CodeMirrorMerge from 'react-codemirror-merge';
-import { EditorView } from 'codemirror';
-import { EditorState } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
 import CardContent from '@mui/material/CardContent';
-import MarkdownRenderer from '../../components/MarkdownRenderer'
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { Button, Typography, Snackbar } from '@mui/material';
+import { Button, Typography, Snackbar, CircularProgress, Box } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -50,14 +48,17 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState('');
     const isInCodeBlock = React.useRef(false);
-    const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false); // New state
+    const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false);
+    const [isLoading, setIsLoading] = React.useState<boolean>(false); // New loading state
 
     React.useEffect(() => {
         setIsReadingComplete(false); // Reset when question changes
     }, [question]);
 
-
     const handleSubmit = async () => {
+        setIsLoading(true); // Start loading
+        setIsReadingComplete(false);
+
         try {
             const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
                 method: 'POST',
@@ -89,7 +90,8 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             const readStream = async () => {
                 let { done, value } = await reader.read();
                 if (done) {
-                    setIsReadingComplete(true); // Mark reading as complete
+                    setIsReadingComplete(true);
+                    setIsLoading(false); // Stop loading
                     return;
                 }
 
@@ -124,6 +126,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             await readStream();
         } catch (error) {
             console.error(error);
+            setIsLoading(false); // Stop loading on error
         }
     };
 
@@ -171,20 +174,32 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                 <InfoCard key={data.id} data={data} value={value} InfoCardProps={codeEval} />
             ))}
 
-            <Button variant="contained" color="primary" onClick={handleSubmit} sx={{ mt: 2 }}>
-                Submit
-            </Button>
+            {/* Submit Button with Loading Animation */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSubmit}
+                    disabled={isLoading || isReadingComplete}
+                >
+                    {isLoading ? 'Submitting...' : 'Submit'}
+                </Button>
+                {isLoading && <CircularProgress size={24} />}
+            </Box>
 
-            {isReadingComplete && ( // Only show if reading is complete
+            {/* Next Question Button */}
+            {isReadingComplete && (
                 <Button
                     variant="outlined"
                     color="primary"
                     onClick={gotoNextQuestion}
                     sx={{ mt: 2 }}
                 >
-                    Next question
+                    Next Question
                 </Button>
             )}
+
+            {/* Snackbar for Notifications */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}

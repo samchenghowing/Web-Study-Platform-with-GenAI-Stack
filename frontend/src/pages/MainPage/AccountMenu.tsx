@@ -1,3 +1,8 @@
+/** AccountMenu.tsx:  
+ * 1. Define Account Menu Routining of the account operation
+ * 2. Define Account Menu interactive behavior and desgin
+ * */ 
+
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -12,6 +17,8 @@ import Settings from '@mui/icons-material/Settings';
 import Logout from '@mui/icons-material/Logout';
 import { useAuth } from '../../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+
 
 export default function AccountMenu() {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);

@@ -22,6 +22,19 @@ from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import InjectedState
 from langgraph.prebuilt import ToolNode
 
+'''
+graph.py [ Ai Model Tool ]
+
+1. self_correction_graph:   Builds a state graph workflow for generating, validating, and refining code solutions using LCEL documentation and an LLM.
+2. generate:                Generates a code solution based on user input and LCEL documentation.
+3. code_check:              Validates the generated code by checking imports and execution for errors.
+4. reflect:                 Reflects on errors found during validation and attempts to improve the code solution.
+5. decide_to_finish:        Determines whether to retry, reflect, or finish based on error status and iteration count.
+
+6. ollama_test_tools:       Tests LLM tools for performing addition and multiplication using structured input.
+7. ollama_test_graph_tools: Builds a state graph workflow for answering user queries with context retrieval, citation, and tool execution.
+
+'''
 
 def self_correction_graph(llm):
     # LCEL docs

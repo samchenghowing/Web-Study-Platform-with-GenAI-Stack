@@ -15,6 +15,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import Fade from '@mui/material/Fade'; // Transition for smoothness
 import { useAuth } from '../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import SignUpDialog from './SignUpDialog';
 
 const theme = createTheme({
   typography: {
@@ -33,7 +34,7 @@ function Copyright(props: any) {
   return (
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
+      <Link color="inherit" >
         WebGenie 
       </Link>{' '}
       {new Date().getFullYear()}
@@ -53,9 +54,35 @@ export default function SignInDialog({ variant, size, sx }) {
     setErrorMessage(''); // Reset error message on open
   };
 
+  const handleCloseDialog = () => {
+    setOpen(false); // Close the dialog
+    setErrorMessage(''); // Reset error message on open
+    navigate('/'); // Navigate back to root
+  };
+
   const handleClose = () => {
     setOpen(false);
+    <SignUpDialog
+                    variant="contained" // Use 'contained' for a consistent button style
+                    size="large" // Make the button larger
+                    sx={{
+                      background: '#ffffff', // Color gradient
+                      width: '100%', // Make the button full-width
+                      color: '#3b82f6', // text colur
+                      fontWeight: 'bold',
+                      // borderRadius: 2, // Rounded corners
+                      textTransform: 'none', // Removes uppercase styling
+                      backgroundColor: '#FFFFFF', // Darken the color on hover
+                      // boxShadow: 3,
+                      fontFamily: '"Roboto", sans-serif', // Specify the font family here
+                      '&:hover': {
+                        backgroundColor: '#f0f7ff', // Same color as SignInDialog for uniformity
+                      },
+                    }}
+                  />
+
   };
+
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,7 +109,7 @@ export default function SignInDialog({ variant, size, sx }) {
       }
 
       login(json);
-      navigate('/main'); // Redirect to /main on successful login
+      navigate('/begin'); // Redirect to /begin on successful login
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }
@@ -160,14 +187,24 @@ export default function SignInDialog({ variant, size, sx }) {
               </Button>
               <Grid container>
                 <Grid item xs>
-                  <Link href='#' variant='body2'>
-                    Forgot password?
-                  </Link>
+                  <Button
+                      onClick={handleCloseDialog}
+                      variant="text" // Correct variant for Button
+                      sx={{ textTransform: 'none' }} // Prevent uppercase text
+                    >
+                      {"Forgot Password"}
+                  </Button>
                 </Grid>
+
                 <Grid item>
-                  <Link href='#' variant='body2'>
-                    {"Don't have an account? Register"}
-                  </Link>
+                <Button
+                    onClick={handleCloseDialog}
+                    variant="text" // Correct variant for Button
+                    sx={{ textTransform: 'none' }} // Prevent uppercase text
+                  >
+                    {"Register"}
+                </Button>
+               
                 </Grid>
               </Grid>
             </Box>

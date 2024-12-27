@@ -24,6 +24,25 @@ from langchain_community.document_loaders.recursive_url_loader import RecursiveU
 
 from PyPDF2 import PdfReader
 
+'''
+background_task.py
+
+[ Pdf ]
+1. save_pdf_to_neo4j:        Extracts text from a PDF, splits it into chunks, and stores it in a Neo4j vector database.  
+
+[ Stack Overflow ]
+2. insert_so_data:           Imports Stack Overflow questions and answers into a Neo4j database with embeddings and relationships.  
+3. load_so_data:             Fetches Stack Overflow data based on a tag and imports it into Neo4j.
+4. load_high_score_so_data:  Fetches and imports high-voted Stack Overflow data into Neo4j.  
+
+[ Web Content ]
+5. load_web_data:            Crawls web content from a given URL, processes it, and stores it in MongoDB.  
+6. verify_submission:        Validates JavaScript code syntax and functionality through ESLint and test cases.  
+7. validate_js_syntax:       Checks JavaScript code syntax using ESLint.  
+8. run_js_tests:             Runs predefined JavaScript test cases in a Node.js Docker container to verify code functionality.  
+
+'''
+
 settings = Settings()
 
 # if Neo4j is local, you can go to http://localhost:7474/ to browse the database

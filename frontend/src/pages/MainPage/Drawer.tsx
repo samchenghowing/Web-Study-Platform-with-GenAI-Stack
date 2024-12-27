@@ -1,3 +1,8 @@
+/** Drawer.tsx:  
+ * 1. Define Drawer Routining of the drawer item
+ * 2. Define Drawer interactive behavior and desgin
+ * */ 
+
 import * as React from 'react';
 import { styled, useTheme, Theme, CSSObject } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -22,9 +27,11 @@ import DatasetIcon from '@mui/icons-material/Dataset';
 import FaceIcon from '@mui/icons-material/Face';
 import Button from '@mui/material/Button';
 import { Link, useNavigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ToggleColorMode from './ToggleColorMode';
 import AccountMenu from './AccountMenu';
 import imageToAdd from "../LandingPage/title.png";
+
 
 const drawerWidth = 240;
 const logoStyle = {
@@ -59,6 +66,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
     justifyContent: 'flex-end',
     padding: theme.spacing(0, 1),
     ...theme.mixins.toolbar,
+
 }));
 
 interface AppBarProps extends MuiAppBarProps {
@@ -107,7 +115,17 @@ interface MiniDrawerProps {
 }
 
 export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDrawerProps) {
-    const theme = useTheme();
+
+    // Set Theme
+    const theme = createTheme({
+        typography: {
+            fontFamily: "'Roboto', Arial, sans-serif",
+        },
+        palette: {
+            mode,
+        },
+    });
+
     const [open, setOpen] = React.useState(false);
 
     const handleDrawerOpen = () => {
@@ -123,8 +141,11 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
     };
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <ThemeProvider theme={theme}>
+            
+        <Box sx={{ display: 'flex',color: 'primary.main' }}>
             <CssBaseline />
+
             <AppBar position="fixed" open={open}>
                 <Toolbar>
                     <IconButton
@@ -146,8 +167,14 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                             alt='logo of WebGenie'
                         />
                     </Button>
+
                     <Box sx={{ flexGrow: 1 }} />
+
+                    <Box sx={{ p: 2 }}>
+                        <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
+                    </Box>
                     <AccountMenu />
+
                 </Toolbar>
             </AppBar>
             <Drawer variant="permanent" open={open}>
@@ -159,11 +186,11 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                 <Divider />
                 <List>
                     <ListItem disablePadding sx={{ display: 'block' }}>
-                        <ListItemButton component={Link} to="/main/quiz">
+                        <ListItemButton component={Link} to="/main/Lib">
                             <ListItemIcon>
                                 <QuizIcon />
                             </ListItemIcon>
-                            <ListItemText primary="Quiz" />
+                            <ListItemText primary="Lib" />
                         </ListItemButton>
                     </ListItem>
                     <ListItem disablePadding sx={{ display: 'block' }}>
@@ -199,14 +226,13 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                         </ListItemButton>
                     </ListItem>
                 </List>
-                <Box sx={{ p: 2 }}>
-                    <ToggleColorMode mode={mode} toggleColorMode={toggleColorMode} />
-                </Box>
+                
             </Drawer>
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <DrawerHeader />
                 {children}
             </Box>
         </Box>
+        </ThemeProvider>
     );
 }
