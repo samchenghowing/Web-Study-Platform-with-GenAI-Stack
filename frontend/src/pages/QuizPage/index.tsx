@@ -9,8 +9,8 @@ import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/ma
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
 import { Question } from './utils';
-import CreateSessionDialog from '../LibPage/CreateSessionDialog'
-import imageToAdd from '../title.png'; // Adjust the path as necessary
+import logoimg from '../src/title.png'; // Adjust the path as necessary
+import travelimg from '../src/travel.jpeg'
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
@@ -119,32 +119,75 @@ const QuizPage: React.FC = () => {
 
     if (isQuizCompleted) {
         return (
-            <Container style={{ textAlign: 'center', padding: 20 }}>
+            <Container
+                sx={{
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center', // Center vertically
+                    alignItems: 'center', // Center horizontally
+                    overflow: 'hidden',
+                    textAlign: 'center',
+
+                }}
+            >
                 {/* Top-left Logo */}
-                    <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                        <img
-                            src={imageToAdd}
-                            alt="logo of WebGenie"
-                            style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                    <img
+                        src={logoimg}
+                        alt="logo of WebGenie"
+                        style={{ width: '200px', height: 'auto' }}
                     />
-                     </div>
-                     <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        overflow: 'hidden', /* Ensures no extra scrolling */
-                        flexGrow: 1
-                    }}> 
-                        <Typography variant="h4">We are good to go!</Typography>
-                        {/* <Typography variant="h6">Your Score: {score} / {questions.length}</Typography> */}
-                        <Button variant="contained" color="primary" component={Link} to="/main/editor" sx={{ mt: 2 }}>
-                            Start your journey
-                        </Button>
-                    </div>
-                
+                </div>
+        
+                {/* GIF Animation */}
+                <div style={{ marginBottom: '20px' }}>
+                    <img
+                        src={travelimg}
+                        alt="Start Journey Animation"
+                        style={{
+                            width: '100px',
+                            height: 'auto',
+                        }}
+                    />
+                </div>
+        
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    We are good to go!
+                </Typography>
+        
+                {/* Start Button */}
+                <Button
+                    variant="contained"
+                    color="primary"
+                    component={Link}
+                    to="/main/lib"
+                    size="large"
+                    sx={{
+                        background: '#ffffff',
+                        color: '#3b82f6',
+                        fontWeight: 'bold',
+                        textTransform: 'none',
+                        fontFamily: '"Roboto", sans-serif',
+                        padding: '10px 20px',
+                        '&:hover': {
+                            backgroundColor: '#f0f7ff',
+                        },
+                    }}
+                >
+                    Start your journey
+                </Button>
             </Container>
         );
+        
     }
 
     /**
@@ -157,19 +200,21 @@ const QuizPage: React.FC = () => {
                 {/* Top-left Logo */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
                         <img
-                            src={imageToAdd}
+                            src={logoimg}
                             alt="logo of WebGenie"
                             style={{ width: '200px', height: 'auto', flexGrow: 2 }}
                     />
                 </div>
-                <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        overflow: 'hidden', /* Ensures no extra scrolling */
-                        flexGrow: 1
-                    }}> <Typography variant="h6">Loading questions...</Typography> </div>
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    Loading questions...</Typography> 
                 
             </Container>
         );
@@ -185,19 +230,22 @@ const QuizPage: React.FC = () => {
                 {/* Top-left Logo */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
                         <img
-                            src={imageToAdd}
+                            src={logoimg}
                             alt="logo of WebGenie"
                             style={{ width: '200px', height: 'auto', flexGrow: 2 }}
                     />
                 </div>
-                <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        overflow: 'hidden', /* Ensures no extra scrolling */
-                        flexGrow: 1
-                    }}> <Typography variant="h6">Error: No questions available.</Typography> </div>
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    Error: No questions available.
+                </Typography> 
                 
             </Container>
         );
@@ -219,7 +267,7 @@ const QuizPage: React.FC = () => {
             {/* Top-left Logo */}
             <div style={{ position: 'absolute', top: 16, left: 16 }}>
                 <img
-                    src={imageToAdd}
+                    src={logoimg}
                     alt="logo of WebGenie"
                     style={{ width: '200px', height: 'auto', flexGrow: 2 }}
                 />

@@ -30,7 +30,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import ToggleColorMode from './ToggleColorMode';
 import AccountMenu from './AccountMenu';
-import imageToAdd from "../LandingPage/title.png";
+import logoimg from '../src/title.png'; // Adjust the path as necessary
 
 
 const drawerWidth = 240;
@@ -162,7 +162,7 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                     </IconButton>
                     <Button onClick={handleOnClick} sx={{ padding: 0 }}>
                         <img // The logo
-                            src={imageToAdd}
+                            src={logoimg}
                             style={logoStyle}
                             alt='logo of WebGenie'
                         />

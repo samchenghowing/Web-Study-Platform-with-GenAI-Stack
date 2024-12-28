@@ -3,6 +3,7 @@ import { Button, Container, Typography, List, ListItem, ListItemText, CircularPr
 import { useAuth } from '../../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import CreateSessionDialog from './CreateSessionDialog';
+import SessionRecord from './SessionRecord';
 
 const SESSION_API_ENDPOINT = 'http://localhost:8504/sessions';
 const CREATE_SESSION_API_ENDPOINT = 'http://localhost:8504/create_session';
@@ -59,9 +60,6 @@ const SessionPage: React.FC = () => {
             <Typography variant="h4" gutterBottom>
                 Your Sessions
             </Typography>
-            <Button variant="contained" color="primary" onClick={handleCreateSession} sx={{ mb: 2 }}>
-                Add Session
-            </Button>
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
                     <CircularProgress />
@@ -79,7 +77,9 @@ const SessionPage: React.FC = () => {
                     ))}
                 </List>
             )}
-            <CreateSessionDialog open={openDialog} onClose={() => setOpenDialog(false)} onSessionCreated={handleSessionCreated} />
+            
+            <CreateSessionDialog  />
+            <SessionRecord/>
         </Container>
     );
 };

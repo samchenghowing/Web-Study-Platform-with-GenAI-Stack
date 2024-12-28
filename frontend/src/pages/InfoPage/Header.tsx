@@ -11,7 +11,7 @@ import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useNavigate } from 'react-router-dom';
 import ToggleColorMode from '../MainPage/ToggleColorMode'; // Adjust the path as necessary
-import imageToAdd from './title.png'; // Adjust the path as necessary
+import logoimg from '../src/title.png'; // Adjust the path as necessary
 
 // Logo style
 const logoStyle = {
@@ -81,7 +81,7 @@ function AppAppBar({ mode, toggleColorMode }: AppAppBarProps) {
             >
               {/* Logo */}
               <img
-                src={imageToAdd}
+                src={logoimg}
                 style={logoStyle}
                 alt="logo of WebGenie"
                 onClick={() => navigate('/main')}

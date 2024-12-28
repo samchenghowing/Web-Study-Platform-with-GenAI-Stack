@@ -13,7 +13,7 @@ import FacebookIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/X';
 
-import imageToAdd from "./title.png";
+import logoimg from '../src/title.png'; // Adjust the path as necessary
 
 const logoStyle = {
   width: '170px',
@@ -72,7 +72,7 @@ export default function Footer() {
           >
             <Box sx={{ width: { xs: '100%', sm: '60%' } }}>
               <Box sx={{ ml: '-15px' }}>
-                <img src={imageToAdd} style={logoStyle}  alt='logo of WebGenie' />
+                <img src={logoimg} style={logoStyle}  alt='logo of WebGenie' />
               </Box>
               <Typography variant="body2" fontWeight={600} gutterBottom>
                 Newsletter

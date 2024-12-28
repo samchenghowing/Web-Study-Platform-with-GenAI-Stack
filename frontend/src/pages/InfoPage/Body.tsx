@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Box, Container, Typography, Button } from '@mui/material';
-import imageToAdd from './company.jpg'; // Replace with your image path
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate from react-router-dom
+import companyimg from '../src/company.jpg'; // Replace with your image path
 
 export default function AboutUs() {
     const theme = createTheme({
@@ -55,7 +55,7 @@ export default function AboutUs() {
                         }}
                     >
                         <img
-                            src={imageToAdd}
+                            src={companyimg}
                             alt="About Us"
                             style={{
                                 maxWidth: '100%',

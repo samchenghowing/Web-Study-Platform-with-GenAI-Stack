@@ -25,7 +25,7 @@
     },
     {
         "id": "3",
-        "question": "How to print hello world in javascript?",
+        "question": "Fixing the Code:\n How to print hello world in javascript?",
         "type": "coding",
         "correctAnswer": "console.log('hello world!');",
         "choices": [],

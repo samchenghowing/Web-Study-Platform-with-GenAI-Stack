@@ -130,7 +130,7 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                 <FormLabel component="legend">
                     <Typography variant="h6">{question}</Typography>
                 </FormLabel>
-                <RadioGroup value={selectedChoice} onChange={handleChoiceChange}>
+                <RadioGroup value={selectedChoice} onChange={handleChoiceChange} >
                     {choices && choices.length > 0 ? (
                         choices.map((choice, index) => (
                             <FormControlLabel

@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Divider } from '@mui/material';
 
+
 const PDF_API_ENDPOINT = 'http://localhost:8504/pdfs';
 
 interface PDFData {
@@ -98,18 +99,25 @@ export default function FormDialog() {
     return (
         <React.Fragment>
             <Button variant="outlined" onClick={handleClickOpen}>
-                Open form dialog
+                Create New session
             </Button>
             <Dialog
                 open={open}
                 onClose={handleClose}
                 maxWidth="md"
                 fullWidth
+                sx={{
+                    '& .MuiDialog-paper': {
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        maxHeight: '100vh'
+                    }
+                }}
             >
-                <DialogTitle variant="h5">New Session</DialogTitle>
+                <DialogTitle variant="h5">+ Create New Session</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        To design the most suitable tasks for you, please enter your preferences for this session.
+                        To let AI tutor design the most suitable tasks for you, please enter your preferences for this session.
                     </DialogContentText>
 
                     <Box
@@ -123,10 +131,13 @@ export default function FormDialog() {
                                 value={QuestionNum}
                                 label="Number of questions"
                                 onChange={handleChange}
+                                sx={{ width: '200px' }}
                             >
-                                <MenuItem value={1}>One</MenuItem>
-                                <MenuItem value={3}>Three</MenuItem>
-                                <MenuItem value={5}>Five</MenuItem>
+                                {[...Array(20)].map((_, index) => (
+                                    <MenuItem key={index + 1} value={index + 1}>
+                                        {index + 1}
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                     </Box>
@@ -153,7 +164,7 @@ export default function FormDialog() {
 
                     <Divider />
 
-                    <Typography variant="h6">Choose your reference book (Optional)</Typography>
+                    <Typography variant="h5">Choose your reference book (Optional)</Typography>
                     <Grid container spacing={2}>
                         {cardContent.map((pdf) => (
                             <Grid item xs={12} sm={6} md={4} key={pdf.file_id}>

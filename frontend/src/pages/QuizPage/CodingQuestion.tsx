@@ -34,7 +34,14 @@ interface CardContentType {
 export function InfoCard({ data, value, InfoCardProps }) {
     return (
         <CardContent>
-            <Typography component={'span'} variant='h5'>
+            <Typography 
+                component={'span'} 
+                variant="body2" 
+                sx={{ 
+                    fontSize: '0.75rem', // Smaller font size for AI output
+                    textAlign: 'left', 
+                    lineHeight: 1.4,
+            }}>
                 <MarkdownRenderer content={data.question} />
             </Typography>
         </CardContent>
@@ -142,7 +149,17 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
 
     return (
         <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-            <Typography variant="h6">{question}</Typography>
+            <Typography 
+                variant="body2" 
+                sx={{ 
+                    textAlign: 'left', 
+                    margin: '0 auto', 
+                    fontSize: '0.875rem', 
+                    maxWidth: '90%'
+                }}
+            >
+                {question}
+            </Typography>
 
             {cardContent.length > 0 && cardContent[0].code ? (
                 <CodeMirrorMerge
@@ -153,12 +170,12 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                         value={value}
                         onChange={handleChange}
                         extensions={[javascript({ jsx: true }), html(), css()]}
-                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+                        
                     />
                     <Modified
                         value={cardContent[0].code}
                         extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
-                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+
                     />
                 </CodeMirrorMerge>
             ) : (
@@ -171,8 +188,14 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             )}
 
             {cardContent.map((data) => (
-                <InfoCard key={data.id} data={data} value={value} InfoCardProps={codeEval} />
+                <InfoCard 
+                    key={data.id} 
+                    data={data} 
+                    value={value} 
+                    InfoCardProps={codeEval} 
+                />
             ))}
+
 
             {/* Submit Button with Loading Animation */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
