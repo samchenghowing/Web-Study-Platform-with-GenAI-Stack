@@ -22,15 +22,16 @@ neo4j.py [Database Operation]
 10. `delete_chat_history`:      (Deletes) chat history associated with a session. 
 
 [ Session Node ]
-11. `get_session`:              (Read) Retrieves or creates a user session.  
-12. `_get_latest_user_session`: (Read) Fetches the most recent session for a user.  
-13. `_create_user_session`:     (Creates) a new session node for a user.  
-14. `get_sessions_for_user`:    (Read) Retrieves all sessions associated with a user.  
-15. `_find_sessions_for_user`:  (Read) fetch user sessions.  
+11. `get_session`:              (Read) Retrieves or creates a user session. 
+12. `create_session`            (Creates) creates a new user session based on user prefence.
+13. `_get_latest_user_session`: (Read) Fetches the most recent session for a user.  
+14. `_create_user_session`:     (Creates) a new session node for a user.  
+15. `get_sessions_for_user`:    (Read) Retrieves all sessions associated with a user.  
+16. `_find_sessions_for_user`:  (Read) fetch user sessions.  
 
 [ ? ]
-16. `create_vector_index`:      Creates vector indexes for `Question` and `Answer` nodes.  
-17. `create_constraints`:       Creates uniqueness constraints for nodes (`Question`, `Answer`, `User`, `Tag`).  
+17. `create_vector_index`:      Creates vector indexes for `Question` and `Answer` nodes.  
+18. `create_constraints`:       Creates uniqueness constraints for nodes (`Question`, `Answer`, `User`, `Tag`).  
 
 '''
 
@@ -125,12 +126,19 @@ class Neo4jDatabase:
             )
             return result
 
+#####
+
     def get_session(self, user_id):
         with self.driver.session() as session:
-            existing_session = session.read_transaction(self._get_latest_user_session, user_id)
+            existing_session = session.read_transaction(self._get_latest_user_session, user_id, None, None, None)
+
             if not existing_session:
-                session_id = session.write_transaction(self._create_user_session, user_id)
-                return {"message": "Session created for user", "user_id": user_id, "session_id": session_id}
+                session_id = session.write_transaction(self._create_user_session, user_id, 0, [], [])
+                return {
+                    "message": "Session created for user", 
+                    "user_id": user_id, 
+                    "session_id": session_id
+                    }
             else:
                 # Extract session details from the existing session record
                 session_id = existing_session["s"]["id"]
@@ -139,9 +147,26 @@ class Neo4jDatabase:
                     "user_id": user_id,
                     "session_id": session_id
                 }
+    
+    def create_session(self, user_id, question_count, topics, selected_pdfs):
+        with self.driver.session() as session:
+            session_id = session.write_transaction(self._create_user_session, user_id, question_count, topics, selected_pdfs)
+            question_count=question_count
+            topics=topics
+            selected_pdfs=selected_pdfs
+            
+            return {
+                "message": "Session created for user", 
+                "user_id": user_id, 
+                "session_id": session_id,
+                "question_count": question_count,
+                "topics": topics,
+                "selected_pdfs": selected_pdfs
+                }
 
+    
     @staticmethod
-    def _get_latest_user_session(tx, user_id):
+    def _get_latest_user_session(tx, user_id, question_count, topics, selected_pdfs):
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
         RETURN s
@@ -152,16 +177,21 @@ class Neo4jDatabase:
         return result.single()
 
     @staticmethod
-    def _create_user_session(tx, user_id):
+    def _create_user_session(tx, user_id, question_count, topics, selected_pdfs):
         session_id = str(uuid.uuid4())  # Generate a unique session ID
+
         tx.run(
             """
             MERGE (u:User {id: $user_id})
-            CREATE (s:Session {id: $session_id, timestamp: datetime()})
+            CREATE (s:Session {id: $session_id, timestamp: datetime(), question_count: COALESCE($question_count, 0), topics: COALESCE($topics, []), selected_pdfs: COALESCE($selected_pdfs, [])})
             CREATE (u)-[:HAS_SESSION]->(s)
+
             """,
             user_id=user_id,
-            session_id=session_id
+            session_id=session_id,
+            question_count=question_count,
+            topics=topics,
+            selected_pdfs=selected_pdfs
         )
         return session_id
     
@@ -175,15 +205,17 @@ class Neo4jDatabase:
     def _find_sessions_for_user(tx, user_id):
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
-        RETURN s.id AS session_id, s.question AS question, s.timestamp AS timestamp
+        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp
         """
         result = tx.run(query, user_id=user_id)
         sessions = []
         for record in result:
             sessions.append({
                 "session_id": record["session_id"],
-                "question": record["question"],
-                "timestamp": record["timestamp"]
+                "question_count": record["question_count"],
+                "topics": record["topics"],
+                "selected_pdfs": record["selected_pdfs"],
+                "timestamp": record["timestamp"]    
             })
         return sessions
 

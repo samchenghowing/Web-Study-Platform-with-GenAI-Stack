@@ -44,7 +44,16 @@ const router = createBrowserRouter([
         errorElement: <ErrorPage />,
     },
     {
-        path: '/begin',
+        path: '/begin', // Landing Page
+        element: (
+            <Suspense fallback={<LoadingPage />}>
+                <QuizPage />
+            </Suspense>
+        ),
+        errorElement: <ErrorPage />,
+    },
+    {
+        path: '/quiz', 
         element: (
             <Suspense fallback={<LoadingPage />}>
                 <QuizPage />
@@ -81,15 +90,6 @@ const router = createBrowserRouter([
                 element: (
                     <Suspense fallback={<LoadingPage />}>
                         <EditorPage />
-                    </Suspense>
-                ),
-                errorElement: <ErrorPage />,
-            },
-            {
-                path: 'quiz',
-                element: (
-                    <Suspense fallback={<LoadingPage />}>
-                        <QuizPage />
                     </Suspense>
                 ),
                 errorElement: <ErrorPage />,
