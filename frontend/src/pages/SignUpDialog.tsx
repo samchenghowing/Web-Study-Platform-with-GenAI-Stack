@@ -25,7 +25,7 @@ const theme = createTheme({
   },
 });
 
-const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup/';
+const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup';
 
 function Copyright(props: any) {
   return (

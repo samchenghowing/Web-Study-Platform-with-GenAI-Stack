@@ -13,7 +13,7 @@ import logoimg from '../src/title.png'; // Adjust the path as necessary
 import travelimg from '../src/travel.jpeg'
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
-const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
+const SESSION_API_ENDPOINT = 'http://localhost:8504/get_QUIZsession';
 const CHECK_NEWSTUDENT_API_ENDPOINT = 'http://localhost:8504/check_new_student';
 
 const QuizPage: React.FC = () => {
@@ -77,6 +77,10 @@ const QuizPage: React.FC = () => {
         const fetchSession = async () => {
             try {
                 const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
+                    method: 'GET', 
+                    headers: {
+                        'Content-Type': 'application/json'  
+                    },
                     signal: abortController.signal
                 });
                 const json = await response.json();

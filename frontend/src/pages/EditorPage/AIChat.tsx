@@ -21,7 +21,7 @@ import { useAuth } from '../../authentication/AuthContext';
 
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
-const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
+const SESSION_API_ENDPOINT = 'http://localhost:8504/get_AIsession';
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -125,7 +125,7 @@ export default function AIChat(props: AIChatProps) {
         const abortController = new AbortController();
         const fetchChatHistory = async () => {
             try {
-                const session = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {});
+                const session = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET' });
                 const sessionJjson = await session.json();
 
                 const response = await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${sessionJjson.session_id}`, {
@@ -154,7 +154,7 @@ export default function AIChat(props: AIChatProps) {
     const deleteChatHistory = async () => {
         try {
             try {
-                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {});
+                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET'  });
                 const json = await response.json();
 
                 await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${json.session_id}`, { method: 'DELETE' });

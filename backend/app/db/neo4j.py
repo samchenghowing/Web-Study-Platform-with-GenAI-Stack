@@ -22,12 +22,16 @@ neo4j.py [Database Operation]
 10. `delete_chat_history`:      (Deletes) chat history associated with a session. 
 
 [ Session Node ]
-11. `get_session`:              (Read) Retrieves or creates a user session. 
+11. `get_AIsession`:            (Read) Retrieves or creates a user AI session. 
+11. `get_QUIZsession`:          (Read) Retrieves or creates a user QUIZ session. 
 12. `create_session`            (Creates) creates a new user session based on user prefence.
-13. `_get_latest_user_session`: (Read) Fetches the most recent session for a user.  
+13. `_get_latest_user_aisession`(Read) Fetches the most recent quiz session for a user.  
+13. `_get_latest_user_quizsession(Read) Fetches the most recent quiz session for a user.  
 14. `_create_user_session`:     (Creates) a new session node for a user.  
-15. `get_sessions_for_user`:    (Read) Retrieves all sessions associated with a user.  
-16. `_find_sessions_for_user`:  (Read) fetch user sessions.  
+15. `get_quizsessions_for_user`:(Read) Retrieves all quiz sessions associated with a user.  
+16. `_find_quizsessions_for_user(Read) fetch user quiz sessions.  
+15. `get_sessions_for_user`:    (Read) Retrieves all AI sessions associated with a user.  
+16. `_find_aisessions_for_user`:(Read) fetch user AI sessions.  
 
 [ ? ]
 17. `create_vector_index`:      Creates vector indexes for `Question` and `Answer` nodes.  
@@ -128,9 +132,30 @@ class Neo4jDatabase:
 
 #####
 
-    def get_session(self, user_id):
+    def get_AIsession(self, user_id):
         with self.driver.session() as session:
-            existing_session = session.read_transaction(self._get_latest_user_session, user_id, None, None, None)
+            existing_sessions = session.read_transaction(self._get_latest_user_aisession, user_id)
+
+            if existing_sessions:
+                # If an existing session is found, use the latest session
+                session_id = existing_sessions["s"]["id"]  # Get the first session's ID
+                return {
+                    "message": "Latest session already exists for user",
+                    "user_id": user_id,
+                    "session_id": session_id
+                }
+            else:
+                # If no session exists, create a new session
+                session_id = session.write_transaction(self._create_user_session, user_id, 0, [], [])
+                return {
+                    "message": "Session created for user", 
+                    "user_id": user_id, 
+                    "session_id": session_id
+                }
+
+    def get_QUIZsession(self, user_id):
+        with self.driver.session() as session:
+            existing_session = session.read_transaction(self._get_latest_user_quizsession, user_id, None, None, None)
 
             if not existing_session:
                 session_id = session.write_transaction(self._create_user_session, user_id, 0, [], [])
@@ -166,11 +191,22 @@ class Neo4jDatabase:
 
     
     @staticmethod
-    def _get_latest_user_session(tx, user_id, question_count, topics, selected_pdfs):
+    def _get_latest_user_aisession(tx, user_id):
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        WHERE s.question_count = 0 
         RETURN s
-        ORDER BY s.timestamp DESC
+        LIMIT 1
+        """
+        result = tx.run(query, user_id=user_id)
+        return result.single()
+
+    @staticmethod
+    def _get_latest_user_quizsession(tx, user_id, question_count, topics, selected_pdfs):
+        query = """
+        MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        WHERE s.question_count <> 0 
+        RETURN s
         LIMIT 1
         """
         result = tx.run(query, user_id=user_id)
@@ -195,16 +231,45 @@ class Neo4jDatabase:
         )
         return session_id
     
-    # get all sessions for a user
+    # get all quiz sessions for a user
+    def get_quizsessions_for_user(self, user_id):
+        with self.driver.session() as session:
+            sessions = session.read_transaction(self._find_quizsessions_for_user, user_id)
+            return sessions
+
+
+
+    @staticmethod
+    def _find_quizsessions_for_user(tx, user_id):
+        query = """
+        MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        WHERE s.question_count <> 0 
+        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp
+        """
+        result = tx.run(query, user_id=user_id)
+        sessions = []
+        for record in result:
+            sessions.append({
+                "session_id": record["session_id"],
+                "question_count": record["question_count"],
+                "topics": record["topics"],
+                "selected_pdfs": record["selected_pdfs"],
+                "timestamp": record["timestamp"]    
+            })
+        return sessions
+
+    # get all AI Chat sessions for a user
     def get_sessions_for_user(self, user_id):
         with self.driver.session() as session:
-            sessions = session.read_transaction(self._find_sessions_for_user, user_id)
+            sessions = session.read_transaction(self._find_aisessions_for_user, user_id)
             return sessions
 
     @staticmethod
-    def _find_sessions_for_user(tx, user_id):
+    def _find_aisessions_for_user(tx, user_id):
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
+        WHERE s.question_count = 0 
+        RETURN s
         RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp
         """
         result = tx.run(query, user_id=user_id)

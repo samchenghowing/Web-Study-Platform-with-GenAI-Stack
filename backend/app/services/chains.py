@@ -288,7 +288,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     )
 
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_session(user_id).get("session_id")
+    sid = neo4j_db.get_AIsession(user_id).get("session_id")
     neo4j_db.close()
 
     llm_response = llm_chain(
@@ -319,7 +319,7 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         ]
     )
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_session(user_id).get("session_id")
+    sid = neo4j_db.get_AIsession(user_id).get("session_id")
     neo4j_db.close()
 
     llm_response = llm_chain(
