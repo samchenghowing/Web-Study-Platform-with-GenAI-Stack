@@ -25,7 +25,7 @@ const theme = createTheme({
   },
 });
 
-const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup/';
+const SIGNUP_API_ENDPOINT = 'http://localhost:8504/signup';
 
 function Copyright(props: any) {
   return (
@@ -51,8 +51,10 @@ export default function SignUpDialog({ variant, size, sx }) {
     setErrorMessage('');
   };
 
+
   const handleClose = () => {
-    setOpen(false);
+    setOpen(false); // Close the dialog
+    setErrorMessage(''); // Reset error message on open
   };
 
   const handleSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,7 +83,7 @@ export default function SignUpDialog({ variant, size, sx }) {
 
       console.log(json);
       login(json);
-      navigate('/main'); // Redirect to /main on successful login
+      navigate('/begin'); // Redirect to /begin on successful login
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }
@@ -163,9 +165,13 @@ export default function SignUpDialog({ variant, size, sx }) {
               </Button>
               <Grid container>
                 <Grid item xs>
-                  <Link href='#' variant='body2'>
-                    Already have an account? Login
-                  </Link>
+                  <Button
+                     onClick={handleClose}
+                     variant="text" // Correct variant for Button
+                     sx={{ textTransform: 'none' }} // Prevent uppercase text
+                    >
+                        {"Already have an account? Login"}
+                   </Button>
                 </Grid>
               </Grid>
             </Box>

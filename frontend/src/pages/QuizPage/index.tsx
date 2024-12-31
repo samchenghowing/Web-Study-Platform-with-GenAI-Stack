@@ -9,13 +9,21 @@ import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/ma
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
 import { Question } from './utils';
-import CreateSessionDialog from './CreateSessionDialog'
+import logoimg from '../src/title.png'; // Adjust the path as necessary
+import travelimg from '../src/travel.jpeg'
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
-const SESSION_API_ENDPOINT = 'http://localhost:8504/get_session';
+const SESSION_API_ENDPOINT = 'http://localhost:8504/get_QUIZsession';
 const CHECK_NEWSTUDENT_API_ENDPOINT = 'http://localhost:8504/check_new_student';
 
 const QuizPage: React.FC = () => {
+    /**
+     * currentQuestionIndex: Tracks the current question index
+     * score: Tracks the user’s score
+     * isQuizCompleted: Indicates if the quiz is completed
+     * questions: Stores fetched questions
+     * user: Fetches authenticated user info from useAuth
+     */
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [isQuizCompleted, setIsQuizCompleted] = useState(false);
@@ -24,6 +32,12 @@ const QuizPage: React.FC = () => {
 
     // TODO: Generate questions by prompting user's answer and textbook content
     // Save the created session in db, real time generation
+
+    /**
+     * Fetches user data from CHECK_NEWSTUDENT_API_ENDPOINT
+     * If is_new is true → Fetch new questions
+     * Else → Fetch session data
+     */
     React.useEffect(() => {
         const abortController = new AbortController();
         const fetchStudent = async () => {
@@ -63,6 +77,10 @@ const QuizPage: React.FC = () => {
         const fetchSession = async () => {
             try {
                 const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
+                    method: 'GET', 
+                    headers: {
+                        'Content-Type': 'application/json'  
+                    },
                     signal: abortController.signal
                 });
                 const json = await response.json();
@@ -78,6 +96,12 @@ const QuizPage: React.FC = () => {
         return () => abortController.abort();
     }, []);
 
+    /**
+     * If the answer is correct, increment the score
+     * Move to the next question (currentQuestionIndex + 1)
+     * If all questions are answered, mark the quiz as completed (isQuizCompleted)
+     */
+
     const handleAnswer = async (isCorrect: boolean) => {
         if (isCorrect) {
             setScore(score + 1);
@@ -90,81 +114,231 @@ const QuizPage: React.FC = () => {
         }
     };
 
+    /**
+     * Displays a completion message
+     * Provides a button to navigate to /main/editor
+     */
+
     const currentQuestion = questions[currentQuestionIndex];
 
     if (isQuizCompleted) {
         return (
-            <Container style={{ textAlign: 'center', padding: 20 }}>
-                <Typography variant="h4">We are good to go!</Typography>
-                {/* <Typography variant="h6">Your Score: {score} / {questions.length}</Typography> */}
-                <Button variant="contained" color="primary" component={Link} to="/main/editor" sx={{ mt: 2 }}>
+            <Container
+                sx={{
+                    height: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center', // Center vertically
+                    alignItems: 'center', // Center horizontally
+                    overflow: 'hidden',
+                    textAlign: 'center',
+
+                }}
+            >
+                {/* Top-left Logo */}
+                <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                    <img
+                        src={logoimg}
+                        alt="logo of WebGenie"
+                        style={{ width: '200px', height: 'auto' }}
+                    />
+                </div>
+        
+                {/* GIF Animation */}
+                <div style={{ marginBottom: '20px' }}>
+                    <img
+                        src={travelimg}
+                        alt="Start Journey Animation"
+                        style={{
+                            width: '100px',
+                            height: 'auto',
+                        }}
+                    />
+                </div>
+        
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    We are good to go!
+                </Typography>
+        
+                {/* Start Button */}
+                <Button
+                    variant="contained"
+                    color="primary"
+                    component={Link}
+                    to="/main/lib"
+                    size="large"
+                    sx={{
+                        background: '#ffffff',
+                        color: '#3b82f6',
+                        fontWeight: 'bold',
+                        textTransform: 'none',
+                        fontFamily: '"Roboto", sans-serif',
+                        padding: '10px 20px',
+                        '&:hover': {
+                            backgroundColor: '#f0f7ff',
+                        },
+                    }}
+                >
                     Start your journey
                 </Button>
             </Container>
         );
+        
     }
+
+    /**
+     * Shows a loading message while fetching questions
+     */
 
     if (questions.length === 0) {
         return (
             <Container>
-                <Typography variant="h6">Loading questions...</Typography>
+                {/* Top-left Logo */}
+                <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                        <img
+                            src={logoimg}
+                            alt="logo of WebGenie"
+                            style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                    />
+                </div>
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    Loading questions...</Typography> 
+                
             </Container>
         );
     }
+
+    /**
+     * Shows a error message while fetching questions
+     */
 
     if (!currentQuestion) {
         return (
             <Container>
-                <Typography variant="h6">Error: No questions available.</Typography>
+                {/* Top-left Logo */}
+                <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                        <img
+                            src={logoimg}
+                            alt="logo of WebGenie"
+                            style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                    />
+                </div>
+                {/* Start Your Journey Text */}
+                <Typography
+                    variant="h4"
+                    sx={{
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                        color: '#3b82f6',
+                    }}
+                >
+                    Error: No questions available.
+                </Typography> 
+                
             </Container>
         );
     }
 
+    /**
+     * CreateSessionDialog.tsx: Session management
+     * Stepper: Visualizes the user's progress (display progress through a sequence of logical and numbered steps.)
+     */
+
     return (
-        <Container>
-            <CreateSessionDialog></CreateSessionDialog>
-            {/* If new user => landing session */}
+  
+        <Container 
+            sx={{ height: '100vh', 
+                  display: 'flex', 
+                  flexDirection: 'column',  
+                  overflow: 'hidden'  
+        }}>
+            {/* Top-left Logo */}
+            <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                <img
+                    src={logoimg}
+                    alt="logo of WebGenie"
+                    style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                />
+            </div>
 
-            {/* else => get existing session/ create new session */}
+            {/* Stepper Section - Fixed Height */}
+            <div style={{
+                    width: '80%',
+                    margin: '0 auto',
+                    marginTop: '80px', /* Adds space below the logo */
+                    marginBottom: '24px',
+                    height: '80px', /* Fixed height for the Stepper */
+                    flexShrink: 0, /* Prevent resizing */
+                    display: 'flex',
+                    alignItems: 'center'
+                }}>
+                    <Stepper activeStep={currentQuestionIndex} alternativeLabel style={{ width: '100%' }}>
+                        {questions.map((_, index) => (
+                            <Step key={index}>
+                                <StepLabel>{`Question ${index + 1}`}</StepLabel>
+                            </Step>
+                        ))}
+                    </Stepper>
+                </div>
 
-            {/* Stepper Component */}
-            <Stepper activeStep={currentQuestionIndex} alternativeLabel>
-                {questions.map((_, index) => (
-                    <Step key={index}>
-                        <StepLabel>{`Question ${index + 1}`}</StepLabel>
-                    </Step>
-                ))}
-            </Stepper>
+            {/* Centered Content */}
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                overflow: 'hidden', /* Ensures no extra scrolling */
+                flexGrow: 1
+            }}>
 
-            {/* Question Rendering */}
-            {currentQuestion.type === 'true-false' ? (
-                <TrueFalseQuestion
-                    question={currentQuestion.question}
-                    correctAnswer={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : currentQuestion.type === 'multiple-choice' ? (
-                <MultipleChoiceQuestion
-                    question={currentQuestion.question}
-                    choices={currentQuestion.choices || []}
-                    correctAnswer={currentQuestion.correctAnswer}
-                    isLanding={currentQuestion.isLanding}
-                    onAnswer={handleAnswer}
-                />
-            ) : currentQuestion.type === 'short-answer' ? (
-                <ShortAnswerQuestion
-                    question={currentQuestion.question}
-                    correctAnswer={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : currentQuestion.type === 'coding' ? (
-                <CodingQuestion
-                    question={currentQuestion.question}
-                    codeEval={currentQuestion.correctAnswer}
-                    onAnswer={handleAnswer}
-                />
-            ) : null}
+                {/* Question Rendering */}
+                <div style={{ textAlign: 'center', width: '80%' }}>
+                    {currentQuestion.type === 'true-false' ? (
+                        <TrueFalseQuestion
+                            question={currentQuestion.question}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'multiple-choice' ? (
+                        <MultipleChoiceQuestion
+                            question={currentQuestion.question}
+                            choices={currentQuestion.choices || []}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            isLanding={currentQuestion.isLanding}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'short-answer' ? (
+                        <ShortAnswerQuestion
+                            question={currentQuestion.question}
+                            correctAnswer={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'coding' ? (
+                        <CodingQuestion
+                            question={currentQuestion.question}
+                            codeEval={currentQuestion.correctAnswer}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : null}
+                </div>
+            </div>
         </Container>
+
     );
 };
 

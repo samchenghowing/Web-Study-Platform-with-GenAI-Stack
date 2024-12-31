@@ -23,6 +23,29 @@ from db.neo4j import Neo4jDatabase
 
 settings = Settings()
 
+'''
+chain.py [ ollama model Operation ]
+
+1.  `load_embedding_model`:                  Loads an embedding model (`OllamaEmbeddings`) for text vectorization and logs the model used.  
+2.  `load_llm`:                              Initializes a language model (`ChatOllama`) with configurable parameters and logs its setup. 
+
+[ Model Setup ]
+3.  `configure_llm_only_chain`:              Sets up an LLM chain for single-turn Q&A without conversation history.  
+4.  `configure_llm_history_chain`:           Builds an LLM chain with conversation history using `Neo4jChatMessageHistory`.  
+5.  `configure_qa_rag_chain`:                Configures a RAG chain with `Neo4jVector` for context-aware responses and tracks history.  
+
+[ Assist function for AI ]
+6.  `fetch_questions_based_on_preferences`:  Retrieves top-scoring questions from Neo4j matching user preferences.  
+7.  `get_user_preferences`:                  Fetches user preferences from Neo4j using a user ID.  
+
+[ AI function - Generate Question (Based on input) ]
+8.  `generate_task`:                         Creates programming tasks based on user preferences fetched from Neo4j.  
+9.  `check_quiz_correctness`:                Evaluates and provides feedback on student answers within task scope. 
+10. `convert_question_to_attribute`:         Converts a question into a single-word attribute using the LLM.  
+11. `create_questions_based_on_preferences`: Generating questions based on user preferences. ( To do ) 
+12. `create_quiz`:                           Generates a personalized quiz based on user preferences and defines its structure (`MCQ`).  
+'''
+
 def load_embedding_model(embedding_model_name: str, logger=BaseLogger(), config={}):
     embeddings = OllamaEmbeddings(
         base_url=config["ollama_base_url"], 
@@ -198,6 +221,30 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
 
     return generate_llm_output
 
+#
+
+def fetch_questions_based_on_preferences(neo4j_graph, preferences):
+    preference_conditions = " OR ".join([f"t.name = '{pref}'" for pref in preferences])
+    query = f"""
+    MATCH (q:Question)-[:TAGGED]->(t:Tag)
+    WHERE ({preference_conditions})
+    RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3
+    """
+    records = neo4j_graph.query(query)
+    return [(record['title'], record['body']) for record in records]
+
+def get_user_preferences(neo4j_graph, user_id):
+    query = "MATCH (u:User {id: $user_id}) RETURN u"
+    params = {'user_id': user_id}
+    result = neo4j_graph.query(query, params)
+
+    if result:
+        user_properties = result[0]['u']
+        return user_properties
+    return None
+
+#
+
 def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[]):
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
@@ -241,7 +288,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
     )
 
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_session(user_id).get("session_id")
+    sid = neo4j_db.get_AIsession(user_id).get("session_id")
     neo4j_db.close()
 
     llm_response = llm_chain(
@@ -272,7 +319,7 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         ]
     )
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_session(user_id).get("session_id")
+    sid = neo4j_db.get_AIsession(user_id).get("session_id")
     neo4j_db.close()
 
     llm_response = llm_chain(
@@ -288,26 +335,6 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
     # neo4j_db.close()
 
     return llm_response
-
-def get_user_preferences(neo4j_graph, user_id):
-    query = "MATCH (u:User {id: $user_id}) RETURN u"
-    params = {'user_id': user_id}
-    result = neo4j_graph.query(query, params)
-
-    if result:
-        user_properties = result[0]['u']
-        return user_properties
-    return None
-
-def fetch_questions_based_on_preferences(neo4j_graph, preferences):
-    preference_conditions = " OR ".join([f"t.name = '{pref}'" for pref in preferences])
-    query = f"""
-    MATCH (q:Question)-[:TAGGED]->(t:Tag)
-    WHERE ({preference_conditions})
-    RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3
-    """
-    records = neo4j_graph.query(query)
-    return [(record['title'], record['body']) for record in records]
 
 def convert_question_to_attribute(question, llm):
     # change to embedding??

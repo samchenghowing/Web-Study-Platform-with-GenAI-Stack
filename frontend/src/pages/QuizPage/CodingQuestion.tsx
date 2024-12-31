@@ -1,16 +1,14 @@
 import * as React from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import CodeMirrorMerge from 'react-codemirror-merge';
-import { EditorView } from 'codemirror';
-import { EditorState } from '@codemirror/state';
 import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
 import CardContent from '@mui/material/CardContent';
-import MarkdownRenderer from '../../components/MarkdownRenderer'
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
-import { Button, Typography, Snackbar } from '@mui/material';
+import { Button, Typography, Snackbar, CircularProgress, Box } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -36,7 +34,14 @@ interface CardContentType {
 export function InfoCard({ data, value, InfoCardProps }) {
     return (
         <CardContent>
-            <Typography component={'span'} variant='h5'>
+            <Typography 
+                component={'span'} 
+                variant="body2" 
+                sx={{ 
+                    fontSize: '0.75rem', // Smaller font size for AI output
+                    textAlign: 'left', 
+                    lineHeight: 1.4,
+            }}>
                 <MarkdownRenderer content={data.question} />
             </Typography>
         </CardContent>
@@ -50,14 +55,17 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarMessage, setSnackbarMessage] = React.useState('');
     const isInCodeBlock = React.useRef(false);
-    const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false); // New state
+    const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false);
+    const [isLoading, setIsLoading] = React.useState<boolean>(false); // New loading state
 
     React.useEffect(() => {
         setIsReadingComplete(false); // Reset when question changes
     }, [question]);
 
-
     const handleSubmit = async () => {
+        setIsLoading(true); // Start loading
+        setIsReadingComplete(false);
+
         try {
             const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
                 method: 'POST',
@@ -89,7 +97,8 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             const readStream = async () => {
                 let { done, value } = await reader.read();
                 if (done) {
-                    setIsReadingComplete(true); // Mark reading as complete
+                    setIsReadingComplete(true);
+                    setIsLoading(false); // Stop loading
                     return;
                 }
 
@@ -124,6 +133,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             await readStream();
         } catch (error) {
             console.error(error);
+            setIsLoading(false); // Stop loading on error
         }
     };
 
@@ -139,7 +149,17 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
 
     return (
         <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-            <Typography variant="h6">{question}</Typography>
+            <Typography 
+                variant="body2" 
+                sx={{ 
+                    textAlign: 'left', 
+                    margin: '0 auto', 
+                    fontSize: '0.875rem', 
+                    maxWidth: '90%'
+                }}
+            >
+                {question}
+            </Typography>
 
             {cardContent.length > 0 && cardContent[0].code ? (
                 <CodeMirrorMerge
@@ -150,12 +170,12 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                         value={value}
                         onChange={handleChange}
                         extensions={[javascript({ jsx: true }), html(), css()]}
-                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+                        
                     />
                     <Modified
                         value={cardContent[0].code}
                         extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
-                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+
                     />
                 </CodeMirrorMerge>
             ) : (
@@ -168,23 +188,41 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             )}
 
             {cardContent.map((data) => (
-                <InfoCard key={data.id} data={data} value={value} InfoCardProps={codeEval} />
+                <InfoCard 
+                    key={data.id} 
+                    data={data} 
+                    value={value} 
+                    InfoCardProps={codeEval} 
+                />
             ))}
 
-            <Button variant="contained" color="primary" onClick={handleSubmit} sx={{ mt: 2 }}>
-                Submit
-            </Button>
 
-            {isReadingComplete && ( // Only show if reading is complete
+            {/* Submit Button with Loading Animation */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSubmit}
+                    disabled={isLoading || isReadingComplete}
+                >
+                    {isLoading ? 'Submitting...' : 'Submit'}
+                </Button>
+                {isLoading && <CircularProgress size={24} />}
+            </Box>
+
+            {/* Next Question Button */}
+            {isReadingComplete && (
                 <Button
                     variant="outlined"
                     color="primary"
                     onClick={gotoNextQuestion}
                     sx={{ mt: 2 }}
                 >
-                    Next question
+                    Next Question
                 </Button>
             )}
+
+            {/* Snackbar for Notifications */}
             <Snackbar
                 open={snackbarOpen}
                 autoHideDuration={6000}

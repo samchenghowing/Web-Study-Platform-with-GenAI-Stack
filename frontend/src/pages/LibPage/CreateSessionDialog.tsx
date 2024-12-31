@@ -20,8 +20,12 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { Divider } from '@mui/material';
+import { useAuth } from '../../authentication/AuthContext';
+import SessionRecord from './SessionRecord';
+
 
 const PDF_API_ENDPOINT = 'http://localhost:8504/pdfs';
+const CREATESESSION_API_ENDPOINT = 'http://localhost:8504/create_session';
 
 interface PDFData {
     file_id: string;
@@ -34,6 +38,7 @@ export default function FormDialog() {
     const [QuestionNum, setQuestionNum] = React.useState('');
     const [cardContent, setCardContent] = React.useState<PDFData[]>([]);
     const [selectedPDFs, setSelectedPDFs] = React.useState<string[]>([]);
+    const { user } = useAuth();
 
     React.useEffect(() => {
         fetchPDFs();
@@ -86,6 +91,35 @@ export default function FormDialog() {
         });
     };
 
+    const handleContinue = async () => {
+        try {
+            const payload = {
+                question_count: Number(QuestionNum),
+                topics: cardContent, 
+                selected_pdfs: selectedPDFs
+            };
+    
+            const response = await fetch(`http://localhost:8504/create_session/${user?._id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to create session');
+            }
+    
+            const data = await response.json();
+            window.dispatchEvent(new Event('fetchSessionsEvent'));
+            handleClose(); // Close the dialog after success
+        } catch (error) {
+            console.error('Error creating session:', error);
+            alert('Failed to create session. Please try again.');
+        }
+    };
+
     const handleClickOpen = () => {
         setOpen(true);
     };
@@ -95,21 +129,29 @@ export default function FormDialog() {
         setSelectedPDFs([]);
     };
 
+
     return (
         <React.Fragment>
             <Button variant="outlined" onClick={handleClickOpen}>
-                Open form dialog
+                Create New session
             </Button>
             <Dialog
                 open={open}
                 onClose={handleClose}
                 maxWidth="md"
                 fullWidth
+                sx={{
+                    '& .MuiDialog-paper': {
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        maxHeight: '100vh'
+                    }
+                }}
             >
-                <DialogTitle variant="h5">New Session</DialogTitle>
+                <DialogTitle variant="h5">+ Create New Session</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        To design the most suitable tasks for you, please enter your preferences for this session.
+                        To let AI tutor design the most suitable tasks for you, please enter your preferences for this session.
                     </DialogContentText>
 
                     <Box
@@ -123,10 +165,13 @@ export default function FormDialog() {
                                 value={QuestionNum}
                                 label="Number of questions"
                                 onChange={handleChange}
+                                sx={{ width: '200px' }}
                             >
-                                <MenuItem value={1}>One</MenuItem>
-                                <MenuItem value={3}>Three</MenuItem>
-                                <MenuItem value={5}>Five</MenuItem>
+                                {[...Array(20)].map((_, index) => (
+                                    <MenuItem key={index + 1} value={index + 1}>
+                                        {index + 1}
+                                    </MenuItem>
+                                ))}
                             </Select>
                         </FormControl>
                     </Box>
@@ -153,7 +198,7 @@ export default function FormDialog() {
 
                     <Divider />
 
-                    <Typography variant="h6">Choose your reference book (Optional)</Typography>
+                    <Typography variant="h5">Choose your reference book (Optional)</Typography>
                     <Grid container spacing={2}>
                         {cardContent.map((pdf) => (
                             <Grid item xs={12} sm={6} md={4} key={pdf.file_id}>
@@ -182,7 +227,8 @@ export default function FormDialog() {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose}>Cancel</Button>
-                    <Button type="submit">Continue</Button>
+                    <Button onClick={handleContinue} type="submit">Continue</Button>
+
                 </DialogActions>
             </Dialog>
         </React.Fragment>
