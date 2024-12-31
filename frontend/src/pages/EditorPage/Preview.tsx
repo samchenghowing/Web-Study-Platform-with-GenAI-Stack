@@ -9,7 +9,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
 
-const Transition = React.forwardRef<HTMLDivElement, TransitionProps & { children: React.ReactElement }>(
+const Transition = React.forwardRef<HTMLDivElement, TransitionProps & { children: React.ReactElement<any> }>(
     function Transition(props, ref) {
         return <Slide direction="up" ref={ref} {...props} />;
     }
