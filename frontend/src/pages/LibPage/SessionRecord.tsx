@@ -58,18 +58,18 @@ const SessionRecord = () => {
                     // Loop through the data and set each quiz record line by line
                     const newQuizData = data.map((item: any) => {
                         // Convert timestamp to a readable format
-                        const timestamp = new Date(item.timestamp._DateTime__time._Time__ticks / 10000 - 62135596800000).toLocaleString();
+                        const timestamp  = convertTimestamp(item.timestamp);
                         
 
                         // Return a formatted record
                         return {
                             
                             session_id: item.session_id,
-                            name: `New Quiz ${item.session_id.slice(-4)}`, // Example for naming
+                            name: item.quizname, 
                             question_count: item.question_count,
                             timestamp: timestamp,
-                            state: 'In Progress',
-                            score: `0/${item.question_count}`,
+                            state: item.done ? 'Done' : 'In Progress', 
+                            score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
                         };
                     });
@@ -98,19 +98,31 @@ const SessionRecord = () => {
     
 
     // Helper function to format timestamp
-    const formatTimestamp = (timestamp: any) => {
+    function convertTimestamp(timestamp) {
+        // const ordinal = timestamp._Date__ordinal;
+        // const baseDate = new Date(1, 0, 1); // January 1st, 0001
+        // const targetDate = new Date(baseDate.getTime() + (739251 - 1) * 24 * 60 * 60 * 1000);  // Add days
+
         const date = timestamp._DateTime__date;
         const time = timestamp._DateTime__time;
-
+    
         const year = date._Date__year;
         const month = date._Date__month;
         const day = date._Date__day;
         const hour = time._Time__hour;
         const minute = time._Time__minute;
         const second = time._Time__second;
-
-        return `${month}/${day}/${year} ${hour}:${minute}:${second}`;
-    };
+    
+        // Format the time string, adding leading zeroes where necessary 
+        const formattedTime = `${hour+8}:${minute.toString().padStart(2, '0')}`; // :${second.toString().padStart(2, '0')
+    
+        // Optionally, you can include the date as well if you want
+        const formattedDate = `${day}/${month}/${year} ${formattedTime}`;
+        // const formattedDate = `${targetDate}`;
+        // targetDate.toISOString()
+    
+        return formattedDate;
+    }
 
     // Add New Record
     const addRecord = (record: QuizRecord) => {

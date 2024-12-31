@@ -36,14 +36,17 @@ interface PDFData {
 export default function FormDialog() {
     const [open, setOpen] = React.useState(false);
     const [QuestionNum, setQuestionNum] = React.useState('');
+    const [selectedTopics, setSelectedTopics] = React.useState<string[]>([]);
     const [cardContent, setCardContent] = React.useState<PDFData[]>([]);
     const [selectedPDFs, setSelectedPDFs] = React.useState<string[]>([]);
+
     const { user } = useAuth();
 
     React.useEffect(() => {
         fetchPDFs();
     }, []);
 
+    // PDF
     const fetchPDFs = async () => {
         const abortController = new AbortController();
         try {
@@ -91,11 +94,12 @@ export default function FormDialog() {
         });
     };
 
+    // Create session based on user preference
     const handleContinue = async () => {
         try {
             const payload = {
                 question_count: Number(QuestionNum),
-                topics: cardContent, 
+                topics: selectedTopics, 
                 selected_pdfs: selectedPDFs
             };
     
@@ -103,6 +107,7 @@ export default function FormDialog() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
+                    
                 },
                 body: JSON.stringify(payload)
             });
@@ -120,6 +125,7 @@ export default function FormDialog() {
         }
     };
 
+    // Diaglog open/close
     const handleClickOpen = () => {
         setOpen(true);
     };
@@ -185,6 +191,7 @@ export default function FormDialog() {
                             options={programmingConcepts}
                             groupBy={(option) => option.category}
                             getOptionLabel={(option) => option.concept}
+                            onChange={(event, newValue) => setSelectedTopics(newValue.map(item => item.concept))} 
                             renderInput={(params) => (
                                 <TextField
                                     {...params}

@@ -109,7 +109,7 @@ export default function SignInDialog({ variant, size, sx }) {
       }
 
       login(json);
-      navigate('/begin'); // Redirect to /begin on successful login
+      navigate('/main'); 
     } catch (error) {
       setErrorMessage('An unexpected error occurred.' + error);
     }
