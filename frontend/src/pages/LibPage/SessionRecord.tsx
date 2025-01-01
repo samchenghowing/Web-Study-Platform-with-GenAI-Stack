@@ -19,10 +19,11 @@ import {
     TextField,
     TablePagination,
 } from '@mui/material';
-import { Delete as DeleteIcon, Edit as EditIcon, DriveFileRenameOutline as RenameIcon, Add as AddIcon, Refresh as ReviseIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Start as StartICON, DriveFileRenameOutline as RenameIcon, Add as AddIcon, Refresh as ReviseIcon } from '@mui/icons-material';
 import { useAuth } from '../../authentication/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session/';
+const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
 
 interface QuizRecord {
     session_id: string;
@@ -40,6 +41,7 @@ const SessionRecord = () => {
     const [newName, setNewName] = useState('');
     const [currentRenameId, setCurrentRenameId] = useState<string | null>(null);
     const { user } = useAuth();
+    const navigate = useNavigate();
     
     // Pagination state
     const [page, setPage] = useState(0);
@@ -49,7 +51,7 @@ const SessionRecord = () => {
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                const response = await fetch(`http://localhost:8504/list_session/${user?._id}`, {
+                const response = await fetch(`${LISTSESSION_API_ENDPOINT}/${user?._id}`, {
                     method: 'GET',
                 });
                 if (response.ok) {
@@ -158,6 +160,10 @@ const SessionRecord = () => {
         // Add revise logic here if needed, like opening a form to edit quiz details
     };
 
+    const handleBeginQuiz = (quiz: QuizRecord) => {
+        navigate('/main/editor', { state: { quiz } });
+    };
+
     // Handle Page Change
     const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
         setPage(newPage);
@@ -217,8 +223,10 @@ const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + 
                             <TableRow
                                 key={quiz.session_id}
                                 sx={{
+                                    position: 'relative',
                                     '&:nth-of-type(odd)': { backgroundColor: '#f4f4f5' },
                                     '&:hover': { backgroundColor: '#eef2ff' },
+                                    '&:hover .overlay-button': { display: 'flex' },
                                 }}
                             >
                                 <TableCell sx={{ fontSize: '14px' }}>{quiz.name}</TableCell>
@@ -243,6 +251,28 @@ const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + 
                                     ))}
                                 </TableCell>
                                 <TableCell align="center">
+                                    <Box
+                                        className="overlay-button"
+                                        sx={{
+                                            display: 'none',
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                        }}
+                                    >
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<StartICON />}
+                                            onClick={() => handleBeginQuiz(quiz)}
+                                        >
+                                            Begin
+                                        </Button>
+                                    </Box>
                                     <Tooltip title="Rename">
                                         <IconButton
                                             color="secondary"

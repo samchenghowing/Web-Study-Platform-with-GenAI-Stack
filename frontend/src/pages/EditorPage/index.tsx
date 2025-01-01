@@ -4,6 +4,7 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
+import { useLocation } from 'react-router-dom';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -36,6 +37,19 @@ export default function MainComponent() {
 	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 	const [snackbarText, setSnackbarText] = React.useState<string>('');
 
+	const location = useLocation();
+	const quiz = location.state?.quiz;
+
+	React.useEffect(() => {
+		if (quiz) {
+			setEditorDoc({
+				jsDoc: quiz.jsDoc,
+				htmlDoc: quiz.htmlDoc,
+				cssDoc: quiz.cssDoc,
+			});
+			setQuestion(quiz.name);
+		}
+	}, [quiz]);
 
 	const handleClose = (
 		event: React.SyntheticEvent | Event,
