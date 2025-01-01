@@ -5,6 +5,7 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation } from 'react-router-dom';
+import { Box, Chip, Typography } from '@mui/material';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -122,6 +123,17 @@ export default function MainComponent() {
 					</ResizablePanel>
 				</Grid>
 				<Grid>
+					<Box sx={{ p: 2 }}>
+						<Typography variant="h6">Quiz Details</Typography>
+						<Typography variant="body1">Question Count: {quiz?.question_count}</Typography>
+						<Typography variant="body1">Score: {quiz?.score}</Typography>
+						<Box sx={{ mt: 1 }}>
+							<Typography variant="body1">Topics:</Typography>
+							{quiz?.topics.map((topic: string, index: number) => (
+								<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+							))}
+						</Box>
+					</Box>
 					<EditorConfig
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}
