@@ -102,6 +102,7 @@ interface AIChatProps {
     setQuestion: (mode: string) => void;
     task: { jsDoc: string; htmlDoc: string; cssDoc: string };
     setTask: Dispatch<SetStateAction<{ jsDoc: string; htmlDoc: string; cssDoc: string }>>;
+    quiz: any; // Add quiz to the props
 }
 
 interface CardContentType {
@@ -125,10 +126,7 @@ export default function AIChat(props: AIChatProps) {
         const abortController = new AbortController();
         const fetchChatHistory = async () => {
             try {
-                const session = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET' });
-                const sessionJjson = await session.json();
-
-                const response = await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${sessionJjson.session_id}`, {
+                const response = await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${props.quiz.session_id}`, {
                     signal: abortController.signal
                 });
                 const json = await response.json();
@@ -147,9 +145,11 @@ export default function AIChat(props: AIChatProps) {
             }
         };
 
-        fetchChatHistory();
+        if (props.quiz) {
+            fetchChatHistory();
+        }
         return () => abortController.abort();
-    }, []);
+    }, [props.quiz]);
 
     const deleteChatHistory = async () => {
         try {

@@ -3,9 +3,14 @@ import Grid from '@mui/material/Grid2';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardActions from '@mui/material/CardActions';
+import Button from '@mui/material/Button';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation } from 'react-router-dom';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab } from '@mui/material';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -33,10 +38,12 @@ export default function MainComponent() {
 		cssDoc: 'h1 {color: black;text-align: center;}',
 	});
 	const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
-
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 	const [snackbarText, setSnackbarText] = React.useState<string>('');
+	const [countdown, setCountdown] = React.useState(3);
+	const [showEditor, setShowEditor] = React.useState(false);
+	const [tabIndex, setTabIndex] = React.useState(0);
 
 	const location = useLocation();
 	const quiz = location.state?.quiz;
@@ -51,6 +58,15 @@ export default function MainComponent() {
 			setQuestion(quiz.name);
 		}
 	}, [quiz]);
+
+	React.useEffect(() => {
+		if (countdown > 0) {
+			const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+			return () => clearTimeout(timer);
+		} else {
+			setShowEditor(true);
+		}
+	}, [countdown]);
 
 	const handleClose = (
 		event: React.SyntheticEvent | Event,
@@ -100,9 +116,24 @@ export default function MainComponent() {
 		setEditorDoc(task);
 	}, [task]);
 
+	const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+		setTabIndex(newValue);
+	};
+
+	if (!showEditor) {
+		return (
+			<Dialog open>
+				<DialogTitle>Are you ready?</DialogTitle>
+				<DialogContent>
+					<Typography variant="h1" align="center">{countdown}</Typography>
+				</DialogContent>
+			</Dialog>
+		);
+	}
+
 	return (
 		<Stack>
-			<Grid container spacing={1}>
+			<Grid container spacing={2}>
 				<Grid>
 					<ResizablePanel
 						width={aiChatWidth}
@@ -111,29 +142,49 @@ export default function MainComponent() {
 						maxWidth={600} // Maximum width in pixels
 					>
 						<Alert severity="info">
-							<AlertTitle>Current task</AlertTitle>
-							{question}
+							<AlertTitle>{quiz?.name}</AlertTitle>
+							<Typography variant="body1">Question Count: 1 of {quiz?.question_count}</Typography>
+							<Typography variant="body1">Current Score: {quiz?.score}</Typography>
 						</Alert>
-						<AIChat
-							question={question}
-							setQuestion={setQuestion}
-							task={task}
-							setTask={setTask}
-						/>
+
+						<Tabs value={tabIndex} onChange={handleTabChange} aria-label="simple tabs example">
+							<Tab label="Question" />
+							<Tab label="AI Chat" />
+						</Tabs>
+
+						{tabIndex === 0 && (
+							<Card variant="outlined">
+								<CardContent>
+									<Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
+										Question 1
+									</Typography>
+									<Typography sx={{ color: 'text.secondary', mb: 1.5 }}>Topics:
+										{quiz?.topics.map((topic: string, index: number) => (
+											<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+										))}</Typography>
+									<Typography variant="body2">
+										<MarkdownRenderer content={"This is an AI genterated question after count down"} />
+									</Typography>
+								</CardContent>
+								<CardActions>
+									<Button size="small">Click to Begin</Button>
+								</CardActions>
+							</Card>
+						)}
+
+						{tabIndex === 1 && (
+							<AIChat
+								question={question}
+								setQuestion={setQuestion}
+								task={task}
+								setTask={setTask}
+								quiz={quiz} // Pass the quiz object to AIChat
+							/>
+						)}
+
 					</ResizablePanel>
 				</Grid>
 				<Grid>
-					<Box sx={{ p: 2 }}>
-						<Typography variant="h6">Quiz Details</Typography>
-						<Typography variant="body1">Question Count: {quiz?.question_count}</Typography>
-						<Typography variant="body1">Score: {quiz?.score}</Typography>
-						<Box sx={{ mt: 1 }}>
-							<Typography variant="body1">Topics:</Typography>
-							{quiz?.topics.map((topic: string, index: number) => (
-								<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-							))}
-						</Box>
-					</Box>
 					<EditorConfig
 						editorConfig={editorConfig}
 						editorDoc={editorDoc}
