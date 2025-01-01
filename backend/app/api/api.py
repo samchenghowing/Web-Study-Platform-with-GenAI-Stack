@@ -123,16 +123,36 @@ async def root():
 
 jobs: Dict[UUID, Job] = {}
 
-@app.post("/generate-task") 
-async def generate_task_api(question: Question):
+# Chat bot API
+@app.post("/query-stream")
+async def qstream(question: Question):
+    output_function = llm_history_chain
+    print(question.session)
+
     q = Queue()
+    def cb():
+        output_function(
+            sid=question.session.get("session_id"),
+            question=question.text,
+            callbacks=[QueueCallback(q)],
+        )
+    def generate():
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+    return StreamingResponse(generate(), media_type="application/json")
+
+@app.post("/generate-task") 
+async def generate_task_api(task: GenerateTask):
+    q = Queue()
+    print(task.session)
 
     def cb():
         generate_task(
-            user_id=question.user,
+            user_id=task.user,
             neo4j_graph=neo4j_graph,
             llm_chain=llm_history_chain,
-            input_question=question.text,
+            session=task.session,
             callbacks=[QueueCallback(q)],
         )
 

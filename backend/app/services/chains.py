@@ -97,11 +97,10 @@ def configure_llm_history_chain(llm, url, username, password):
     You are a helpful assistant that helps a support agent with answering programming questions.
     If you don't know the answer, just say that you don't know, you must not make up an answer.
     """
-    human_template = "{question}"
     chat_prompt = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(template),
         MessagesPlaceholder(variable_name="chat_history"),
-        HumanMessagePromptTemplate.from_template(human_template),
+        HumanMessagePromptTemplate.from_template("{question}"),
     ])
 
     def generate_llm_output(
@@ -131,7 +130,6 @@ def configure_llm_history_chain(llm, url, username, password):
 
 def configure_qa_rag_chain(llm, url, username, password, embeddings):
     # RAG response
-    #   System: Always talk in pirate speech.
     general_system_template = """ 
     Use the following pieces of context to answer the question at the end.
     The context contains question-answer pairs and their links from Stackoverflow.
@@ -245,23 +243,23 @@ def get_user_preferences(neo4j_graph, user_id):
 
 #
 
-def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[]):
+def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
         return "User preferences not found."
 
-    questions = fetch_questions_based_on_preferences(neo4j_graph, preferences)
-    questions_prompt = ""
-    for i, question in enumerate(questions, start=1):
-        questions_prompt += f"{i}. \n{question[0]}\n----\n\n"
-        questions_prompt += f"{question[1][:150]}\n\n"
-        questions_prompt += "----\n\n"
+    # questions = fetch_questions_based_on_preferences(neo4j_graph, preferences)
+    # questions_prompt = ""
+    # for i, question in enumerate(questions, start=1):
+    #     questions_prompt += f"{i}. \n{question[0]}\n----\n\n"
+    #     questions_prompt += f"{question[1][:150]}\n\n"
+    #     questions_prompt += "----\n\n"
 
     gen_system_template = f"""
     You're a programming teacher and you are preparing task on html, css and javascript. 
     Generate coding snippet that having fault for students to fix.
-    Formulate a question in the same style and tone as the following example questions.
-    {questions_prompt}
+    Make sure creating question based on student's prefrence below.
+    {preferences}
     ---
 
     Return a title for the question, and the question itself.
@@ -287,13 +285,15 @@ def generate_task(user_id, neo4j_graph, llm_chain, input_question, callbacks=[])
         ]
     )
 
-    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_AIsession(user_id).get("session_id")
-    neo4j_db.close()
+    # neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    # sid = neo4j_db.get_AIsession(user_id).get("session_id")
+    # neo4j_db.close()
+
+    currentTopics = "I want to know more about these topics" , session.get("topics")
 
     llm_response = llm_chain(
-        sid=sid,
-        question=input_question,
+        sid=session.get("session_id"),
+        question=currentTopics,
         callbacks=callbacks,
         prompt=chat_prompt,
     )

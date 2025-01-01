@@ -9,8 +9,10 @@ import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation } from 'react-router-dom';
-import { Box, Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab } from '@mui/material';
+import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab } from '@mui/material';
 import MarkdownRenderer from '../../components/MarkdownRenderer';
+import { useAuth } from '../../authentication/AuthContext';
+import { extract_task } from './utils';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -20,6 +22,7 @@ import { EditorConfigType, EditorDocType } from './utils';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';
+const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 
 export default function MainComponent() {
 	const [editorConfig, setEditorConfig] = React.useState<EditorConfigType>({
@@ -31,7 +34,7 @@ export default function MainComponent() {
 		htmlDoc: 'Hello world',
 		cssDoc: '',
 	});
-	const [question, setQuestion] = React.useState('No question assigned yet... Chat with AI to get your tailored task!');
+	const [question, setQuestion] = React.useState('Generating question...');
 	const [task, setTask] = React.useState<EditorDocType>({
 		jsDoc: 'console.log(\'You can learn anything\');',
 		htmlDoc: 'Hello world',
@@ -48,14 +51,16 @@ export default function MainComponent() {
 	const location = useLocation();
 	const quiz = location.state?.quiz;
 
+	const { user } = useAuth(); // Accessing user from AuthContext
+
 	React.useEffect(() => {
 		if (quiz) {
-			setEditorDoc({
-				jsDoc: quiz.jsDoc,
-				htmlDoc: quiz.htmlDoc,
-				cssDoc: quiz.cssDoc,
-			});
-			setQuestion(quiz.name);
+			// setEditorDoc({
+			// 	jsDoc: quiz.jsDoc,
+			// 	htmlDoc: quiz.htmlDoc,
+			// 	cssDoc: quiz.cssDoc,
+			// });
+			// setQuestion(quiz.name);
 		}
 	}, [quiz]);
 
@@ -65,8 +70,48 @@ export default function MainComponent() {
 			return () => clearTimeout(timer);
 		} else {
 			setShowEditor(true);
+			generateQuestion();
 		}
 	}, [countdown]);
+
+	const generateQuestion = async () => {
+		try {
+			const response = await fetch(TASK_API_ENDPOINT, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ user: user?._id, session: JSON.stringify(quiz) }) // Serialize the session field
+			});
+
+			setQuestion("");
+
+			const reader = response.body?.getReader();
+			if (!reader) {
+				throw new Error('Stream reader is not available');
+			}
+
+			const readStream = async () => {
+				let { done, value } = await reader.read();
+				if (done) return;
+
+				const chunk = new TextDecoder('utf-8').decode(value);
+				const jsonStrings = chunk.split('\n').filter(Boolean);
+
+				jsonStrings.forEach(jsonString => {
+					try {
+						const jsonChunk = JSON.parse(jsonString);
+						setQuestion(prev => prev + jsonChunk.token);
+					} catch (error) {
+						console.error('Error parsing JSON chunk', error);
+					}
+				});
+				await readStream();
+			};
+
+			await readStream();
+		} catch (error) {
+			console.error('Error during stream', error);
+		}
+	};
 
 	const handleClose = (
 		event: React.SyntheticEvent | Event,
@@ -163,11 +208,17 @@ export default function MainComponent() {
 											<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
 										))}</Typography>
 									<Typography variant="body2">
-										<MarkdownRenderer content={"This is an AI genterated question after count down"} />
+										<MarkdownRenderer content={question} />
 									</Typography>
 								</CardContent>
 								<CardActions>
-									<Button size="small">Click to Begin</Button>
+									<Button size="small" onClick={() => {
+										const [jsCode, htmlCode, cssCode] = extract_task(question);
+										var task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
+										setTask(task);
+									}}>
+										Click to Begin
+									</Button>
 								</CardActions>
 							</Card>
 						)}

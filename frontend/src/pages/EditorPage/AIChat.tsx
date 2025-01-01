@@ -19,7 +19,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MarkdownRenderer from '../../components/MarkdownRenderer'
 import { useAuth } from '../../authentication/AuthContext';
 
-const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
+const CHAT_API_ENDPOINT = 'http://localhost:8504/query-stream';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
 const SESSION_API_ENDPOINT = 'http://localhost:8504/get_AIsession';
 
@@ -51,7 +51,7 @@ function InfoCard({ data, AIChatprops }) {
                     <MarkdownRenderer content={data.question} />
                 </Typography>
             </CardContent>
-            {data.role === 'ai' && (
+            {/* {data.role === 'ai' && (
                 <CardActions>
                     <Button size='large' onClick={() => {
                         const [jsCode, htmlCode, cssCode] = extract_task(data.question);
@@ -62,7 +62,7 @@ function InfoCard({ data, AIChatprops }) {
                         Take this task!
                     </Button>
                 </CardActions>
-            )}
+            )} */}
         </StyledCard>
     );
 }
@@ -191,10 +191,10 @@ export default function AIChat(props: AIChatProps) {
             setUserQuestion('');
 
             try {
-                const response = await fetch(TASK_API_ENDPOINT, {
+                const response = await fetch(CHAT_API_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user: user?._id, text: userQuestion, rag: false })
+                    body: JSON.stringify({ user: user?._id, text: userQuestion, session: JSON.stringify(props.quiz) })
                 });
 
                 const reader = response.body?.getReader();

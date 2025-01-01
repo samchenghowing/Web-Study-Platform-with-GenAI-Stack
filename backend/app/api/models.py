@@ -1,9 +1,15 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Json
 
 class Question(BaseModel):
     user: str
     text: str
-    rag: bool | None = False 
+    session: Json[Any]
+
+class GenerateTask(BaseModel):
+    user: str
+    session: Json[Any]
 
 class LoadDataRequest(BaseModel):
     tag: str
