@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface User {
     _id: string;
     avatarUrl: string | undefined;
-    name: string;
+    username: string;
     email: string;
 }
 

@@ -48,7 +48,7 @@ export default function AccountMenu() {
                         aria-haspopup="true"
                         aria-expanded={open ? 'true' : undefined}
                     >
-                        <Avatar alt={user ? user.name : 'Guest'} src={user ? user.avatarUrl : undefined} />
+                        <Avatar alt={user ? user.username : 'Guest'} src={user ? user.avatarUrl : undefined} />
                     </IconButton>
                 </Tooltip>
             </Box>
@@ -91,7 +91,6 @@ export default function AccountMenu() {
             >
                 {user ? (
                     <>
-                        <MenuItem disabled>{user.name}</MenuItem>
                         <MenuItem disabled>{user.email}</MenuItem>
                     </>
                 ) : (
@@ -100,7 +99,7 @@ export default function AccountMenu() {
                     </>
                 )}
                 <MenuItem onClick={handleClose}>
-                    <Avatar alt={user ? user.name : 'Guest'} src={user ? user.avatarUrl : undefined} /> Profile
+                    <Avatar alt={user ? user.username : 'Guest'} src={user ? user.avatarUrl : undefined} /> {user ? user.username : 'Guest'}
                 </MenuItem>
                 <Divider />
                 <MenuItem onClick={handleClose}>
