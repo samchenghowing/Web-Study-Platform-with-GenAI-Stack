@@ -64,11 +64,11 @@ const router = createBrowserRouter([
     {
         path: '/main',
         element: (
-            // <PrivateRoute>
+            <PrivateRoute>
                 <Suspense fallback={<LoadingPage />}>
                     <MainPage />
                 </Suspense>
-            // </PrivateRoute>
+            </PrivateRoute>
         ),
         errorElement: <ErrorPage />,
         children: [

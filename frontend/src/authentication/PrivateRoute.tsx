@@ -16,7 +16,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = () => {
 
     if (!user) {
         // Redirect to the sign-in page if not authenticated
-        return <Navigate to="/signin" replace />;
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;
