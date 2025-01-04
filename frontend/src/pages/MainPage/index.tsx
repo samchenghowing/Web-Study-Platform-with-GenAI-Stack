@@ -7,7 +7,11 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import getLPTheme from './getLPTheme';
 import Drawer from './Drawer';
 
-const MainPage: React.FC = () => {
+interface MainPageProps {
+	children?: React.ReactNode;
+}
+
+const MainPage: React.FC<MainPageProps> = ({ children }) => {
 	// Theme and CSS layout
 	const [mode, setMode] = React.useState<PaletteMode>('light');
 	const LPtheme = createTheme(getLPTheme(mode));

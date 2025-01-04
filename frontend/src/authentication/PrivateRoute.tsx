@@ -1,13 +1,14 @@
 import * as React from "react";
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import LoadingPage from '../pages/LoadingPage';
+import MainPage from '../pages/MainPage';
 
 interface PrivateRouteProps {
     children?: React.ReactNode;
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = () => {
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -19,7 +20,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = () => {
         return <Navigate to="/" replace />;
     }
 
-    return <Outlet />;
+    return <MainPage>{children}</MainPage>;
 };
 
 export default PrivateRoute;
