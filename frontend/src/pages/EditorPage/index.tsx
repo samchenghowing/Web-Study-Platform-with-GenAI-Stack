@@ -26,7 +26,7 @@ const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 
 export default function MainComponent() {
 	const [editorConfig, setEditorConfig] = React.useState<EditorConfigType>({
-		language: 'js',
+		language: 'combined',
 		autoRun: false,
 	});
 	const [editorDoc, setEditorDoc] = React.useState<EditorDocType>({
@@ -44,7 +44,7 @@ export default function MainComponent() {
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 	const [snackbarText, setSnackbarText] = React.useState<string>('');
-	const [countdown, setCountdown] = React.useState(3);
+	const [countdown, setCountdown] = React.useState(1);
 	const [showEditor, setShowEditor] = React.useState(false);
 	const [tabIndex, setTabIndex] = React.useState(0);
 
@@ -216,6 +216,10 @@ export default function MainComponent() {
 										const [jsCode, htmlCode, cssCode] = extract_task(question);
 										var task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
 										setTask(task);
+										setEditorConfig(prevState => ({
+											...prevState,
+											language: 'combined' // Ensure default is 'combined'
+										}));
 									}}>
 										Click to Begin
 									</Button>

@@ -26,29 +26,43 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
                 return editorDoc.htmlDoc;
             case 'css':
                 return editorDoc.cssDoc;
+            case 'combined':
+                return `${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`;
             default:
                 return '';
         }
     }, [editorConfig.language, editorDoc]);
 
     const handleChange = (value: string) => {
-        const updatedDoc = { ...editorDoc };
+        if (editorConfig.language === 'combined') {
+            const htmlMatch = value.match(/<body>([\s\S]*?)<\/body>/);
+            const cssMatch = value.match(/<style>([\s\S]*?)<\/style>/);
+            const jsMatch = value.match(/<script>([\s\S]*?)<\/script>/);
 
-        switch (editorConfig.language) {
-            case 'js':
-                updatedDoc.jsDoc = value;
-                break;
-            case 'html':
-                updatedDoc.htmlDoc = value;
-                break;
-            case 'css':
-                updatedDoc.cssDoc = value;
-                break;
-            default:
-                break;
+            setEditorDoc({
+                htmlDoc: htmlMatch ? htmlMatch[1] : editorDoc.htmlDoc,
+                cssDoc: cssMatch ? cssMatch[1] : editorDoc.cssDoc,
+                jsDoc: jsMatch ? jsMatch[1] : editorDoc.jsDoc,
+            });
+        } else {
+            const updatedDoc = { ...editorDoc };
+
+            switch (editorConfig.language) {
+                case 'js':
+                    updatedDoc.jsDoc = value;
+                    break;
+                case 'html':
+                    updatedDoc.htmlDoc = value;
+                    break;
+                case 'css':
+                    updatedDoc.cssDoc = value;
+                    break;
+                default:
+                    break;
+            }
+
+            setEditorDoc(updatedDoc);
         }
-
-        setEditorDoc(updatedDoc);
     };
 
     return (

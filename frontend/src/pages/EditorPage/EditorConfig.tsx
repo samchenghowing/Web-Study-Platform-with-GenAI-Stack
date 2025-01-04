@@ -11,6 +11,7 @@ import JavascriptIcon from '@mui/icons-material/Javascript';
 import SaveAsIcon from '@mui/icons-material/SaveAs';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import GradingIcon from '@mui/icons-material/Grading';
+import CodeIcon from '@mui/icons-material/Code'; // Import the icon for the combined editor
 import { EditorConfigType, EditorDocType } from './utils';
 import Preview from './Preview';
 
@@ -24,7 +25,7 @@ interface EditorConfigProps {
 }
 
 const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(function EditorConfig(props, ref) {
-    const [alignment, setAlignment] = React.useState<EditorConfigType['language']>('js');
+    const [alignment, setAlignment] = React.useState<EditorConfigType['language']>('combined'); // Set default to 'combined'
 
     const handleAlignment = (
         event: React.MouseEvent<HTMLElement>,
@@ -53,6 +54,11 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
                 aria-label="editor language"
                 color="standard"
             >
+                <Tooltip title="Combined Editor">
+                    <ToggleButton value="combined">
+                        <CodeIcon />
+                    </ToggleButton>
+                </Tooltip>
                 <Tooltip title="JavaScript Editor">
                     <ToggleButton value="js">
                         <JavascriptIcon />

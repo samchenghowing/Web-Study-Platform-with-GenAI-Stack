@@ -1,5 +1,5 @@
 export type EditorConfigType = {
-    language: 'all' | 'js' | 'html' | 'css';
+    language: 'combined' | 'js' | 'html' | 'css';
     autoRun: boolean;
 };
 
