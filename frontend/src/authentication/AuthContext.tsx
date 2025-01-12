@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState<boolean>(true);
 
     React.useEffect(() => {
-        const loggedInUser = localStorage.getItem('user');
+        const loggedInUser = sessionStorage.getItem('user');
         if (loggedInUser) {
             setUser(JSON.parse(loggedInUser));
         }
@@ -31,12 +31,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = (userData: any) => {
         setUser(userData);
-        if (userData != null) localStorage.setItem('user', JSON.stringify(userData));
+        if (userData != null) sessionStorage.setItem('user', JSON.stringify(userData));
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
     };
 
     return (
