@@ -329,11 +329,6 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         prompt=chat_prompt,
     )
 
-    # neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    # is_correct = True # TODO:
-    # neo4j_db.save_answer(user_id, task, answer, is_correct)
-    # neo4j_db.close()
-
     return llm_response
 
 def convert_question_to_attribute(question, llm):
@@ -366,45 +361,6 @@ def create_questions_based_on_preferences(neo4j_graph, preferences):
 
 
     return None
-
-def create_quiz(llm, user_id, neo4j_graph):
-    preferences = get_user_preferences(neo4j_graph, user_id)
-    if not preferences:
-        return "User preferences not found."
-
-    gen_system_template = f"""
-    You're a programming teacher and you are preparing question on html, css and javascript. 
-    Create quiz for student which related to their learning history, preference and level.
-    """
-    # we need jinja2 since the questions themselves contain curly braces
-    system_prompt = SystemMessagePromptTemplate.from_template(
-        gen_system_template, template_format="jinja2"
-    )
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [
-            system_prompt,
-        ]
-    )
-
-    class MCQ(BaseModel):
-        """Multiple choice questions."""
-
-        question: str = Field(...)
-        type: str = Field(...)  # e.g., 'true-false', 'multiple-choice', 'short-answer'
-        correctAnswer: str = Field(...)
-        choices: Optional[List[str]] = Field(default=None)
-
-        class Config:
-            populate_by_name = True
-            arbitrary_types_allowed = True
-
-    llm.bind_tools([MCQ])
-    
-    result = llm.invoke("linked list mc question")
-    result.tool_calls
-
-    print(result)
-    return result
 
 def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username: str, password: str, top_k: int = 5):
     vector_store = Neo4jVector(

@@ -248,12 +248,6 @@ async def get_quiz(id: str):
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 
-@app.post("/quiz/generate")
-def generate_quiz(user_id: str):
-    result = create_quiz(llm, user_id, neo4j_graph)
-    return result
-
-
 @app.post("/submit/quiz")
 async def submit_quiz(task: Quiz_submission):
     q = Queue()
