@@ -44,7 +44,7 @@ export default function MainComponent() {
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 	const [snackbarText, setSnackbarText] = React.useState<string>('');
-	const [countdown, setCountdown] = React.useState(1);
+	const [countdown, setCountdown] = React.useState(0);
 	const [showEditor, setShowEditor] = React.useState(false);
 	const [tabIndex, setTabIndex] = React.useState(0);
 
@@ -55,12 +55,7 @@ export default function MainComponent() {
 
 	React.useEffect(() => {
 		if (quiz) {
-			// setEditorDoc({
-			// 	jsDoc: quiz.jsDoc,
-			// 	htmlDoc: quiz.htmlDoc,
-			// 	cssDoc: quiz.cssDoc,
-			// });
-			// setQuestion(quiz.name);
+			setCountdown(3);
 		}
 	}, [quiz]);
 
@@ -76,6 +71,9 @@ export default function MainComponent() {
 
 	const generateQuestion = async () => {
 		try {
+			if (!quiz) {
+				throw new Error('Quiz object is not available');
+			}
 			const response = await fetch(TASK_API_ENDPOINT, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -201,7 +199,7 @@ export default function MainComponent() {
 							<Card variant="outlined">
 								<CardContent>
 									<Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
-										Question 1
+										Question number {quiz?.question_no}
 									</Typography>
 									<Typography sx={{ color: 'text.secondary', mb: 1.5 }}>Topics:
 										{quiz?.topics.map((topic: string, index: number) => (

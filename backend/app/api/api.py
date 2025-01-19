@@ -163,6 +163,8 @@ async def generate_task_api(task: GenerateTask):
 
     return StreamingResponse(generate(), media_type="application/json")
 
+# should this be a question sessioin for the AI chat?
+# @app.get("/get_AIsession/{user_id}/{session_id}/{question_id}") 
 @app.get("/get_AIsession/{user_id}") 
 async def get_session(user_id: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
@@ -572,6 +574,7 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
 
 ## Chat History
 @app.get(
+    # "/chat_histories/{SessionId}/{QuestionId}", # Should add QuestionId for more specific chat history
     "/chat_histories/{SessionId}",
     response_description="List all chat histories",
 )
@@ -582,6 +585,7 @@ async def list_chat_histories(SessionId: str):
         raise HTTPException(status_code=404, detail="No chat histories found")
     return chat_histories
 
+# Also delete all related chat histories for a session
 @app.delete("/chat_histories/{SessionId}", response_description="Delete a session's chat histories")
 async def delete_chat_histories(SessionId: str):
     """

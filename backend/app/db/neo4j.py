@@ -300,6 +300,19 @@ class Neo4jDatabase:
             })
         return sessions
 
+    def create_question_node(self, session_id, question_id, question_text):
+        with self.driver.session() as session:
+            session.write_transaction(self._create_question_node, session_id, question_id, question_text)
+
+    @staticmethod
+    def _create_question_node(tx, session_id, question_id, question_text):
+        query = """
+        MATCH (s:Session {id: $session_id})
+        CREATE (q:Question {id: $question_id, text: $question_text, timestamp: datetime()})
+        CREATE (s)-[:CONTAINS]->(q)
+        """
+        tx.run(query, session_id=session_id, question_id=question_id, question_text=question_text)
+
 
 # stackoverflow questions
 def create_vector_index(driver) -> None:

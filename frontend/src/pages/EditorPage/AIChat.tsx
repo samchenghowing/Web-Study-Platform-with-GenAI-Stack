@@ -21,7 +21,7 @@ import { useAuth } from '../../authentication/AuthContext';
 
 const CHAT_API_ENDPOINT = 'http://localhost:8504/query-stream';
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories';
-const SESSION_API_ENDPOINT = 'http://localhost:8504/get_AIsession';
+const QUESTION_SESSION_API_ENDPOINT = 'http://localhost:8504/get_AIsession';
 
 const BackgroundPaper = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -154,7 +154,7 @@ export default function AIChat(props: AIChatProps) {
     const deleteChatHistory = async () => {
         try {
             try {
-                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET'  });
+                const response = await fetch(`${QUESTION_SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET'  });
                 const json = await response.json();
 
                 await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${json.session_id}`, { method: 'DELETE' });
