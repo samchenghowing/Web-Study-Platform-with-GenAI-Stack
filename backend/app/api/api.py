@@ -179,6 +179,10 @@ async def get_session(user_id: str):
     neo4j_db.close()
     return session
 
+@app.get("/retrieve_by_similarity/{query}") 
+async def retrieve_by_similarity(query: str):
+    session = retrieve_pdf_chunks_by_similarity(query, embeddings, settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    return session
 
 @app.post("/create_session/{user_id}")
 async def create_session(user_id: str, payload: dict):

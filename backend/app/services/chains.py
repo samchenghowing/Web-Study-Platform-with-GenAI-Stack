@@ -405,3 +405,16 @@ def create_quiz(llm, user_id, neo4j_graph):
 
     print(result)
     return result
+
+def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username: str, password: str, top_k: int = 5):
+    vector_store = Neo4jVector(
+        embedding=embeddings,
+        url=url,
+        username=username,
+        password=password,
+        index_name="pdf_bot",
+        node_label="PdfBotChunk"
+    )
+    retriever = vector_store.as_retriever(search_kwargs={"k": top_k})
+    results = retriever.get_relevant_documents(query)
+    return results
