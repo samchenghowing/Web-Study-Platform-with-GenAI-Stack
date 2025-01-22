@@ -1,9 +1,5 @@
-from langchain_ollama import ChatOllama, OllamaEmbeddings
-
-from langchain_community.vectorstores import Neo4jVector
-
 from langchain.chains import RetrievalQAWithSourcesChain
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -12,9 +8,14 @@ from langchain.prompts import (
     MessagesPlaceholder,
 )
 
-from langchain_neo4j import Neo4jChatMessageHistory
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_neo4j import Neo4jVector, Neo4jChatMessageHistory
 from langchain.memory import ConversationBufferMemory
-from langchain_core.runnables.history import RunnableWithMessageHistory
+
+from langchain_core.runnables.history import RunnableWithMessageHistory, RunnablePassthrough
+from langchain_core.tools import tool
+
+from langchain_core.output_parsers import StrOutputParser
 
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any
@@ -159,11 +160,7 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
         sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
     ) -> str:
 
-        qa_chain = load_qa_with_sources_chain(
-            llm,
-            chain_type="stuff",
-            prompt=prompt,
-        )
+        qa_chain = create_stuff_documents_chain(llm, prompt)
 
         neo4j_history = Neo4jChatMessageHistory(
             session_id=sid,
@@ -219,6 +216,49 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
 
     return generate_llm_output
 
+def configure_grader_chain(llm, url, username, password, embeddings):
+    # RAG response
+    general_system_template = """You are a grader assessing relevance of a retrieved document to a user question. \n 
+    It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
+    If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
+    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
+
+    messages = [
+        SystemMessagePromptTemplate.from_template(general_system_template),
+        HumanMessagePromptTemplate.from_template("Retrieved document: \n\n {context} \n\n User question: {question}"),
+    ]
+    qa_prompt = ChatPromptTemplate.from_messages(messages)
+
+    def generate_llm_output(
+        sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
+    ) -> str:
+        
+        vector_store = Neo4jVector(
+            embedding=embeddings,
+            url=url,
+            username=username,
+            password=password,
+            index_name="pdf_bot",
+            node_label="PdfBotChunk"
+        )
+        retriever = vector_store.as_retriever(search_kwargs={"k": 3})
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+
+        rag_chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
+        answer = rag_chain.invoke(question)
+        print(answer)
+
+        return {"answer": answer}
+
+    return generate_llm_output
+
+
 #
 
 def fetch_questions_based_on_preferences(neo4j_graph, preferences):
@@ -247,13 +287,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
         return "User preferences not found."
-
-    # questions = fetch_questions_based_on_preferences(neo4j_graph, preferences)
-    # questions_prompt = ""
-    # for i, question in enumerate(questions, start=1):
-    #     questions_prompt += f"{i}. \n{question[0]}\n----\n\n"
-    #     questions_prompt += f"{question[1][:150]}\n\n"
-    #     questions_prompt += "----\n\n"
 
     gen_system_template = f"""
     You're a programming teacher and you are preparing task on html, css and javascript. 
@@ -328,6 +361,7 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
         callbacks=callbacks,
         prompt=chat_prompt,
     )
+    # retrieve_pdf_chunks_by_similarity(answer, embeddings, url, username, password, top_k=5)
 
     return llm_response
 

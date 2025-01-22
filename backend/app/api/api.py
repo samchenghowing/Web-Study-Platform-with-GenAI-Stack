@@ -104,6 +104,7 @@ llm = load_llm(settings.llm, logger=BaseLogger(), config={"ollama_base_url": set
 llm_chain = configure_llm_only_chain(llm)
 llm_history_chain = configure_llm_history_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
 rag_chain = configure_qa_rag_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
+grader_chain = configure_grader_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 
 
 app = FastAPI()
@@ -183,6 +184,24 @@ async def get_session(user_id: str):
 async def retrieve_by_similarity(query: str):
     session = retrieve_pdf_chunks_by_similarity(query, embeddings, settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     return session
+
+
+@app.get("/tooltest/{question}") 
+async def tooltest(question: str):
+
+    q = Queue()
+    def cb():
+        grader_chain(
+            sid="test",
+            question=question,
+            callbacks=[QueueCallback(q)],
+        )
+    def generate():
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+    return StreamingResponse(generate(), media_type="application/json")
+
 
 @app.post("/create_session/{user_id}")
 async def create_session(user_id: str, payload: dict):
@@ -288,12 +307,6 @@ async def submit_settings(task: Quiz_submission):
 async def status_handler(uid: UUID):
     return jobs[uid]
 
-@app.post("/submit", status_code=HTTPStatus.ACCEPTED)
-async def submit_question(background_tasks: BackgroundTasks, task: Submission):
-    new_task = Job()
-    jobs[new_task.uid] = new_task
-    background_tasks.add_task(verify_submission, jobs, new_task.uid, task)
-    return new_task
 
 async def get_file_content(files: List[UploadFile]): # PDF backgroud task API
     byte_files = {}

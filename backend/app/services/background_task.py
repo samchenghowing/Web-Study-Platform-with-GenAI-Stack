@@ -1,10 +1,7 @@
-import os
 import io
-import tempfile
 import requests
 from typing import List, Dict, Union
 from uuid import UUID, uuid4
-import subprocess
 import docker
 from pydantic import BaseModel, Field
 from bs4 import BeautifulSoup as Soup
@@ -17,8 +14,7 @@ from services.chains import (
 )
 from config import Settings, BaseLogger
 
-from langchain_community.vectorstores import Neo4jVector
-from langchain_neo4j import Neo4jGraph
+from langchain_neo4j import Neo4jVector, Neo4jGraph
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
