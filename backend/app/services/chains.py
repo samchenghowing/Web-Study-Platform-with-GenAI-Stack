@@ -241,6 +241,14 @@ def configure_grader_chain(llm, url, username, password, embeddings):
             index_name="pdf_bot",
             node_label="PdfBotChunk"
         )
+        
+        class GradeDocuments(BaseModel):
+            """Binary score for relevance check on retrieved documents."""
+
+            binary_score: str = Field(
+                description="Documents are relevant to the question, 'yes' or 'no'"
+            )
+
         retriever = vector_store.as_retriever(search_kwargs={"k": 3})
         def format_docs(docs):
             return "\n\n".join(doc.page_content for doc in docs)
@@ -248,7 +256,7 @@ def configure_grader_chain(llm, url, username, password, embeddings):
         rag_chain = (
             {"context": retriever | format_docs, "question": RunnablePassthrough()}
             | prompt
-            | llm
+            | llm.bind_tools([GradeDocuments])
             | StrOutputParser()
         )
         answer = rag_chain.invoke(question)
