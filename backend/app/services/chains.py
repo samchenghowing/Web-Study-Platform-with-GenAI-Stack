@@ -22,6 +22,8 @@ from typing import Optional, List, Any
 from config import Settings, BaseLogger
 from db.neo4j import Neo4jDatabase
 
+import json
+
 settings = Settings()
 
 '''
@@ -221,7 +223,7 @@ def configure_grader_chain(llm, url, username, password, embeddings):
     general_system_template = """You are a grader assessing relevance of a retrieved document to a user question. \n 
     It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
     If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
+    Give a similarity score between 100 (very relevant) and 0 (irrelevant) to indicate the relevance of the document to the question."""
 
     messages = [
         SystemMessagePromptTemplate.from_template(general_system_template),
@@ -243,10 +245,10 @@ def configure_grader_chain(llm, url, username, password, embeddings):
         )
         
         class GradeDocuments(BaseModel):
-            """Binary score for relevance check on retrieved documents."""
+            """Similarity score for relevance check on retrieved documents."""
 
-            binary_score: str = Field(
-                description="Documents are relevant to the question, 'yes' or 'no'"
+            similarity_score: float = Field(
+                description="Similarity score between 100 (very relevant) and 0 (irrelevant)"
             )
 
         retriever = vector_store.as_retriever(search_kwargs={"k": 3})
@@ -261,11 +263,11 @@ def configure_grader_chain(llm, url, username, password, embeddings):
         )
         answer = rag_chain.invoke(question)
         print(answer)
-
-        return {"answer": answer}
+        answer_dict = json.loads(answer)
+        print(answer_dict["parameters"]["similarity_score"])
+        return {"answer": answer_dict, "similarity_score": answer_dict["parameters"]["similarity_score"]}
 
     return generate_llm_output
-
 
 #
 
