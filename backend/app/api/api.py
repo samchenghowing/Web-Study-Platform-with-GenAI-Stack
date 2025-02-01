@@ -23,6 +23,8 @@ from fastapi import (
     BackgroundTasks, 
     UploadFile, 
     File,
+    WebSocket,
+    WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
@@ -125,6 +127,22 @@ async def root():
     return {"message": "Hello World"}
 
 jobs: Dict[UUID, Job] = {}
+
+connected_clients: List[WebSocket] = []
+
+@app.websocket("/ws/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await websocket.accept()
+    connected_clients.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            for client in connected_clients:
+                await client.send_text(f"Message text was: {data}")
+    except WebSocketDisconnect:
+        connected_clients.remove(websocket)
+        print(f"Client #{client_id} disconnected")
+
 
 # Chat bot API
 @app.post("/query-stream")

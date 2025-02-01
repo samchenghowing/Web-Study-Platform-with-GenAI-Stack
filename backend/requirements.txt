@@ -25,3 +25,4 @@ Requests
 streamlit
 typing_extensions
 uvicorn
+websockets
