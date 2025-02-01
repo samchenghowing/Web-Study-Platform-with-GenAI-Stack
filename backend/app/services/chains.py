@@ -269,6 +269,10 @@ def configure_grader_chain(llm, url, username, password, embeddings):
 
     return generate_llm_output
 
+def configure_graph_chain(llm, url, username, password, embeddings):
+    
+    return "not implemented"
+
 #
 
 def fetch_questions_based_on_preferences(neo4j_graph, preferences):

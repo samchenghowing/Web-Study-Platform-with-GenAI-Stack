@@ -8,6 +8,7 @@ from http import HTTPStatus
 from queue import Queue
 from config import Settings, BaseLogger
 
+from services.graphs import *
 from services.background_task import *
 from services.chains import *
 from api.models import *
@@ -105,6 +106,7 @@ llm_chain = configure_llm_only_chain(llm)
 llm_history_chain = configure_llm_history_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
 rag_chain = configure_qa_rag_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 grader_chain = configure_grader_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
+graph_chain = configure_graph_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 
 
 app = FastAPI()
@@ -201,6 +203,19 @@ async def tooltest(question: str):
         for token, _ in stream(cb, q):
             yield json.dumps({"token": token})
     return StreamingResponse(generate(), media_type="application/json")
+
+
+
+@app.get("/graphtest/{question}") 
+async def graphtest(question: str):
+
+    self_correction_graph(llm)
+    
+    return "Accepted"
+
+
+
+
 
 
 @app.post("/create_session/{user_id}")
