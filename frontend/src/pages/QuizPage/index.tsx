@@ -11,6 +11,7 @@ import { useAuth } from '../../authentication/AuthContext';
 import { Question } from './utils';
 import logoimg from '../src/title.png'; // Adjust the path as necessary
 import travelimg from '../src/travel.jpeg'
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 const SESSION_API_ENDPOINT = 'http://localhost:8504/get_QUIZsession';
@@ -29,6 +30,8 @@ const QuizPage: React.FC = () => {
     const [isQuizCompleted, setIsQuizCompleted] = useState(false);
     const [questions, setQuestions] = React.useState<Question[]>([]);
     const { user } = useAuth();
+
+    const [question, setQuestion] = React.useState('.');
 
     // TODO: Generate questions by prompting user's answer and textbook content
     // Save the created session in db, real time generation
@@ -77,9 +80,9 @@ const QuizPage: React.FC = () => {
         const fetchSession = async () => {
             try {
                 const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
-                    method: 'GET', 
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'  
+                        'Content-Type': 'application/json'
                     },
                     signal: abortController.signal
                 });
@@ -143,7 +146,7 @@ const QuizPage: React.FC = () => {
                         style={{ width: '200px', height: 'auto' }}
                     />
                 </div>
-        
+
                 {/* GIF Animation */}
                 <div style={{ marginBottom: '20px' }}>
                     <img
@@ -155,7 +158,7 @@ const QuizPage: React.FC = () => {
                         }}
                     />
                 </div>
-        
+
                 {/* Start Your Journey Text */}
                 <Typography
                     variant="h4"
@@ -167,7 +170,7 @@ const QuizPage: React.FC = () => {
                 >
                     We are good to go!
                 </Typography>
-        
+
                 {/* Start Button */}
                 <Button
                     variant="contained"
@@ -191,22 +194,60 @@ const QuizPage: React.FC = () => {
                 </Button>
             </Container>
         );
-        
+
     }
 
-    /**
-     * Shows a loading message while fetching questions
-     */
+
+
+    const generateLp = async () => {
+        try {
+            const payloadtest = {
+                session_id: "quiz_test",
+            };
+            const response = await fetch('http://localhost:8504/generate-learning-preference', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: user?._id, session: JSON.stringify(payloadtest) }) // TODO: Add session data
+            });
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('Stream reader is not available');
+            }
+
+            const readStream = async () => {
+                let { done, value } = await reader.read();
+                if (done) return;
+
+                const chunk = new TextDecoder('utf-8').decode(value);
+                const jsonStrings = chunk.split('\n').filter(Boolean);
+
+                jsonStrings.forEach(jsonString => {
+                    try {
+                        const jsonChunk = JSON.parse(jsonString);
+                        setQuestion(prev => prev + jsonChunk.token);
+                    } catch (error) {
+                        console.error('Error parsing JSON chunk', error);
+                    }
+                });
+                await readStream();
+            };
+
+            await readStream();
+        } catch (error) {
+            console.error('Error during stream', error);
+        }
+    };
 
     if (questions.length === 0) {
         return (
             <Container>
                 {/* Top-left Logo */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                        <img
-                            src={logoimg}
-                            alt="logo of WebGenie"
-                            style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                    <img
+                        src={logoimg}
+                        alt="logo of WebGenie"
+                        style={{ width: '200px', height: 'auto', flexGrow: 2 }}
                     />
                 </div>
                 {/* Start Your Journey Text */}
@@ -218,8 +259,8 @@ const QuizPage: React.FC = () => {
                         color: '#3b82f6',
                     }}
                 >
-                    Loading questions...</Typography> 
-                
+                    Loading questions...</Typography>
+
             </Container>
         );
     }
@@ -233,10 +274,10 @@ const QuizPage: React.FC = () => {
             <Container>
                 {/* Top-left Logo */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                        <img
-                            src={logoimg}
-                            alt="logo of WebGenie"
-                            style={{ width: '200px', height: 'auto', flexGrow: 2 }}
+                    <img
+                        src={logoimg}
+                        alt="logo of WebGenie"
+                        style={{ width: '200px', height: 'auto', flexGrow: 2 }}
                     />
                 </div>
                 {/* Start Your Journey Text */}
@@ -249,8 +290,8 @@ const QuizPage: React.FC = () => {
                     }}
                 >
                     Error: No questions available.
-                </Typography> 
-                
+                </Typography>
+
             </Container>
         );
     }
@@ -261,13 +302,30 @@ const QuizPage: React.FC = () => {
      */
 
     return (
-  
-        <Container 
-            sx={{ height: '100vh', 
-                  display: 'flex', 
-                  flexDirection: 'column',  
-                  overflow: 'hidden'  
-        }}>
+
+        <Container
+            sx={{
+                height: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+            }}>
+            <Button
+                variant="contained"
+                onClick={() => generateLp()}
+            >
+                testing
+            </Button>
+            <Typography 
+                component={'span'} 
+                variant="body2" 
+                sx={{ 
+                    fontSize: '0.75rem', // Smaller font size for AI output
+                    textAlign: 'left', 
+                    lineHeight: 1.4,
+            }}>
+                <MarkdownRenderer content={question} />
+            </Typography>
             {/* Top-left Logo */}
             <div style={{ position: 'absolute', top: 16, left: 16 }}>
                 <img
@@ -279,23 +337,23 @@ const QuizPage: React.FC = () => {
 
             {/* Stepper Section - Fixed Height */}
             <div style={{
-                    width: '80%',
-                    margin: '0 auto',
-                    marginTop: '80px', /* Adds space below the logo */
-                    marginBottom: '24px',
-                    height: '80px', /* Fixed height for the Stepper */
-                    flexShrink: 0, /* Prevent resizing */
-                    display: 'flex',
-                    alignItems: 'center'
-                }}>
-                    <Stepper activeStep={currentQuestionIndex} alternativeLabel style={{ width: '100%' }}>
-                        {questions.map((_, index) => (
-                            <Step key={index}>
-                                <StepLabel>{`Question ${index + 1}`}</StepLabel>
-                            </Step>
-                        ))}
-                    </Stepper>
-                </div>
+                width: '80%',
+                margin: '0 auto',
+                marginTop: '80px', /* Adds space below the logo */
+                marginBottom: '24px',
+                height: '80px', /* Fixed height for the Stepper */
+                flexShrink: 0, /* Prevent resizing */
+                display: 'flex',
+                alignItems: 'center'
+            }}>
+                <Stepper activeStep={currentQuestionIndex} alternativeLabel style={{ width: '100%' }}>
+                    {questions.map((_, index) => (
+                        <Step key={index}>
+                            <StepLabel>{`Question ${index + 1}`}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+            </div>
 
             {/* Centered Content */}
             <div style={{

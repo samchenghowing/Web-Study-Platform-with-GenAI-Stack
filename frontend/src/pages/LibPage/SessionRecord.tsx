@@ -42,7 +42,7 @@ const SessionRecord = () => {
     const [currentRenameId, setCurrentRenameId] = useState<string | null>(null);
     const { user } = useAuth();
     const navigate = useNavigate();
-    
+
     // Pagination state
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -56,26 +56,26 @@ const SessionRecord = () => {
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                     // Loop through the data and set each quiz record line by line
                     const newQuizData = data.map((item: any) => {
                         // Convert timestamp to a readable format
-                        const timestamp  = convertTimestamp(item.timestamp);
-                        
+                        const timestamp = convertTimestamp(item.timestamp);
+
 
                         // Return a formatted record
                         return {
-                            
+
                             session_id: item.session_id,
-                            name: item.quizname, 
+                            name: item.quizname,
                             question_count: item.question_count,
                             timestamp: timestamp,
-                            state: item.done ? 'Done' : 'In Progress', 
+                            state: item.done ? 'Done' : 'In Progress',
                             score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
                         };
                     });
-    
+
                     setQuizData(newQuizData); // Set the formatted data to state
                 } else {
                     console.error('Failed to fetch sessions');
@@ -85,7 +85,7 @@ const SessionRecord = () => {
             }
         };
         fetchSessions();
-    
+
         // Listen for the custom event
         const handleCustomEvent = () => {
             fetchSessions();
@@ -97,7 +97,7 @@ const SessionRecord = () => {
             window.removeEventListener('fetchSessionsEvent', handleCustomEvent);
         };
     }, []);
-    
+
 
     // Helper function to format timestamp
     function convertTimestamp(timestamp) {
@@ -107,22 +107,22 @@ const SessionRecord = () => {
 
         const date = timestamp._DateTime__date;
         const time = timestamp._DateTime__time;
-    
+
         const year = date._Date__year;
         const month = date._Date__month;
         const day = date._Date__day;
         const hour = time._Time__hour;
         const minute = time._Time__minute;
         const second = time._Time__second;
-    
+
         // Format the time string, adding leading zeroes where necessary 
-        const formattedTime = `${hour+8}:${minute.toString().padStart(2, '0')}`; // :${second.toString().padStart(2, '0')
-    
+        const formattedTime = `${hour + 8}:${minute.toString().padStart(2, '0')}`; // :${second.toString().padStart(2, '0')
+
         // Optionally, you can include the date as well if you want
         const formattedDate = `${day}/${month}/${year} ${formattedTime}`;
         // const formattedDate = `${targetDate}`;
         // targetDate.toISOString()
-    
+
         return formattedDate;
     }
 
@@ -176,35 +176,35 @@ const SessionRecord = () => {
 
     };
 
-/**
- * <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                    const newQuiz: QuizRecord = {
-                        session_id: Date.now().toString(),
-                        name: 'New Quiz',
-                        question_count: 10,
-                        timestamp: new Date().toLocaleString(),
-                        state: 'In Progress',
-                        score: '0/10',
-                        topics: ['Topic1'],
-                    };
-                    setQuizData((prev) => [...prev, newQuiz]);
-                }}
-                sx={{ mb: 2 }}
-            >
-                Demo insert button
-            </Button>
- */
+    /**
+     * <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                        const newQuiz: QuizRecord = {
+                            session_id: Date.now().toString(),
+                            name: 'New Quiz',
+                            question_count: 10,
+                            timestamp: new Date().toLocaleString(),
+                            state: 'In Progress',
+                            score: '0/10',
+                            topics: ['Topic1'],
+                        };
+                        setQuizData((prev) => [...prev, newQuiz]);
+                    }}
+                    sx={{ mb: 2 }}
+                >
+                    Demo insert button
+                </Button>
+     */
 
 
-// Slice data for current page
-const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    // Slice data for current page
+    const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
         <Box sx={{ p: 4, maxWidth: '95vw', overflowX: 'auto' }}>
-            
+
             <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
                 <Table sx={{ minWidth: 1000 }}>
                     <TableHead>
@@ -322,8 +322,8 @@ const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + 
                 onRowsPerPageChange={handleChangeRowsPerPage}
             />
 
-              {/* Rename Dialog */}
-              <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)}>
+            {/* Rename Dialog */}
+            <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)}>
                 <DialogTitle>Rename Quiz</DialogTitle>
                 <DialogContent>
                     <TextField

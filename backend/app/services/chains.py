@@ -273,18 +273,6 @@ def configure_graph_chain(llm, url, username, password, embeddings):
     
     return "not implemented"
 
-#
-
-def fetch_questions_based_on_preferences(neo4j_graph, preferences):
-    preference_conditions = " OR ".join([f"t.name = '{pref}'" for pref in preferences])
-    query = f"""
-    MATCH (q:Question)-[:TAGGED]->(t:Tag)
-    WHERE ({preference_conditions})
-    RETURN q.title AS title, q.body AS body ORDER BY q.score DESC LIMIT 3
-    """
-    records = neo4j_graph.query(query)
-    return [(record['title'], record['body']) for record in records]
-
 def get_user_preferences(neo4j_graph, user_id):
     query = "MATCH (u:User {id: $user_id}) RETURN u"
     params = {'user_id': user_id}
@@ -331,10 +319,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
-
-    # neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    # sid = neo4j_db.get_AIsession(user_id).get("session_id")
-    # neo4j_db.close()
 
     currentTopics = "I want to know more about these topics" , session.get("topics")
 
@@ -404,11 +388,41 @@ def convert_question_to_attribute(question, llm):
     )
     return llm_response["answer"]
 
-def create_questions_based_on_preferences(neo4j_graph, preferences):
+def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     # TODO with TOOLS
+    preferences = get_user_preferences(neo4j_graph, user_id)
+    if not preferences:
+        return "User preferences not found."
 
+    gen_system_template = f"""
+    You're a programming teacher and you want to design a learning path on learning html, css and javascript. 
+    Generate learning path for student to learn html, css and javascript.
+    Make sure the learin path contain specific question/task base on student's prefrence below.
+    {preferences}
+    ---
 
-    return None
+    """
+    # we need jinja2 since the questions themselves contain curly braces
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        gen_system_template, template_format="jinja2"
+    )
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_prompt,
+            MessagesPlaceholder(variable_name="chat_history"),
+            HumanMessagePromptTemplate.from_template("{question}"),
+        ]
+    )
+
+    currentTopics = "Could you suggest the learning path for me?"
+
+    llm_response = llm_chain(
+        sid=session.get("session_id"),
+        question=currentTopics,
+        callbacks=callbacks,
+        prompt=chat_prompt,
+    )
+    return llm_response
 
 def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username: str, password: str, top_k: int = 5):
     vector_store = Neo4jVector(

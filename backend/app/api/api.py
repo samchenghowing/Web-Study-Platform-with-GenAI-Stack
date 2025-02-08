@@ -184,6 +184,27 @@ async def generate_task_api(task: GenerateTask):
 
     return StreamingResponse(generate(), media_type="application/json")
 
+@app.post("/generate-learning-preference") 
+async def generate_lp_api(task: GenerateTask):
+    q = Queue()
+    print(task.session)
+
+    def cb():
+        generate_lp(
+            user_id=task.user,
+            neo4j_graph=neo4j_graph,
+            llm_chain=llm_history_chain,
+            session=task.session,
+            callbacks=[QueueCallback(q)],
+        )
+
+    def generate():
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+
+    return StreamingResponse(generate(), media_type="application/json")
+
 # should this be a question sessioin for the AI chat?
 # @app.get("/get_AIsession/{user_id}/{session_id}/{question_id}") 
 @app.get("/get_AIsession/{user_id}") 
