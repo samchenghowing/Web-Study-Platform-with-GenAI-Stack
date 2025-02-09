@@ -399,8 +399,6 @@ def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     Generate learning path for student to learn html, css and javascript.
     Make sure the learin path contain specific question/task base on student's prefrence below.
     {preferences}
-    ---
-
     """
     # we need jinja2 since the questions themselves contain curly braces
     system_prompt = SystemMessagePromptTemplate.from_template(

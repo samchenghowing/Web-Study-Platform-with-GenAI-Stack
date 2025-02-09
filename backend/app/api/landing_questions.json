@@ -30,5 +30,13 @@
         "correctAnswer": "console.log('hello world!');",
         "choices": [],
         "isLanding": "true"
+    },
+    {
+        "id": "4",
+        "question": "Suggestions for learning web development",
+        "type": "Suggestions",
+        "correctAnswer": "",
+        "choices": [],
+        "isLanding": "true"
     }
 ]

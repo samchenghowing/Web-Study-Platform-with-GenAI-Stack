@@ -5,7 +5,7 @@ import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import CodingQuestion from './CodingQuestion';
-import { Typography, Container, Button, Stepper, Step, StepLabel } from '@mui/material';
+import { Typography, Container, Button, Stepper, Step, StepLabel, Card, CardContent } from '@mui/material';
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
 import { Question } from './utils';
@@ -99,6 +99,14 @@ const QuizPage: React.FC = () => {
         return () => abortController.abort();
     }, []);
 
+    const currentQuestion = questions[currentQuestionIndex];
+
+    React.useEffect(() => {
+        if (currentQuestion?.type.toLowerCase() === 'suggestions') {
+            generateLp();
+        }
+    }, [currentQuestion]);
+
     /**
      * If the answer is correct, increment the score
      * Move to the next question (currentQuestionIndex + 1)
@@ -122,8 +130,6 @@ const QuizPage: React.FC = () => {
      * Provides a button to navigate to /main/editor
      */
 
-    const currentQuestion = questions[currentQuestionIndex];
-
     if (isQuizCompleted) {
         return (
             <Container
@@ -134,8 +140,7 @@ const QuizPage: React.FC = () => {
                     justifyContent: 'center', // Center vertically
                     alignItems: 'center', // Center horizontally
                     overflow: 'hidden',
-                    textAlign: 'center',
-
+                    textAlign: 'left' // Change text alignment
                 }}
             >
                 {/* Top-left Logo */}
@@ -201,39 +206,40 @@ const QuizPage: React.FC = () => {
 
     const generateLp = async () => {
         try {
-            const payloadtest = {
-                session_id: "quiz_test",
-            };
-            const response = await fetch('http://localhost:8504/generate-learning-preference', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user: user?._id, session: JSON.stringify(payloadtest) }) // TODO: Add session data
+            const latest_session = await fetch(`http://localhost:8504/get_QUIZsession/${user?._id}`, {
+                method: 'GET',
             });
-
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('Stream reader is not available');
-            }
-
-            const readStream = async () => {
-                let { done, value } = await reader.read();
-                if (done) return;
-
-                const chunk = new TextDecoder('utf-8').decode(value);
-                const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                jsonStrings.forEach(jsonString => {
-                    try {
-                        const jsonChunk = JSON.parse(jsonString);
-                        setQuestion(prev => prev + jsonChunk.token);
-                    } catch (error) {
-                        console.error('Error parsing JSON chunk', error);
-                    }
+            if (latest_session.ok) {
+                const session = await latest_session.json();
+                const response = await fetch('http://localhost:8504/generate-learning-preference', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user: user?._id, session: JSON.stringify(session) })
                 });
-                await readStream();
-            };
+                const reader = response.body?.getReader();
+                if (!reader) {
+                    throw new Error('Stream reader is not available');
+                }
+                const readStream = async () => {
+                    let { done, value } = await reader.read();
+                    if (done) return;
 
-            await readStream();
+                    const chunk = new TextDecoder('utf-8').decode(value);
+                    const jsonStrings = chunk.split('\n').filter(Boolean);
+
+                    jsonStrings.forEach(jsonString => {
+                        try {
+                            const jsonChunk = JSON.parse(jsonString);
+                            setQuestion(prev => prev + jsonChunk.token);
+                        } catch (error) {
+                            console.error('Error parsing JSON chunk', error);
+                        }
+                    });
+                    await readStream();
+                };
+
+                await readStream();
+            }
         } catch (error) {
             console.error('Error during stream', error);
         }
@@ -308,24 +314,9 @@ const QuizPage: React.FC = () => {
                 height: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                textAlign: 'left' // Change text alignment
             }}>
-            <Button
-                variant="contained"
-                onClick={() => generateLp()}
-            >
-                testing
-            </Button>
-            <Typography 
-                component={'span'} 
-                variant="body2" 
-                sx={{ 
-                    fontSize: '0.75rem', // Smaller font size for AI output
-                    textAlign: 'left', 
-                    lineHeight: 1.4,
-            }}>
-                <MarkdownRenderer content={question} />
-            </Typography>
             {/* Top-left Logo */}
             <div style={{ position: 'absolute', top: 16, left: 16 }}>
                 <img
@@ -365,7 +356,7 @@ const QuizPage: React.FC = () => {
             }}>
 
                 {/* Question Rendering */}
-                <div style={{ textAlign: 'center', width: '80%' }}>
+                <div style={{ textAlign: 'left', width: '80%' }}> {/* Change text alignment */}
                     {currentQuestion.type === 'true-false' ? (
                         <TrueFalseQuestion
                             question={currentQuestion.question}
@@ -392,6 +383,12 @@ const QuizPage: React.FC = () => {
                             codeEval={currentQuestion.correctAnswer}
                             onAnswer={handleAnswer}
                         />
+                    ) : currentQuestion.type === 'Suggestions' ? (
+                        <Card style={{ maxHeight: '80vh', overflow: 'auto' }}>
+                            <CardContent>
+                                <MarkdownRenderer content={question} />
+                            </CardContent>
+                        </Card>
                     ) : null}
                 </div>
             </div>
