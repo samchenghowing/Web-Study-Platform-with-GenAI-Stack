@@ -202,8 +202,6 @@ const QuizPage: React.FC = () => {
 
     }
 
-
-
     const generateLp = async () => {
         try {
             const latest_session = await fetch(`http://localhost:8504/get_QUIZsession/${user?._id}`, {
@@ -387,6 +385,14 @@ const QuizPage: React.FC = () => {
                         <Card style={{ maxHeight: '80vh', overflow: 'auto' }}>
                             <CardContent>
                                 <MarkdownRenderer content={question} />
+                                <Button
+                                    variant="outlined"
+                                    color="primary"
+                                    onClick={() => handleAnswer(true)}
+                                    sx={{ mt: 2 }}
+                                >
+                                    Next Question
+                                </Button>
                             </CardContent>
                         </Card>
                     ) : null}

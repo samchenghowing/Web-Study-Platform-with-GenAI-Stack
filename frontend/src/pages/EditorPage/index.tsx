@@ -13,6 +13,7 @@ import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab } from 
 import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { useAuth } from '../../authentication/AuthContext';
 import { extract_task } from './utils';
+import DialogActions from '@mui/material/DialogActions';
 
 import AIChat from './AIChat';
 import EditorView from './EditorView';
@@ -47,6 +48,11 @@ export default function MainComponent() {
 	const [countdown, setCountdown] = React.useState(0);
 	const [showEditor, setShowEditor] = React.useState(false);
 	const [tabIndex, setTabIndex] = React.useState(0);
+
+	const [isReadingComplete, setIsReadingComplete] = React.useState<boolean>(false);
+	const [cardContent, setCardContent] = React.useState<{ id: number; role: string; question: string; code: string; }[]>([]);
+	const [isLoading, setIsLoading] = React.useState<boolean>(false); // New loading state.
+	const [dialogOpen, setDialogOpen] = React.useState(false); // New state for dialog
 
 	const location = useLocation();
 	const quiz = location.state?.quiz;
@@ -122,23 +128,77 @@ export default function MainComponent() {
 	};
 
 	const handleCodeSubmit = async () => {
+		setIsLoading(true); // Start loading
+		setIsReadingComplete(false);
+		setDialogOpen(true); // Open dialog
+
 		try {
-			const response = await fetch(SUBMIT_API_ENDPOINT, {
+			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify(editorDoc),
+				body: JSON.stringify({
+					user: user ? user._id : 'test_user',
+					question: question,
+					answer: editorDoc.jsDoc, // Assuming the answer is in jsDoc
+				}),
 			});
-			const json = await response.json();
-			setSubmissionUID(json.uid);
+
+			const reader = response.body?.getReader();
+			if (!reader) {
+				throw new Error('Stream reader is not available');
+			}
+
+			setCardContent((prev) => [
+				...prev,
+				{
+					id: 1,
+					role: 'human',
+					question: '',
+					code: '',
+				},
+			]);
+
+			const readStream = async () => {
+				let { done, value } = await reader.read();
+				if (done) {
+					setIsReadingComplete(true);
+					setIsLoading(false); // Stop loading
+					return;
+				}
+
+				const chunk = new TextDecoder('utf-8').decode(value);
+				const jsonStrings = chunk.split('\n').filter(Boolean);
+
+				jsonStrings.forEach((jsonString) => {
+					try {
+						const jsonChunk = JSON.parse(jsonString);
+						const token = jsonChunk.token;
+
+						setCardContent((prev) =>
+							prev.map((card) => {
+								if (card.id === 1) {
+									let updatedCard = { ...card };
+
+									updatedCard.question += token;
+
+									return updatedCard;
+								}
+								return card;
+							})
+						);
+					} catch (error) {
+						console.error('Error parsing JSON chunk', error);
+					}
+				});
+				await readStream();
+			};
+
+			await readStream();
 		} catch (error) {
 			console.error(error);
-			setSnackbarText("Quiz submission error");
-			setSnackbarOpen(true);
-		} finally {
-			setSnackbarText("Quiz submitted and waiting for process");
-			setSnackbarOpen(true);
+			setIsLoading(false); // Stop loading on error
 		}
 	};
 
@@ -161,6 +221,11 @@ export default function MainComponent() {
 
 	const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
 		setTabIndex(newValue);
+	};
+
+	const handleNextQuestion = () => {
+		setDialogOpen(false);
+		// Logic to load the next question
 	};
 
 	if (!showEditor) {
@@ -263,6 +328,24 @@ export default function MainComponent() {
 					{snackbarText}
 				</Alert>
 			</Snackbar>
+
+			<Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+				<DialogTitle>Submission Result</DialogTitle>
+				<DialogContent>
+					{cardContent.map((card) => (
+						<div key={card.id}>
+							<Typography variant="h6">{card.role}</Typography>
+							<Typography variant="body1">{card.question}</Typography>
+							<Typography variant="body2">{card.code}</Typography>
+						</div>
+					))}
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={handleNextQuestion} color="primary">
+						Next Question
+					</Button>
+				</DialogActions>
+			</Dialog>
 
 		</Stack>
 	);
