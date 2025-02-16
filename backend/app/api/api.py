@@ -664,6 +664,15 @@ async def delete_chat_histories(SessionId: str):
 
     raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
 
+@app.get("/chat_histories/user/{user_id}")
+async def list_chat_histories_for_user(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    chat_histories = neo4j_db.get_all_chat_histories_for_user(user_id)
+    neo4j_db.close()
+    if not chat_histories:
+        raise HTTPException(status_code=404, detail="No chat histories found for user")
+    return chat_histories
+
 
 @app.get(
     "/web_files/",

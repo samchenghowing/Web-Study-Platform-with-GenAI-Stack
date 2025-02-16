@@ -313,6 +313,24 @@ class Neo4jDatabase:
         """
         tx.run(query, session_id=session_id, question_id=question_id, question_text=question_text)
 
+    def get_all_chat_histories_for_user(self, user_id):
+        with self.driver.session() as session:
+            query = """
+            MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)-[:LAST_MESSAGE]->(last_message)
+            WITH s, last_message
+            MATCH p=(last_message)<-[:NEXT*0..]-(previous_messages)
+            WITH s, p, length(p) AS path_length
+            ORDER BY s.timestamp DESC, path_length DESC
+            UNWIND reverse(nodes(p)) AS node
+            WITH s.id AS session_id, COLLECT(DISTINCT {data: {content: node.content}, type: node.type}) AS results
+            RETURN session_id, results
+            """
+            result = session.run(query, user_id=user_id)
+            sessions = {}
+            for record in result:
+                sessions[record["session_id"]] = record["results"]
+            return sessions
+
 
 # stackoverflow questions
 def create_vector_index(driver) -> None:
