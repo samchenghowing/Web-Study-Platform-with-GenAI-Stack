@@ -6,6 +6,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import QuestionAnswerHistory from './QuestionAnswerHistory';
+import EncouragementAchievementSystem from './EncouragementAchievementSystem';
 
 export default function MainPage() {
     return (
@@ -18,16 +19,7 @@ export default function MainPage() {
             <Grid container spacing={3}>
                 {/* Encouragement/Achievement System Card */}
                 <Grid item xs={12} md={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Encouragement / Achievement System
-                            </Typography>
-                            <Typography>
-                                Here you can view your achievements and get motivation!
-                            </Typography>
-                        </CardContent>
-                    </Card>
+                    <EncouragementAchievementSystem />
                 </Grid>
 
                 {/* Score / Correct Rate / Level Card */}
