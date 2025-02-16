@@ -397,6 +397,7 @@ def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     gen_system_template = f"""
     You're a programming teacher and you want to design a learning path on learning html, css and javascript. 
     Generate learning path for student to learn html, css and javascript.
+    The learning path should not exceed 5 steps.
     Make sure the learin path contain specific question/task base on student's prefrence below.
     {preferences}
     """

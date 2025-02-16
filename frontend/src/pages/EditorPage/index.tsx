@@ -203,16 +203,16 @@ export default function MainComponent() {
 	};
 
 	const checkSubmissionResult = async () => {
-		if (!submissionUID) return;
-		try {
-			const response = await fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${submissionUID}/status`);
-			const json = await response.json();
-			console.log(json);
-			setSnackbarText(json.status);
-			setSnackbarOpen(true);
-		} catch (error) {
-			console.error(error);
-		}
+		// if (!submissionUID) return;
+		// try {
+		// 	const response = await fetch(`${BACKGROUND_TASK_STATUS_ENDPOINT}/${submissionUID}/status`);
+		// 	const json = await response.json();
+		// 	console.log(json);
+		// 	setSnackbarText(json.status);
+		// 	setSnackbarOpen(true);
+		// } catch (error) {
+		// 	console.error(error);
+		// }
 	};
 
 	React.useEffect(() => {
