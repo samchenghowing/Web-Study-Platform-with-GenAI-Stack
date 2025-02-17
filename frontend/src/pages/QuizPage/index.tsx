@@ -12,6 +12,7 @@ import { Question } from './utils';
 import logoimg from '../src/title.png'; // Adjust the path as necessary
 import travelimg from '../src/travel.jpeg'
 import MarkdownRenderer from '../../components/MarkdownRenderer';
+import DropdownQuestion from './DropdownQuestion';
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 const SESSION_API_ENDPOINT = 'http://localhost:8504/get_QUIZsession';
@@ -367,6 +368,13 @@ const QuizPage: React.FC = () => {
                             choices={currentQuestion.choices || []}
                             correctAnswer={currentQuestion.correctAnswer}
                             isLanding={currentQuestion.isLanding}
+                            onAnswer={handleAnswer}
+                        />
+                    ) : currentQuestion.type === 'dropdownquestion' ? (
+                        <DropdownQuestion
+                            question={currentQuestion.question}
+                            choices={currentQuestion.choices || []}
+                            correctAnswer={currentQuestion.correctAnswer}
                             onAnswer={handleAnswer}
                         />
                     ) : currentQuestion.type === 'short-answer' ? (

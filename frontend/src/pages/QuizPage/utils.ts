@@ -1,5 +1,4 @@
-export type QuestionType = 'true-false' | 'multiple-choice' | 'short-answer' | 'coding';
-
+export type QuestionType = 'multiple-choice' | 'true-false' | 'short-answer' | 'coding' | 'dropdownquestion' | 'Suggestions';
 export type Question = {
     id: number;
     question: string;

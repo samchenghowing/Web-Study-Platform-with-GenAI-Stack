@@ -14,26 +14,35 @@
     },
     {
         "id": "2",
-        "question": "What do you prefer to learn?",
-        "type": "multiple-choice",
+        "question": "How much time would you like to spend on learning per day?",
+        "type": "dropdownquestion",
         "correctAnswer": "Blue",
         "choices": [
-            "Start from suggested learning pattern",
-            "Find my way"
+            "Less than 15 minutes",
+            "Around 30 minutes",
+            "More than 30 minutes"
         ],
         "isLanding": "true"
     },
     {
         "id": "3",
-        "question": "Fixing the Code:\n How to print hello world in javascript?",
+        "question": "Any specific topic you are interested in?",
+        "type": "short-answer",
+        "correctAnswer": "",
+        "choices": [],
+        "isLanding": "true"
+    },
+    {
+        "id": "4",
+        "question": "One last step: Lets' test your understanding. Fixing the Code:\n How to print hello world in javascript?",
         "type": "coding",
         "correctAnswer": "console.log('hello world!');",
         "choices": [],
         "isLanding": "true"
     },
     {
-        "id": "4",
-        "question": "Suggestions for learning web development",
+        "id": "99",
+        "question": "Your tailor made learning path is ready. Check it out.",
         "type": "Suggestions",
         "correctAnswer": "",
         "choices": [],
