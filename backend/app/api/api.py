@@ -108,7 +108,6 @@ llm_chain = configure_llm_only_chain(llm)
 llm_history_chain = configure_llm_history_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
 rag_chain = configure_qa_rag_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 grader_chain = configure_grader_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
-graph_chain = configure_graph_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
 
 
 app = FastAPI()
@@ -687,4 +686,20 @@ async def list_web_files():
     The response is unpaginated and limited to 1000 results.
     """
     return WebfileModelCollection(web_files=await file_collection.find().to_list(1000))
+
+@app.get("/streak-reward/{user_id}")
+async def get_streak_reward(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    query = """
+    MATCH (u:User {id: $user_id})-[:COMPLETED]->(q:Quiz)
+    RETURN count(q) as quiz_count
+    """
+    params = {'user_id': user_id}
+    result = neo4j_db.query(query, params)
+    neo4j_db.close()
+
+    if result:
+        return {"quiz_count": result[0]['quiz_count']}
+    else:
+        raise HTTPException(status_code=404, detail="User not found or no quizzes completed")
 

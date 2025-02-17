@@ -269,10 +269,6 @@ def configure_grader_chain(llm, url, username, password, embeddings):
 
     return generate_llm_output
 
-def configure_graph_chain(llm, url, username, password, embeddings):
-    
-    return "not implemented"
-
 def get_user_preferences(neo4j_graph, user_id):
     query = "MATCH (u:User {id: $user_id}) RETURN u"
     params = {'user_id': user_id}
