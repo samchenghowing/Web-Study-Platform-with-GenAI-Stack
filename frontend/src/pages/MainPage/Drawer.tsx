@@ -146,7 +146,7 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
         <Box sx={{ display: 'flex',color: 'primary.main' }}>
             <CssBaseline />
 
-            <AppBar position="fixed" open={open}>
+            <AppBar position="fixed" open={open} sx={{ backgroundColor: '#6887c1' }}>
                 <Toolbar>
                     <IconButton
                         color="inherit"

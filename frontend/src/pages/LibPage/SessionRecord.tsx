@@ -24,6 +24,7 @@ import { useAuth } from '../../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
+const CHANGENAME_API_ENDPOINT = 'http://localhost:8504/update_session_name';
 
 interface QuizRecord {
     session_id: string;
@@ -65,9 +66,8 @@ const SessionRecord = () => {
 
                         // Return a formatted record
                         return {
-
                             session_id: item.session_id,
-                            name: item.quizname,
+                            name: item.sname,
                             question_count: item.question_count,
                             timestamp: timestamp,
                             state: item.done ? 'Done' : 'In Progress',
@@ -143,15 +143,33 @@ const SessionRecord = () => {
         setCurrentRenameId(id);
     };
 
-    const handleRenameSubmit = () => {
-        setQuizData((prev) =>
-            prev.map((quiz) =>
-                quiz.session_id === currentRenameId ? { ...quiz, name: newName } : quiz
-            )
-        );
-        setRenameDialogOpen(false);
-        setNewName('');
-        setCurrentRenameId(null);
+    const handleRenameSubmit = async () => {
+        try {
+            const response = await fetch(`${CHANGENAME_API_ENDPOINT}/${currentRenameId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ new_name: newName })
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to update session name');
+            }
+    
+            setQuizData((prev) =>
+                prev.map((quiz) =>
+                    quiz.session_id === currentRenameId ? { ...quiz, name: newName } : quiz
+                )
+            );
+            setRenameDialogOpen(false);
+            setNewName('');
+            setCurrentRenameId(null);
+            console.error('rename success');
+        } catch (error) {
+            console.error('Error updating session name:', error);
+            alert('Failed to update session name. Please try again.');
+        }
     };
 
     // Revise Record

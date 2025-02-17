@@ -243,7 +243,6 @@ async def tooltest(question: str):
     return StreamingResponse(generate(), media_type="application/json")
 
 
-
 @app.get("/graphtest/{question}") 
 async def graphtest(question: str):
 
@@ -252,18 +251,15 @@ async def graphtest(question: str):
     return "Accepted"
 
 
-
-
-
-
 @app.post("/create_session/{user_id}")
 async def create_session(user_id: str, payload: dict):
+    sname = payload.get('sname')
     question_count = payload.get('question_count')
     topics = payload.get('topics')
     selected_pdfs = payload.get('selected_pdfs')
 
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    session = neo4j_db.create_session(user_id, question_count, topics, selected_pdfs)
+    session = neo4j_db.create_session(user_id, sname, question_count, topics, selected_pdfs)
     neo4j_db.close()
     return session
 
@@ -273,6 +269,22 @@ async def list_session(user_id: str):
     sessions = neo4j_db.get_quizsessions_for_user(user_id)
     neo4j_db.close()
     return sessions
+
+@app.post("/update_session_name/{session_id}")
+async def update_session_name(session_id: str, payload: dict):
+    new_name = payload.get("new_name")
+
+    if not new_name:
+        raise HTTPException(status_code=400, detail="New name is required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    success = neo4j_db.update_session_name(session_id, new_name)
+    neo4j_db.close()
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return {"message": "Session name updated successfully"}
 
 ##########
 

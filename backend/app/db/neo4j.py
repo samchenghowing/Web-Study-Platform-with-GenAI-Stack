@@ -27,7 +27,7 @@ neo4j.py [Database Operation]
 12. `create_session`            (Creates) creates a new Quiz session based on user prefence. 
 13. `_get_latest_user_aisession`(Read) Fetches the most recent quiz session for a user.  
 13. `_get_latest_user_quizsession(Read) Fetches the most recent quiz session for a user.  
-14. `_create_user_session`:     (Creates) a new session node for a user. (user_id, question_count, topics, selected_pdfs, quizname, score, done)
+14. `_create_user_session`:     (Creates) a new session node for a user. (user_id, question_count, topics, selected_pdfs, sname, score, done)
 
 15. `get_quizsessions_for_user`:(Read) Retrieves all quiz sessions associated with a user.  
 16. `_find_quizsessions_for_user(Read) fetch user quiz sessions.  
@@ -147,7 +147,7 @@ class Neo4jDatabase:
                 }
             else:
                 # If no session exists, create a new session
-                session_id = session.write_transaction(self._create_user_session, user_id, 0, [], [], "AI Chat", None, None)
+                session_id = session.write_transaction(self._create_user_session, user_id, "AI Chat", 0, [], [], None, None)
                 return {
                     "message": "Session created for user", 
                     "user_id": user_id, 
@@ -159,7 +159,7 @@ class Neo4jDatabase:
             existing_session = session.read_transaction(self._get_latest_user_quizsession, user_id)
 
             if not existing_session:
-                session_id = session.write_transaction(self._create_user_session, user_id, 0, [], [], "EMTPY QUIZ", None, None)
+                session_id = session.write_transaction(self._create_user_session, user_id, "EMTPY QUIZ", 0, [], [], None, None)
                 return {
                     "message": "Session created for user", 
                     "user_id": user_id, 
@@ -174,22 +174,38 @@ class Neo4jDatabase:
                     "session_id": session_id
                 }
     
-    def create_session(self, user_id, question_count, topics, selected_pdfs):
+    def create_session(self, user_id, sname, question_count, topics, selected_pdfs):
         with self.driver.session() as session:
-            session_id = session.write_transaction(self._create_user_session, user_id, question_count, topics, selected_pdfs, None, None, None)
+            session_id = session.write_transaction(self._create_user_session, user_id, sname, question_count, topics, selected_pdfs, None, None)
 
+            sname=sname
             question_count=question_count
-            topics=topics # 
+            topics=topics 
             selected_pdfs=selected_pdfs
             
             return {
                 "message": "Session created for user", 
                 "user_id": user_id, 
                 "session_id": session_id,
+                "session_name": sname,
                 "question_count": question_count,
                 "topics": topics,
                 "selected_pdfs": selected_pdfs,
                 }
+
+    def update_session_name(self, session_id: str, new_name: str) -> bool:
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (s:Session {id: $session_id})
+                SET s.sname = $new_name
+                RETURN s
+                """,
+                session_id=session_id,
+                new_name=new_name
+            )
+
+            return bool(result.single()) 
 
     @staticmethod
     def _get_latest_user_aisession(tx, user_id):
@@ -214,7 +230,7 @@ class Neo4jDatabase:
         return result.single()
 
     @staticmethod
-    def _create_user_session(tx, user_id, question_count, topics, selected_pdfs, quizname, score, done):
+    def _create_user_session(tx, user_id, sname, question_count, topics, selected_pdfs, score, done):
         session_id = str(uuid.uuid4())  # Generate a unique session ID
         
         tx.run(
@@ -223,10 +239,10 @@ class Neo4jDatabase:
             CREATE (s:Session {
                 id: $session_id, 
                 timestamp: datetime(), 
+                sname: COALESCE($sname, 'New Quiz'),
                 question_count: COALESCE($question_count, 0), 
                 topics: COALESCE($topics, []), 
                 selected_pdfs: COALESCE($selected_pdfs, []), 
-                quizname: COALESCE($quizname, 'New Quiz Name'), 
                 score: COALESCE($score, 0),  
                 done: COALESCE($done, false)
             })
@@ -235,10 +251,10 @@ class Neo4jDatabase:
             """,
             user_id=user_id,
             session_id=session_id,
+            sname = sname,
             question_count=question_count,
             topics=topics,
             selected_pdfs=selected_pdfs,
-            quizname = quizname,
             score = score,
             done = done
         )
@@ -257,7 +273,7 @@ class Neo4jDatabase:
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
         WHERE s.question_count <> 0 
-        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp, s.quizname AS quizname, s.score AS score, s.done AS done
+        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp, s.sname AS sname, s.score AS score, s.done AS done
         """
         result = tx.run(query, user_id=user_id)
         sessions = []
@@ -268,7 +284,7 @@ class Neo4jDatabase:
                 "topics": record["topics"],
                 "selected_pdfs": record["selected_pdfs"],
                 "timestamp": record["timestamp"],
-                "quizname": record["quizname"] ,
+                "sname": record["sname"] ,
                 "score": record["score"] ,
                 "done": record["done"] 
             })

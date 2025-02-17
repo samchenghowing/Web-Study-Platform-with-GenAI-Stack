@@ -39,6 +39,7 @@ export default function FormDialog() {
     const [selectedTopics, setSelectedTopics] = React.useState<string[]>([]);
     const [cardContent, setCardContent] = React.useState<PDFData[]>([]);
     const [selectedPDFs, setSelectedPDFs] = React.useState<string[]>([]);
+    const [sessionName, setSessionName] =  React.useState('');
 
     const { user } = useAuth();
 
@@ -85,6 +86,10 @@ export default function FormDialog() {
         setQuestionNum(event.target.value as string);
     };
 
+    const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSessionName(event.target.value);
+    };
+
     const handlePDFSelect = (file_id: string) => {
         setSelectedPDFs((prev) => {
             if (prev.includes(file_id)) {
@@ -98,6 +103,7 @@ export default function FormDialog() {
     const handleContinue = async () => {
         try {
             const payload = {
+                sname: sessionName,
                 question_count: Number(QuestionNum),
                 topics: selectedTopics, 
                 selected_pdfs: selectedPDFs
@@ -138,7 +144,7 @@ export default function FormDialog() {
 
     return (
         <React.Fragment>
-            <Button variant="outlined" onClick={handleClickOpen}>
+            <Button variant="outlined" onClick={handleClickOpen} sx={{ borderRadius: '20px', textTransform: 'none' }}>
                 Create New session
             </Button>
             <Dialog
@@ -148,42 +154,56 @@ export default function FormDialog() {
                 fullWidth
                 sx={{
                     '& .MuiDialog-paper': {
-                        borderRadius: '12px',
+                        borderRadius: '16px',
                         overflow: 'hidden',
-                        maxHeight: '100vh'
+                        maxHeight: '300vh',
+                        backgroundColor: '#f5f5f5',
                     }
                 }}
             >
-                <DialogTitle variant="h5">+ Create New Session</DialogTitle>
+                <DialogTitle variant="h5" sx={{ color: '#1976d2', textAlign: 'center' }}>Create New Session</DialogTitle>
                 <DialogContent>
-                    <DialogContentText>
+                    {/* <DialogContentText>
                         To let AI tutor design the most suitable tasks for you, please enter your preferences for this session.
-                    </DialogContentText>
+                    </DialogContentText> */}
 
-                    <Box
-                        component="form"
-                        sx={{ p: 2 }}
-                    >
-                        <FormControl sx={{ mt: 2, minWidth: 300 }}><InputLabel id="question-select-label">Number of questions</InputLabel>
-                            <Select
-                                labelId="question-select-label"
-                                id="question-select"
-                                value={QuestionNum}
-                                label="Number of questions"
-                                onChange={handleChange}
-                                sx={{ width: '200px' }}
-                            >
-                                {[...Array(20)].map((_, index) => (
-                                    <MenuItem key={index + 1} value={index + 1}>
-                                        {index + 1}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
+                    {/* Session Name Field */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={9}>
+                            <Box component="form" sx={{ p: 2 }}>
+                                <TextField
+                                    label="Session Name"
+                                    fullWidth
+                                    variant="outlined"
+                                    placeholder="Enter a name for the session"
+                                    onChange={handleNameChange}
+                                />
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={3}>
+                            <Box component="form" sx={{ p: 2 }}>
+                                <FormControl sx={{ minWidth: 200 }} fullWidth>
+                                    <InputLabel id="question-select-label">Number of Questions</InputLabel>
+                                    <Select
+                                        labelId="question-select-label"
+                                        id="question-select"
+                                        value={QuestionNum}
+                                        label="Number of questions"
+                                        onChange={handleChange}
+                                        sx={{ width: '100%' }}
+                                    >
+                                        {[...Array(20)].map((_, index) => (
+                                            <MenuItem key={index + 1} value={index + 1}>
+                                                {index + 1}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
+                            </Box>
+                        </Grid>
+                    </Grid>
 
-                    <Divider />
-
+                    {/* Select Topics */}
                     <Box sx={{ p: 2 }}>
                         <Autocomplete
                             multiple
@@ -191,21 +211,26 @@ export default function FormDialog() {
                             options={programmingConcepts}
                             groupBy={(option) => option.category}
                             getOptionLabel={(option) => option.concept}
-                            onChange={(event, newValue) => setSelectedTopics(newValue.map(item => item.concept))} 
+                            onChange={(event, newValue) => setSelectedTopics(newValue.map(item => item.concept))}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
-                                    variant="standard"
+                                    variant="outlined"
                                     label="Topics for this session"
                                     placeholder="Pick some Tags"
+                                    fullWidth
                                 />
                             )}
                         />
                     </Box>
 
-                    <Divider />
+                    {/* Add PDF Information */}
+                    <DialogContentText sx={{ textAlign: 'center', fontSize: '14px', color: '#555' }}>
+                        You can add a reference PDF to assist with creating the session. This step is optional.
+                    </DialogContentText>
 
-                    <Typography variant="h5">Choose your reference book (Optional)</Typography>
+                    {/* Choose Reference Book */}
+                    <Typography variant="h5" sx={{ color: '#1976d2', mb: 2 }}></Typography>
                     <Grid container spacing={2}>
                         {cardContent.map((pdf) => (
                             <Grid item xs={12} sm={6} md={4} key={pdf.file_id}>
@@ -231,14 +256,16 @@ export default function FormDialog() {
                             </Grid>
                         ))}
                     </Grid>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleClose}>Cancel</Button>
-                    <Button onClick={handleContinue} type="submit">Continue</Button>
 
+
+                </DialogContent>
+                <DialogActions sx={{ p: 2 ,justifyContent: 'center'  }}>
+                    <Button onClick={handleClose} sx={{ textTransform: 'none' }}>Cancel</Button>
+                    <Button onClick={handleContinue} type="submit" sx={{ textTransform: 'none', backgroundColor: '#1976d2', color: '#fff', '&:hover': { backgroundColor: '#1565c0' } }}>Continue</Button>
                 </DialogActions>
             </Dialog>
         </React.Fragment>
+    
     );
 }
 
