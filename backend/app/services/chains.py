@@ -273,28 +273,70 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
     if not preferences:
         return "User preferences not found."
 
+    # gen_system_template = f"""
+    # You're a programming teacher and you are preparing task on html, css and javascript. 
+    # Generate coding snippet that having fault for students to fix.
+    # Make sure creating question based on student's prefrence below.
+    # {preferences}
+    # ---
+
+    # Return a title for the question, and the question itself.
+    # Also, provide the difficulty level (easy, medium, hard), completeness (percentage), and experience points (XP) for the question.
+    # Don't include any explanations in your responses.
+    # ---
+    # Example conversation:
+
+    # User: Hey I want to know javascript
+
+    # Agent: OK, here's an starting question containing errors, let see if you can fix it: #Title: Fix the error for the following code  ```javascript\nconsoel.log(Hello World')```
+    # Difficulty: easy
+    # Completeness: 80%
+    # XP: 10
+    # ---
+    # """
+
     gen_system_template = f"""
-    You're a programming teacher and you are preparing task on html, css and javascript. 
-    Generate coding snippet that having fault for students to fix.
-    Make sure creating question based on student's prefrence below.
-    {preferences}
-    ---
+        You are a programming teacher designing coding tasks for students.  
+        Your task is to generate an HTML, CSS, or JavaScript code snippet **containing intentional errors** for students to fix.  
 
-    Return a title for the question, and the question itself.
-    Also, provide the difficulty level (easy, medium, hard), completeness (percentage), and experience points (XP) for the question.
-    Don't include any explanations in your responses.
-    ---
-    Example conversation:
+        ### **Requirements:**  
+        - The question should be tailored to the student's preference:  
+        {preferences}  
+        - The generated code must be **syntactically incorrect or functionally flawed**.  
+        - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).  
+        - Do **not** include explanations or hints in your response.  
+        - Do **not** add additional content of the response
 
-    User: Hey I want to know javascript
+        ### **Response Format:**  
+        Provide the following details in your response:  
+        1. **Title:** A concise title describing the task.  
+        2. **Question:** A brief introduction to the task.  
+        3. **Code Snippet:** The faulty code enclosed in triple backticks (```) with proper syntax highlighting (e.g., ```html, ```css, ```javascript).  
+        4. **Difficulty:** easy / medium / hard.  
+        5. **Completeness:** A percentage indicating how much of the code is correct.  
+        6. **XP:** The experience points rewarded for completing the task.  
+        7. **Notice**: add note if needed, dont added after the code 
 
-    Agent: OK, here's an starting question containing errors, let see if you can fix it: #Title: Fix the error for the following code  ```javascript\nconsoel.log(Hello World')```
-    Difficulty: easy
-    Completeness: 80%
-    XP: 10
-    ---
+        ---
+
+        ### **Example Output:**  
+
+        **Title:** Fix the syntax error in the JavaScript function  
+        **Difficulty:** easy 
+        **Completeness:** 80 % 
+        **XP:** 10 
+        **Question:** The following JavaScript function has a syntax error. Identify and fix it.  
+        **Notice:"" Note code is missing a and the semantic the navigation menu.
+        ```javascript
+        function add(a, b) 
+        return a + b // Missing semicolon
+        
+        console.log(add(3, 5);
+        ```
+        
 
     """
+    
     # we need jinja2 since the questions themselves contain curly braces
     system_prompt = SystemMessagePromptTemplate.from_template(
         gen_system_template, template_format="jinja2"
@@ -388,9 +430,12 @@ def check_quiz_correctness_json(user_id, llm_chain, task, answer, callbacks=[]):
     - **Only evaluate** the correctness of the student's answer.
     - **Do NOT** generate additional corrections, explanations, or reformatted code.
     - **Do NOT** include HTML or unrelated text.
+
     
     ## Response Format (STRICT JSON):
-    Your response **must be in valid JSON format**, don't missing status, message and hints and the format:
+    - Your response **must be in valid JSON format**:
+    - Your response **must contain status correct / incorrect judge **
+
     ```json
     {{
         "status": "Correct" or "Incorrect",

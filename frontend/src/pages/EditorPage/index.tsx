@@ -9,7 +9,7 @@ import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation } from 'react-router-dom';
-import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab } from '@mui/material';
+import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab, Box } from '@mui/material';
 import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { useAuth } from '../../authentication/AuthContext';
 import { extract_task } from './utils';
@@ -56,6 +56,8 @@ export default function MainComponent() {
 
 	const location = useLocation();
 	const quiz = location.state?.quiz;
+	
+
 
 	const { user } = useAuth(); // Accessing user from AuthContext
 
@@ -76,6 +78,7 @@ export default function MainComponent() {
 	}, [countdown]);
 
 	const generateQuestion = async () => {
+		
 		try {
 			if (!quiz) {
 				throw new Error('Quiz object is not available');
@@ -83,8 +86,13 @@ export default function MainComponent() {
 			const response = await fetch(TASK_API_ENDPOINT, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ user: user?._id, session: JSON.stringify(quiz) }) // Serialize the session field
+				body: JSON.stringify({ 
+					user: user?._id, 
+					session: JSON.stringify(quiz),
+					sessionid: quiz.session_id,
+				}) // Serialize the session field
 			});
+			console.log(response);
 
 			setQuestion("");
 
@@ -104,6 +112,7 @@ export default function MainComponent() {
 					try {
 						const jsonChunk = JSON.parse(jsonString);
 						setQuestion(prev => prev + jsonChunk.token);
+
 					} catch (error) {
 						console.error('Error parsing JSON chunk', error);
 					}
@@ -133,7 +142,7 @@ export default function MainComponent() {
 		setDialogOpen(true); // Open dialog
 
 		try {
-			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz_json`, {
+			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -263,18 +272,28 @@ export default function MainComponent() {
 						{tabIndex === 0 && (
 							<Card variant="outlined">
 								<CardContent>
+
+									{/* 1. Question number */}
 									<Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
 										Question number {quiz?.question_no}
 									</Typography>
+
+									{/* 2. Topic */}
 									<Typography sx={{ color: 'text.secondary', mb: 1.5 }}>Topics:
 										{quiz?.topics.map((topic: string, index: number) => (
 											<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
 										))}</Typography>
 									<Typography variant="body2">
-										<MarkdownRenderer content={question} />
+									
+									{/* 3. Quesustion field */}
+									<Box sx={{ overflowWrap: "break-word", whiteSpace: "pre-wrap" }}>
+										<MarkdownRenderer content={question || "Loading..."} />
+									</Box>
+
 									</Typography>
 								</CardContent>
 								<CardActions>
+									{/* 4. Button to sent code to the right*/}
 									<Button size="small" onClick={() => {
 										const [jsCode, htmlCode, cssCode] = extract_task(question);
 										var task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
@@ -291,12 +310,12 @@ export default function MainComponent() {
 						)}
 
 						{tabIndex === 1 && (
-							<AIChat
+							<AIChat 
 								question={question}
 								setQuestion={setQuestion}
 								task={task}
 								setTask={setTask}
-								quiz={quiz} // Pass the quiz object to AIChat
+								quiz={quiz} // Pass the quiz object to AIChat // Should using AI CHat type session node 
 							/>
 						)}
 
