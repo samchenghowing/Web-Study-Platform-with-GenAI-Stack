@@ -44,6 +44,8 @@ from pdf2image import convert_from_bytes
 2.  `/get_QUIZsession/{user_id}`:   [P] Retrieves QUIZ session data from Neo4j for a specific user.
 3.  `/create_session/{user_id}`     [G] Create new QUIZ Session based on User Preference
 4.  `/list_session/{user_id}`:      [P] List all QUIZ session associated to the user
+5.  `/update_session_name/{s_id}"   [P] update QUIZ session name based on sesion id 
+6.  `/delete_session/{s_id}`        [P] del QUIZ session based on sesion id 
 
 [ Quiz ]
 4.  `/quiz/{id}`:                   [G] Fetches quiz questions for a student from MongoDB or loads default questions if none are found.
@@ -205,7 +207,7 @@ async def generate_lp_api(task: GenerateTask):
 
     return StreamingResponse(generate(), media_type="application/json")
 
-# should this be a question sessioin for the AI chat?
+# should this be a question sessioin for the AI chat? if it is AI CHAT (noramlly ask question to AI), could open mulit AI chat if needed like chatgpt
 # @app.get("/get_AIsession/{user_id}/{session_id}/{question_id}") 
 @app.get("/get_AIsession/{user_id}") 
 async def get_session(user_id: str):
@@ -298,7 +300,6 @@ async def delete_session(session_id: str):
 
     return {"message": "Session deleted successfully"}
 
-
 ##########
 
 @app.get(
@@ -364,6 +365,27 @@ async def submit_quiz(task: Quiz_submission):
             yield json.dumps({"token": token})
 
     return StreamingResponse(generate(), media_type="application/json")
+
+@app.post("/submit/quiz_json")
+async def submit_quiz(task: Quiz_submission):
+    q = Queue()
+
+    def cb():
+        check_quiz_correctness_json(
+            user_id=task.user,
+            llm_chain=llm_history_chain,
+            task=task.question,
+            answer=task.answer,
+            callbacks=[QueueCallback(q)],
+        )
+
+    def generate():
+        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
+        for token, _ in stream(cb, q):
+            yield json.dumps({"token": token})
+
+    return StreamingResponse(generate(), media_type="application/json")
+
 
 @app.post("/submit/settings")
 async def submit_settings(task: Quiz_submission):

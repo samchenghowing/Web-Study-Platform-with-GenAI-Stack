@@ -133,7 +133,7 @@ export default function MainComponent() {
 		setDialogOpen(true); // Open dialog
 
 		try {
-			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
+			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz_json`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

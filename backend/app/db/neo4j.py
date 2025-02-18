@@ -213,12 +213,13 @@ class Neo4jDatabase:
             result = session.run(
                 """
                 MATCH (s:Session {id: $session_id})
-                DETACH DELETE s
-                RETURN COUNT(s) AS deleted_count
+                OPTIONAL MATCH (s)-[*]->(related)
+                DETACH DELETE s, related
+                RETURN COUNT(s) > 0 AS deleted
                 """,
                 session_id=session_id
             )
-            return result.single()["deleted_count"] > 0
+            return result.single()["deleted"]
 
     @staticmethod
     def _get_latest_user_aisession(tx, user_id):
