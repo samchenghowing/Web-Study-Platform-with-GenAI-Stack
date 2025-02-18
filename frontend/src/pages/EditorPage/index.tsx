@@ -45,7 +45,7 @@ export default function MainComponent() {
 	const [submissionUID, setSubmissionUID] = React.useState<string>('');
 	const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 	const [snackbarText, setSnackbarText] = React.useState<string>('');
-	const [countdown, setCountdown] = React.useState(0);
+	const [countdown, setCountdown] = React.useState(1);
 	const [showEditor, setShowEditor] = React.useState(false);
 	const [tabIndex, setTabIndex] = React.useState(0);
 
