@@ -1,5 +1,6 @@
 from neo4j import GraphDatabase
 import uuid
+import logging
 
 '''
 neo4j.py [Database Operation]
@@ -328,18 +329,28 @@ class Neo4jDatabase:
             })
         return sessions
 
-    def create_question_node(self, session_id, question_id, question_text):
+    def create_question_node(self, session_id, question_id, question_text, difficulty, completeness, xp):
         with self.driver.session() as session:
-            session.write_transaction(self._create_question_node, session_id, question_id, question_text)
+            logging.info(f"Creating question node with ID: {question_id} for session: {session_id}")
+            session.write_transaction(self._create_question_node, session_id, question_id, question_text, difficulty, completeness, xp)
 
     @staticmethod
-    def _create_question_node(tx, session_id, question_id, question_text):
+    def _create_question_node(tx, session_id, question_id, question_text, difficulty, completeness, xp):
         query = """
         MATCH (s:Session {id: $session_id})
-        CREATE (q:Question {id: $question_id, text: $question_text, timestamp: datetime()})
+        CREATE (q:Question {
+            id: $question_id, 
+            text: $question_text, 
+            difficulty: $difficulty, 
+            completeness: $completeness, 
+            xp: $xp, 
+            timestamp: datetime()
+        })
         CREATE (s)-[:CONTAINS]->(q)
         """
-        tx.run(query, session_id=session_id, question_id=question_id, question_text=question_text)
+        logging.info(f"Running query to create question node: {query}")
+        tx.run(query, session_id=session_id, question_id=question_id, question_text=question_text, difficulty=difficulty, completeness=completeness, xp=xp)
+        logging.info(f"Question node with ID: {question_id} created successfully")
 
     def get_all_chat_histories_for_user(self, user_id):
         with self.driver.session() as session:

@@ -172,6 +172,7 @@ async def generate_task_api(task: GenerateTask):
             user_id=task.user,
             neo4j_graph=neo4j_graph,
             llm_chain=llm_history_chain,
+            grader_chain=grader_chain,
             session=task.session,
             callbacks=[QueueCallback(q)],
         )

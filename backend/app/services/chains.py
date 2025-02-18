@@ -1,3 +1,5 @@
+import logging
+import uuid
 from langchain.chains import RetrievalQAWithSourcesChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
@@ -220,14 +222,12 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
 
 def configure_grader_chain(llm, url, username, password, embeddings):
     # RAG response
-    general_system_template = """You are a grader assessing relevance of a retrieved document to a user question. \n 
-    It does not need to be a stringent test. The goal is to filter out erroneous retrievals. \n
-    If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-    Give a similarity score between 100 (very relevant) and 0 (irrelevant) to indicate the relevance of the document to the question."""
+    general_system_template = """You are a grader assessing the attributes of a generated question. \n 
+    Evaluate the question based on the following criteria: difficulty, completeness, and experience points (XP)."""
 
     messages = [
         SystemMessagePromptTemplate.from_template(general_system_template),
-        HumanMessagePromptTemplate.from_template("Retrieved document: \n\n {context} \n\n User question: {question}"),
+        HumanMessagePromptTemplate.from_template("Generated question: \n\n {context} \n\n Evaluate the question."),
     ]
     qa_prompt = ChatPromptTemplate.from_messages(messages)
 
@@ -235,37 +235,24 @@ def configure_grader_chain(llm, url, username, password, embeddings):
         sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
     ) -> str:
         
-        vector_store = Neo4jVector(
-            embedding=embeddings,
-            url=url,
-            username=username,
-            password=password,
-            index_name="pdf_bot",
-            node_label="PdfBotChunk"
-        )
-        
         class GradeDocuments(BaseModel):
-            """Similarity score for relevance check on retrieved documents."""
+            """Evaluation scores for the generated question."""
 
-            similarity_score: float = Field(
-                description="Similarity score between 100 (very relevant) and 0 (irrelevant)"
+            difficulty: float = Field(
+                description="Difficulty score between 0 and 100"
             )
-
-        retriever = vector_store.as_retriever(search_kwargs={"k": 3})
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
-
-        rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt
-            | llm.bind_tools([GradeDocuments])
-            | StrOutputParser()
-        )
+            completeness: float = Field(
+                description="Completeness score between 0 and 100"
+            )
+            xp: float = Field(
+                description="Experience points (XP) score between 0 and 100"
+            )
+        rag_chain = llm.bind_tools([GradeDocuments]) | StrOutputParser()
         answer = rag_chain.invoke(question)
         print(answer)
         answer_dict = json.loads(answer)
-        print(answer_dict["parameters"]["similarity_score"])
-        return {"answer": answer_dict, "similarity_score": answer_dict["parameters"]["similarity_score"]}
+        print(answer_dict["parameters"])
+        return {"answer": answer_dict, "question_level": answer_dict["parameters"]}
 
     return generate_llm_output
 
@@ -281,7 +268,7 @@ def get_user_preferences(neo4j_graph, user_id):
 
 #
 
-def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
+def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callbacks=[]):
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
         return "User preferences not found."
@@ -294,6 +281,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     ---
 
     Return a title for the question, and the question itself.
+    Also, provide the difficulty level (easy, medium, hard), completeness (percentage), and experience points (XP) for the question.
     Don't include any explanations in your responses.
     ---
     Example conversation:
@@ -301,6 +289,9 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     User: Hey I want to know javascript
 
     Agent: OK, here's an starting question containing errors, let see if you can fix it: #Title: Fix the error for the following code  ```javascript\nconsoel.log(Hello World')```
+    Difficulty: easy
+    Completeness: 80%
+    XP: 10
     ---
 
     """
@@ -324,6 +315,34 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
         callbacks=callbacks,
         prompt=chat_prompt,
     )
+
+    # Extract difficulty, completeness, and XP from the response
+    response_parts = llm_response["answer"]
+    question_id = str(uuid.uuid4())
+
+    # Use the grader_chain to evaluate the generated question
+    grader_response = grader_chain(
+        sid=session.get("session_id"),
+        question=response_parts,
+        callbacks=callbacks,
+    )
+
+    evaluated_difficulty = grader_response["question_level"]["difficulty"]
+    evaluated_completeness = grader_response["question_level"]["completeness"]
+    evaluated_xp = grader_response["question_level"]["xp"]
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    # Store the question in Neo4j
+    neo4j_db.create_question_node(
+        session_id=session.get("session_id"),
+        question_id=question_id,
+        question_text=response_parts,
+        difficulty=evaluated_difficulty,
+        completeness=evaluated_completeness,
+        xp=evaluated_xp
+    )
+    logging.info(f"Question node created for session: {session.get('session_id')} with question ID: {question_id}")
+
     return llm_response
 
 def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
@@ -332,7 +351,6 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
     {task}
     Your evulation should only follow the scope of your question.
     You must not include response which does not in the scope of your question.
-
     Your coding hints should include all the original code from student.
     """
     system_prompt = SystemMessagePromptTemplate.from_template(
