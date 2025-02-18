@@ -22,7 +22,7 @@ import Grid from '@mui/material/Grid';
 import { Divider } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
 import SessionRecord from './SessionRecord';
-
+import Slider from '@mui/material/Slider';
 
 const PDF_API_ENDPOINT = 'http://localhost:8504/pdfs';
 const CREATESESSION_API_ENDPOINT = 'http://localhost:8504/create_session';
@@ -35,11 +35,11 @@ interface PDFData {
 
 export default function FormDialog() {
     const [open, setOpen] = React.useState(false);
-    const [QuestionNum, setQuestionNum] = React.useState('');
+    const [QuestionNum, setQuestionNum] = React.useState<number>(1);
     const [selectedTopics, setSelectedTopics] = React.useState<string[]>([]);
     const [cardContent, setCardContent] = React.useState<PDFData[]>([]);
     const [selectedPDFs, setSelectedPDFs] = React.useState<string[]>([]);
-    const [sessionName, setSessionName] =  React.useState('');
+    const [sessionName, setSessionName] = React.useState('');
 
     const { user } = useAuth();
 
@@ -82,8 +82,12 @@ export default function FormDialog() {
         }
     };
 
-    const handleChange = (event: SelectChangeEvent) => {
-        setQuestionNum(event.target.value as string);
+    const handleSliderChange = (event: Event, newValue: number | number[]) => {
+        if (typeof newValue === 'number' && newValue < 1) {
+            setQuestionNum(1);
+        } else {
+            setQuestionNum(newValue as number);
+        }
     };
 
     const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,23 +109,23 @@ export default function FormDialog() {
             const payload = {
                 sname: sessionName,
                 question_count: Number(QuestionNum),
-                topics: selectedTopics, 
+                topics: selectedTopics,
                 selected_pdfs: selectedPDFs
             };
-    
+
             const response = await fetch(`http://localhost:8504/create_session/${user?._id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                    
+
                 },
                 body: JSON.stringify(payload)
             });
-    
+
             if (!response.ok) {
                 throw new Error('Failed to create session');
             }
-    
+
             const data = await response.json();
             window.dispatchEvent(new Event('fetchSessionsEvent'));
             handleClose(); // Close the dialog after success
@@ -158,9 +162,9 @@ export default function FormDialog() {
                         overflow: 'hidden',
                         backgroundColor: '#f5f5f5',
                         height: '1000vh',
-                        maxHeight: '40%',
-                        width: '500px',  
-                        maxWidth: '80%', 
+                        maxHeight: '60%',
+                        width: '500px',
+                        maxWidth: '80%',
                     }
                 }}
             >
@@ -172,8 +176,11 @@ export default function FormDialog() {
 
                     {/* Session Name Field */}
                     <Grid container spacing={0}>
-                        <Grid item xs={12} sm={8}>
+                        <Grid item xs={12}>
                             <Box component="form" sx={{ p: 2 }}>
+                                <DialogContentText sx={{ textAlign: 'left', fontSize: '14px', color: '#555' }}>
+                                    Let's begin with giving a name to this learning session.
+                                </DialogContentText>
                                 <TextField
                                     label="Session Name"
                                     fullWidth
@@ -183,49 +190,57 @@ export default function FormDialog() {
                                 />
                             </Box>
                         </Grid>
-                        <Grid item xs={11} sm={3}>
+                        <Grid item xs={12}>
                             <Box component="form" sx={{ p: 2 }}>
-                                <FormControl sx={{ minWidth: 120 }}>
-                                    <InputLabel id="question-select-label">Q.Number</InputLabel>
-                                    <Select
-                                        labelId="question-select-label"
-                                        id="question-select"
+                                <DialogContentText sx={{ textAlign: 'left', fontSize: '14px', color: '#555' }}>
+                                    Now, pick some interesting topics.
+                                </DialogContentText>
+                                <Autocomplete
+                                    multiple
+                                    id="tags-standard"
+                                    options={programmingConcepts}
+                                    groupBy={(option) => option.category}
+                                    getOptionLabel={(option) => option.concept}
+                                    onChange={(event, newValue) => setSelectedTopics(newValue.map(item => item.concept))}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            variant="outlined"
+                                            label="Topics for this session"
+                                            placeholder="Pick some Tags"
+                                            fullWidth
+                                        />
+                                    )}
+                                />
+                            </Box>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            <Box component="form" sx={{ p: 2 }}>
+                                <Typography gutterBottom>Questions: {QuestionNum}</Typography>
+                                <Box display="flex" alignItems="center">
+                                    <DialogContentText sx={{ textAlign: 'left', fontSize: '14px', color: '#555' }}>
+                                        How deep you want to divde in for these topics?
+                                    </DialogContentText>
+                                    <Slider
                                         value={QuestionNum}
-                                        label="Number of questions"
-                                        onChange={handleChange}
-                                        sx={{ width: '100%' }}
-                                    >
-                                        {[...Array(20)].map((_, index) => (
-                                            <MenuItem key={index + 1} value={index + 1}>
-                                                {index + 1}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
+                                        onChange={handleSliderChange}
+                                        aria-labelledby="discrete-slider"
+                                        valueLabelDisplay="auto"
+                                        step={1}
+                                        marks={[
+                                            { value: 0, label: '0' },
+                                            { value: 4, label: '4' },
+                                            { value: 8, label: '8' }
+                                        ]}
+                                        min={0}
+                                        max={8}
+                                    />
+                                </Box>
                             </Box>
                         </Grid>
                     </Grid>
 
-                    {/* Select Topics */}
-                    <Box sx={{ p: 2 }}>
-                        <Autocomplete
-                            multiple
-                            id="tags-standard"
-                            options={programmingConcepts}
-                            groupBy={(option) => option.category}
-                            getOptionLabel={(option) => option.concept}
-                            onChange={(event, newValue) => setSelectedTopics(newValue.map(item => item.concept))}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="outlined"
-                                    label="Topics for this session"
-                                    placeholder="Pick some Tags"
-                                    fullWidth
-                                />
-                            )}
-                        />
-                    </Box>
 
                     {/* Add PDF Information */}
                     <DialogContentText sx={{ textAlign: 'center', fontSize: '14px', color: '#555' }}>
@@ -262,13 +277,13 @@ export default function FormDialog() {
 
 
                 </DialogContent>
-                <DialogActions sx={{ p: 2 ,justifyContent: 'center'  }}>
+                <DialogActions sx={{ p: 2, justifyContent: 'center' }}>
                     <Button onClick={handleClose} sx={{ textTransform: 'none' }}>Cancel</Button>
                     <Button onClick={handleContinue} type="submit" sx={{ textTransform: 'none', backgroundColor: '#1976d2', color: '#fff', '&:hover': { backgroundColor: '#1565c0' } }}>Continue</Button>
                 </DialogActions>
             </Dialog>
         </React.Fragment>
-    
+
     );
 }
 
