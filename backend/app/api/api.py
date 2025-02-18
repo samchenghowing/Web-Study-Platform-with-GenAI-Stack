@@ -286,6 +286,18 @@ async def update_session_name(session_id: str, payload: dict):
 
     return {"message": "Session name updated successfully"}
 
+@app.delete("/delete_session/{session_id}")
+async def delete_session(session_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    success = neo4j_db.delete_session(session_id)
+    neo4j_db.close()
+
+    if not success:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return {"message": "Session deleted successfully"}
+
+
 ##########
 
 @app.get(

@@ -193,14 +193,14 @@ export default function MiniDrawer({ children, mode, toggleColorMode }: MiniDraw
                             <ListItemText primary="Lib" />
                         </ListItemButton>
                     </ListItem>
-                    <ListItem disablePadding sx={{ display: 'block' }}>
+                    {/* <ListItem disablePadding sx={{ display: 'block' }}>
                         <ListItemButton component={Link} to="/main/editor">
                             <ListItemIcon>
                                 <EditIcon />
                             </ListItemIcon>
                             <ListItemText primary="Editor" />
                         </ListItemButton>
-                    </ListItem>
+                    </ListItem> */}
                     <ListItem disablePadding sx={{ display: 'block' }}>
                         <ListItemButton component={Link} to="/main/upload">
                             <ListItemIcon>

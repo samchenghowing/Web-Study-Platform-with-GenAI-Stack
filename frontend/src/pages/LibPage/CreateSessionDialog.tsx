@@ -150,14 +150,17 @@ export default function FormDialog() {
             <Dialog
                 open={open}
                 onClose={handleClose}
-                maxWidth="md"
+                maxWidth="sm"
                 fullWidth
                 sx={{
                     '& .MuiDialog-paper': {
                         borderRadius: '16px',
                         overflow: 'hidden',
-                        maxHeight: '300vh',
                         backgroundColor: '#f5f5f5',
+                        height: '1000vh',
+                        maxHeight: '40%',
+                        width: '500px',  
+                        maxWidth: '80%', 
                     }
                 }}
             >
@@ -168,8 +171,8 @@ export default function FormDialog() {
                     </DialogContentText> */}
 
                     {/* Session Name Field */}
-                    <Grid container spacing={2}>
-                        <Grid item xs={12} sm={9}>
+                    <Grid container spacing={0}>
+                        <Grid item xs={12} sm={8}>
                             <Box component="form" sx={{ p: 2 }}>
                                 <TextField
                                     label="Session Name"
@@ -180,10 +183,10 @@ export default function FormDialog() {
                                 />
                             </Box>
                         </Grid>
-                        <Grid item xs={12} sm={3}>
+                        <Grid item xs={11} sm={3}>
                             <Box component="form" sx={{ p: 2 }}>
-                                <FormControl sx={{ minWidth: 200 }} fullWidth>
-                                    <InputLabel id="question-select-label">Number of Questions</InputLabel>
+                                <FormControl sx={{ minWidth: 120 }}>
+                                    <InputLabel id="question-select-label">Q.Number</InputLabel>
                                     <Select
                                         labelId="question-select-label"
                                         id="question-select"

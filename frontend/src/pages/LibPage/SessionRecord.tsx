@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 
 const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
 const CHANGENAME_API_ENDPOINT = 'http://localhost:8504/update_session_name';
+const DELETE_API_ENDPOINT = 'http://localhost:8504/delete_session';
 
 interface QuizRecord {
     session_id: string;
@@ -132,10 +133,27 @@ const SessionRecord = () => {
     };
 
     // Delete Record
-    const handleDelete = (id: string) => {
-        setQuizData(quizData.filter((quiz) => quiz.session_id !== id));
+    const handleDeleteSubmit = async (id: string) => {
+        try {
+            const response = await fetch(`${DELETE_API_ENDPOINT}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to delete session');
+            }
+    
+            setQuizData((prev) => prev.filter((quiz) => quiz.session_id !== id));
+            console.log('Delete success');
+        } catch (error) {
+            console.error('Error deleting session:', error);
+            alert('Failed to delete session. Please try again.');
+        }
     };
-
+    
     // Rename Record
     const handleRenameOpen = (id: string, currentName: string) => {
         setRenameDialogOpen(true);
@@ -310,7 +328,7 @@ const SessionRecord = () => {
                                     <Tooltip title="Delete">
                                         <IconButton
                                             color="error"
-                                            onClick={() => handleDelete(quiz.session_id)}
+                                            onClick={() => handleDeleteSubmit(quiz.session_id)}
                                         >
                                             <DeleteIcon />
                                         </IconButton>

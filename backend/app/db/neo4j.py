@@ -207,6 +207,18 @@ class Neo4jDatabase:
 
             return bool(result.single()) 
 
+    def delete_session(self, session_id: str) -> bool:
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (s:Session {id: $session_id})
+                DETACH DELETE s
+                RETURN COUNT(s) AS deleted_count
+                """,
+                session_id=session_id
+            )
+            return result.single()["deleted_count"] > 0
+
     @staticmethod
     def _get_latest_user_aisession(tx, user_id):
         query = """
