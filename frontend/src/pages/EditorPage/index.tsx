@@ -150,6 +150,7 @@ export default function MainComponent() {
 				body: JSON.stringify({
 					user: user ? user._id : 'test_user',
 					question: question,
+					session: JSON.stringify(quiz),
 					answer: editorDoc.jsDoc, // Assuming the answer is in jsDoc
 				}),
 			});
@@ -261,7 +262,6 @@ export default function MainComponent() {
 						<Alert severity="info">
 							<AlertTitle>{quiz?.name}</AlertTitle>
 							<Typography variant="body1">Question Count: 1 of {quiz?.question_count}</Typography>
-							<Typography variant="body1">Current Score: {quiz?.score}</Typography>
 						</Alert>
 
 						<Tabs value={tabIndex} onChange={handleTabChange} aria-label="simple tabs example">

@@ -67,6 +67,15 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
         setIsReadingComplete(false);
 
         try {
+            let newSession = {
+                session_id: '12345',
+                name: 'landing session',
+                question_count: 1,
+                timestamp: new Date().toISOString(),
+                state: 'in_progress',
+                score: 0,
+                topics: '',
+            };
             const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
                 method: 'POST',
                 headers: {
@@ -76,6 +85,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     user: user ? user._id : 'test_user',
                     question: question,
                     answer: value,
+					session: JSON.stringify(newSession),
                 }),
             });
 
@@ -113,10 +123,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                         setCardContent((prev) =>
                             prev.map((card) => {
                                 if (card.id === 1) {
-                                    let updatedCard = { ...card };
-
-                                    if (isInCodeBlock.current) updatedCard.code += token;
-                                    else { updatedCard.question += token; }
+                                    let updatedCard = { ...card };updatedCard.question += token
 
                                     return updatedCard;
                                 }

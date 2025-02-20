@@ -25,6 +25,7 @@ class Quiz_submission(BaseModel):
     user: str
     question: str
     answer: str # user's answer (need to check and provide feedback to user)
+    session: Json[Any] = None
 
 class StudentCheckResponse(BaseModel):
     is_new: bool

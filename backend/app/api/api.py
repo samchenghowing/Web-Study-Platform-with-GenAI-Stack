@@ -357,6 +357,7 @@ async def submit_quiz(task: Quiz_submission):
             llm_chain=llm_history_chain,
             task=task.question,
             answer=task.answer,
+            question_node=task.session,
             callbacks=[QueueCallback(q)],
         )
 

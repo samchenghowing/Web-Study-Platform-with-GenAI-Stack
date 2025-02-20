@@ -387,7 +387,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
 
     return llm_response
 
-def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
+def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, callbacks=[]):
     gen_system_template = f"""
     You're a programming teacher and you have created below question for student. 
     {task}
@@ -405,12 +405,9 @@ def check_quiz_correctness(user_id, llm_chain, task, answer, callbacks=[]):
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
-    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    sid = neo4j_db.get_AIsession(user_id).get("session_id")
-    neo4j_db.close()
 
     llm_response = llm_chain(
-        sid=sid,
+        sid=question_node.get("session_id"),
         question=answer, # student's answer send to llm
         callbacks=callbacks,
         prompt=chat_prompt,

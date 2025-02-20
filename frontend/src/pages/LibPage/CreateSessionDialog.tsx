@@ -161,10 +161,6 @@ export default function FormDialog() {
                         borderRadius: '16px',
                         overflow: 'hidden',
                         backgroundColor: '#f5f5f5',
-                        height: '1000vh',
-                        maxHeight: '60%',
-                        width: '500px',
-                        maxWidth: '80%',
                     }
                 }}
             >
