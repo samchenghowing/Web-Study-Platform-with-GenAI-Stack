@@ -56,7 +56,7 @@ export default function MainComponent() {
 
 	const location = useLocation();
 	const quiz = location.state?.quiz;
-	
+
 
 
 	const { user } = useAuth(); // Accessing user from AuthContext
@@ -78,7 +78,7 @@ export default function MainComponent() {
 	}, [countdown]);
 
 	const generateQuestion = async () => {
-		
+
 		try {
 			if (!quiz) {
 				throw new Error('Quiz object is not available');
@@ -86,8 +86,8 @@ export default function MainComponent() {
 			const response = await fetch(TASK_API_ENDPOINT, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					user: user?._id, 
+				body: JSON.stringify({
+					user: user?._id,
 					session: JSON.stringify(quiz),
 					sessionid: quiz.session_id,
 				}) // Serialize the session field
@@ -284,11 +284,11 @@ export default function MainComponent() {
 											<Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
 										))}</Typography>
 									<Typography variant="body2">
-									
-									{/* 3. Quesustion field */}
-									<Box sx={{ overflowWrap: "break-word", whiteSpace: "pre-wrap" }}>
-										<MarkdownRenderer content={question || "Loading..."} />
-									</Box>
+
+										{/* 3. Quesustion field */}
+										<Box sx={{ overflowWrap: "break-word", whiteSpace: "pre-wrap" }}>
+											<MarkdownRenderer content={question || "Loading..."} />
+										</Box>
 
 									</Typography>
 								</CardContent>
@@ -310,7 +310,7 @@ export default function MainComponent() {
 						)}
 
 						{tabIndex === 1 && (
-							<AIChat 
+							<AIChat
 								question={question}
 								setQuestion={setQuestion}
 								task={task}
@@ -353,9 +353,8 @@ export default function MainComponent() {
 				<DialogContent>
 					{cardContent.map((card) => (
 						<div key={card.id}>
-							<Typography variant="h6">{card.role}</Typography>
-							<Typography variant="body1">{card.question}</Typography>
-							<Typography variant="body2">{card.code}</Typography>
+							<MarkdownRenderer content={card.question}>
+							</MarkdownRenderer>
 						</div>
 					))}
 				</DialogContent>
