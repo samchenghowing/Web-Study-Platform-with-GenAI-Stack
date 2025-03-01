@@ -34,6 +34,7 @@ interface QuizRecord {
     name: string;
     question_count: number;
     timestamp: string;
+    progress: number;
     state: 'Done' | 'In Progress';
     score: string; // e.g., "8/10"
     topics: string[];
@@ -77,6 +78,7 @@ const SessionRecord = () => {
                             name: item.sname,
                             question_count: item.question_count,
                             timestamp: timestamp,
+                            progress: item.current_question_count,
                             state: item.current_question_count === item.question_count ? 'Done' : 'In Progress',
                             score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
@@ -200,7 +202,7 @@ const SessionRecord = () => {
     };
 
     const handleBeginQuiz = (quiz: QuizRecord) => {
-        if (quiz.current_question_count === quiz.question_count) {
+        if (quiz.progress === quiz.question_count) {
             setSnackbarMessage('This quiz is already done.');
             setSnackbarOpen(true);
         } else {
