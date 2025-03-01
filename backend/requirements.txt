@@ -6,7 +6,6 @@ langchain
 langchain_community
 langchain_core
 langgraph
-langgraph
 langchain-ollama
 langchain_mongodb
 langchain-neo4j

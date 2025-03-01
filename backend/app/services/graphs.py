@@ -5,22 +5,16 @@ from typing import List, TypedDict, Sequence, TypedDict
 from bs4 import BeautifulSoup as Soup
 from pydantic import BaseModel, Field
 
-from langchain_core.messages import ToolMessage, BaseMessage
-from langchain_core.documents import Document
-from langchain_core.tools import tool
 from typing import List, Tuple
 
 from langchain.prompts import (
     ChatPromptTemplate,
 )
 
-from langchain_core.messages import HumanMessage
 from langchain_community.document_loaders.recursive_url_loader import RecursiveUrlLoader
 
 from langgraph.graph import END, StateGraph, START
-
-from langgraph.prebuilt import InjectedState
-from langgraph.prebuilt import ToolNode
+from langchain_core.output_parsers import StrOutputParser
 
 '''
 graph.py [ Ai Model Tool ]
@@ -79,7 +73,7 @@ def self_correction_graph(llm):
         # description = "Schema for code solutions to questions about LCEL."
 
     # LLM
-    structured_llm_ollama = llm.bind_tools([code])
+    structured_llm_ollama = llm.bind_tools([code]) | StrOutputParser()
 
     # No re-try
     code_gen_chain = code_gen_prompt_claude | structured_llm_ollama
@@ -87,18 +81,20 @@ def self_correction_graph(llm):
     class GraphState(TypedDict):
         """
         Represents the state of our graph.
-
-        Attributes:
-            error : Binary flag for control flow to indicate whether test error was tripped
-            messages : With user question, error messages, reasoning
-            generation : Code solution
-            iterations : Number of tries
         """
 
-        error: str
-        messages: List
-        generation: str
-        iterations: int
+        error: str = Field(
+                description="Binary flag for control flow to indicate whether test error was tripped"
+            )
+        messages: List = Field(
+                description="With user question, error messages, reasoning"
+            )
+        generation: str = Field(
+                description="Code solution"
+            )
+        iterations: int = Field(
+                description="Number of tries"
+            )
 
     ### Parameter
 
@@ -123,6 +119,7 @@ def self_correction_graph(llm):
         """
 
         print("---GENERATING CODE SOLUTION---")
+        print(state)
 
         # State
         messages = state["messages"]

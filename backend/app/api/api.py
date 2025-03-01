@@ -400,7 +400,7 @@ async def submit_settings(task: Quiz_submission):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     user_node = neo4j_db.get_user_by_id(task.user)
     if user_node:
-        attr = convert_question_to_attribute(task.question, llm_chain)
+        attr = convert_question_to_attribute(task.question, llm=llm)
         login = int(dict(user_node).get("login"))
         neo4j_db.update_user_model(task.user, {attr: task.answer, "login": login+1})
         user_node = neo4j_db.get_user_by_id(task.user) # get updated user

@@ -509,18 +509,30 @@ def convert_question_to_attribute(question, llm):
     system_prompt = SystemMessagePromptTemplate.from_template(
         gen_system_template, template_format="jinja2"
     )
+    class Attribute(BaseModel):
+        """Convert user question to a single word attribute."""
+
+        attribute: str = Field(
+            description="A single word attribute"
+        )
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
-    llm_response = llm(
-        f"Here's the question to rewrite in one word: ```{question}```",
-        [],
-        chat_prompt,
+    tool_chain = (
+        {"question": RunnablePassthrough()}
+        | chat_prompt
+        | llm.bind_tools([Attribute])
+        | StrOutputParser()
     )
-    return llm_response["answer"]
+    answer = tool_chain.invoke(question)
+    print(answer)
+    answer_dict = json.loads(answer)
+    attribute = answer_dict["parameters"]["attribute"].replace(" ", "_")
+    print(attribute)
+    return attribute
 
 def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     # TODO with TOOLS

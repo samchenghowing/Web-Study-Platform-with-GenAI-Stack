@@ -375,12 +375,14 @@ const QuizPage: React.FC = () => {
                             question={currentQuestion.question}
                             choices={currentQuestion.choices || []}
                             correctAnswer={currentQuestion.correctAnswer}
+                            isLanding={currentQuestion.isLanding}
                             onAnswer={handleAnswer}
                         />
                     ) : currentQuestion.type === 'short-answer' ? (
                         <ShortAnswerQuestion
                             question={currentQuestion.question}
                             correctAnswer={currentQuestion.correctAnswer}
+                            isLanding={currentQuestion.isLanding}
                             onAnswer={handleAnswer}
                         />
                     ) : currentQuestion.type === 'coding' ? (
@@ -405,8 +407,8 @@ const QuizPage: React.FC = () => {
                                 color="primary"
                                 onClick={() => handleAnswer(true)}
                                 sx={{ mt: 2 }}
-                                >
-                            Next Question
+                            >
+                                Next Question
                             </Button>
                         </>
 
