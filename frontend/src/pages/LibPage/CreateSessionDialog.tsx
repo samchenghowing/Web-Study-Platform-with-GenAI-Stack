@@ -187,7 +187,7 @@ export default function FormDialog() {
                             <Box component="form" sx={{ p: 2 }}>
                                 <DialogContentText sx={{ textAlign: 'left', fontSize: '14px', color: '#555' }}>
                                     Let's begin with giving a name to this learning session.
-                                </DialogContentText>
+                                </DialogContentText >
                                 <TextField
                                     label="Session Name"
                                     fullWidth
@@ -242,7 +242,7 @@ export default function FormDialog() {
                                         step={1}
                                         marks={[
                                             { value: 1, label: '1' },
-                                            { value: 4, label: '4' },
+                                            { value: 5, label: '5' },
                                             { value: 10, label: '10' }
                                         ]}
                                         min={1}

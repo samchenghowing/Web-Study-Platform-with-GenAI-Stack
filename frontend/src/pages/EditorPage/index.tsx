@@ -9,7 +9,7 @@ import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation } from 'react-router-dom';
-import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab, Box } from '@mui/material';
+import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab, Box, CircularProgress } from '@mui/material';
 import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { useAuth } from '../../authentication/AuthContext';
 import { extract_task } from './utils';
@@ -137,10 +137,11 @@ export default function MainComponent() {
 	};
 
 	const handleCodeSubmit = async () => {
-		setIsLoading(true); // Start loading
+		setIsLoading(true);
 		setIsReadingComplete(false);
-		setDialogOpen(true); // Open dialog
-
+		setDialogOpen(true);
+		setCardContent([]); // Reset card content before new submission
+	
 		try {
 			const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
 				method: 'POST',
@@ -151,66 +152,55 @@ export default function MainComponent() {
 					user: user ? user._id : 'test_user',
 					question: question,
 					session: JSON.stringify(quiz),
-					answer: editorDoc.jsDoc, // Assuming the answer is in jsDoc
+					answer: editorDoc.jsDoc,
 				}),
 			});
-
+	
 			const reader = response.body?.getReader();
 			if (!reader) {
 				throw new Error('Stream reader is not available');
 			}
-
-			setCardContent((prev) => [
-				...prev,
-				{
-					id: 1,
-					role: 'human',
-					question: '',
-					code: '',
-				},
-			]);
-
+	
+			let fullMessage = ''; // Store complete message
+	
 			const readStream = async () => {
-				let { done, value } = await reader.read();
-				if (done) {
-					setIsReadingComplete(true);
-					setIsLoading(false); // Stop loading
-					return;
-				}
-
-				const chunk = new TextDecoder('utf-8').decode(value);
-				const jsonStrings = chunk.split('\n').filter(Boolean);
-
-				jsonStrings.forEach((jsonString) => {
-					try {
-						const jsonChunk = JSON.parse(jsonString);
-						const token = jsonChunk.token;
-
-						setCardContent((prev) =>
-							prev.map((card) => {
-								if (card.id === 1) {
-									let updatedCard = { ...card };
-
-									updatedCard.question += token;
-
-									return updatedCard;
-								}
-								return card;
-							})
-						);
-					} catch (error) {
-						console.error('Error parsing JSON chunk', error);
+				while (true) {
+					const { done, value } = await reader.read();
+					
+					if (done) {
+						setIsReadingComplete(true);
+						setIsLoading(false);
+						// Update card content with complete message
+						setCardContent([{
+							id: 1,
+							role: 'assistant',
+							question: fullMessage,
+							code: ''
+						}]);
+						break;
 					}
-				});
-				await readStream();
+	
+					const chunk = new TextDecoder('utf-8').decode(value);
+					const jsonStrings = chunk.split('\n').filter(Boolean);
+	
+					for (const jsonString of jsonStrings) {
+						try {
+							const jsonChunk = JSON.parse(jsonString);
+							fullMessage += jsonChunk.token; // Accumulate tokens
+						} catch (error) {
+							console.error('Error parsing JSON chunk', error);
+						}
+					}
+				}
 			};
-
+	
 			await readStream();
 		} catch (error) {
 			console.error(error);
 			setIsLoading(false); // Stop loading on error
 		}
 	};
+	
 
 	const checkSubmissionResult = async () => {
 		// if (!submissionUID) return;
@@ -351,12 +341,22 @@ export default function MainComponent() {
 			<Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
 				<DialogTitle>Submission Result</DialogTitle>
 				<DialogContent>
-					{cardContent.map((card) => (
-						<div key={card.id}>
-							<MarkdownRenderer content={card.question}>
-							</MarkdownRenderer>
-						</div>
-					))}
+						{isLoading ? (
+							<Box sx={{ 
+								display: 'flex', 
+								justifyContent: 'center', 
+								alignItems: 'center', 
+								p: 3 
+							}}>
+								<CircularProgress />
+							</Box>
+						) : (
+							cardContent.map((card) => (
+								<div key={card.id}>
+									<MarkdownRenderer content={card.question} />
+								</div>
+							))
+						)}
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={handleNextQuestion} color="primary">
