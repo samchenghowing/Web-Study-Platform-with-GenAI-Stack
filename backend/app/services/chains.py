@@ -248,11 +248,18 @@ def configure_grader_chain(llm, url, username, password, embeddings):
                 description="Experience points (XP) score between 0 and 100"
             )
         rag_chain = llm.bind_tools([GradeDocuments]) | StrOutputParser()
+        
+        logging.info(f"Invoking grader chain with question: {question}")
         answer = rag_chain.invoke(question)
-        print(answer)
-        answer_dict = json.loads(answer)
-        print(answer_dict["parameters"])
-        return {"answer": answer_dict, "question_level": answer_dict["parameters"]}
+        logging.info(f"Grader chain response: {answer}")
+        
+        try:
+            answer_dict = json.loads(answer)
+            logging.info(f"Parsed grader response: {answer_dict}")
+            return {"answer": answer_dict, "question_level": answer_dict["parameters"]}
+        except json.JSONDecodeError as e:
+            logging.error(f"Error decoding grader response: {e}")
+            return {"answer": "", "question_level": {"difficulty": 0, "completeness": 0, "xp": 0}}
 
     return generate_llm_output
 
@@ -272,28 +279,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
         return "User preferences not found."
-
-    # gen_system_template = f"""
-    # You're a programming teacher and you are preparing task on html, css and javascript. 
-    # Generate coding snippet that having fault for students to fix.
-    # Make sure creating question based on student's prefrence below.
-    # {preferences}
-    # ---
-
-    # Return a title for the question, and the question itself.
-    # Also, provide the difficulty level (easy, medium, hard), completeness (percentage), and experience points (XP) for the question.
-    # Don't include any explanations in your responses.
-    # ---
-    # Example conversation:
-
-    # User: Hey I want to know javascript
-
-    # Agent: OK, here's an starting question containing errors, let see if you can fix it: #Title: Fix the error for the following code  ```javascript\nconsoel.log(Hello World')```
-    # Difficulty: easy
-    # Completeness: 80%
-    # XP: 10
-    # ---
-    # """
 
     gen_system_template = f"""
         You are a programming teacher designing coding tasks for students.  

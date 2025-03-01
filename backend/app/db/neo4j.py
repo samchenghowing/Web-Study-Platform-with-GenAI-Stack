@@ -253,7 +253,7 @@ class Neo4jDatabase:
             CREATE (s:Session {
                 id: $session_id, 
                 timestamp: datetime(), 
-                sname: COALESCE($sname, 'New Quiz'),
+                sname: COALESCE(NULLIF($sname, ''), 'New Quiz'),
                 question_count: COALESCE($question_count, 0), 
                 topics: COALESCE($topics, []), 
                 selected_pdfs: COALESCE($selected_pdfs, []), 
@@ -279,8 +279,6 @@ class Neo4jDatabase:
         with self.driver.session() as session:
             sessions = session.read_transaction(self._find_quizsessions_for_user, user_id)
             return sessions
-
-
 
     @staticmethod
     def _find_quizsessions_for_user(tx, user_id):
