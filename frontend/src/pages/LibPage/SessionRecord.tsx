@@ -18,6 +18,8 @@ import {
     DialogActions,
     TextField,
     TablePagination,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import { Delete as DeleteIcon, Start as StartICON, DriveFileRenameOutline as RenameIcon, Add as AddIcon, Refresh as ReviseIcon } from '@mui/icons-material';
 import { useAuth } from '../../authentication/AuthContext';
@@ -35,6 +37,7 @@ interface QuizRecord {
     state: 'Done' | 'In Progress';
     score: string; // e.g., "8/10"
     topics: string[];
+    current_question_count: number; 
 }
 
 const SessionRecord = () => {
@@ -48,6 +51,10 @@ const SessionRecord = () => {
     // Pagination state
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    // Snackbar state
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
     // Fetch Sessions for a User
     useEffect(() => {
@@ -64,16 +71,16 @@ const SessionRecord = () => {
                         // Convert timestamp to a readable format
                         const timestamp = convertTimestamp(item.timestamp);
 
-
                         // Return a formatted record
                         return {
                             session_id: item.session_id,
                             name: item.sname,
                             question_count: item.question_count,
                             timestamp: timestamp,
-                            state: item.done ? 'Done' : 'In Progress',
+                            state: item.current_question_count === item.question_count ? 'Done' : 'In Progress',
                             score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
+                            current_question_count: item.current_question_count, // Add this field
                         };
                     });
 
@@ -99,30 +106,26 @@ const SessionRecord = () => {
         };
     }, []);
 
-
     // Helper function to format timestamp
     function convertTimestamp(timestamp) {
-        // const ordinal = timestamp._Date__ordinal;
-        // const baseDate = new Date(1, 0, 1); // January 1st, 0001
-        // const targetDate = new Date(baseDate.getTime() + (739251 - 1) * 24 * 60 * 60 * 1000);  // Add days
-
         const date = timestamp._DateTime__date;
         const time = timestamp._DateTime__time;
 
         const year = date._Date__year;
         const month = date._Date__month;
         const day = date._Date__day;
-        const hour = time._Time__hour;
+        let hour = time._Time__hour;
         const minute = time._Time__minute;
         const second = time._Time__second;
 
-        // Format the time string, adding leading zeroes where necessary 
-        const formattedTime = `${hour + 8}:${minute.toString().padStart(2, '0')}`; // :${second.toString().padStart(2, '0')
+        // Adjust the hour by adding 8 hours and handle overflow
+        hour = (hour + 8) % 24;
+
+        // Format the time string, adding leading zeroes where necessary
+        const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
 
         // Optionally, you can include the date as well if you want
         const formattedDate = `${day}/${month}/${year} ${formattedTime}`;
-        // const formattedDate = `${targetDate}`;
-        // targetDate.toISOString()
 
         return formattedDate;
     }
@@ -197,7 +200,12 @@ const SessionRecord = () => {
     };
 
     const handleBeginQuiz = (quiz: QuizRecord) => {
-        navigate('/main/editor', { state: { quiz } });
+        if (quiz.current_question_count === quiz.question_count) {
+            setSnackbarMessage('This quiz is already done.');
+            setSnackbarOpen(true);
+        } else {
+            navigate('/main/editor', { state: { quiz } });
+        }
     };
 
     // Handle Page Change
@@ -209,7 +217,7 @@ const SessionRecord = () => {
     const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0); // Reset to first page when changing rows per page
-
+    
     };
 
     /**
@@ -240,7 +248,6 @@ const SessionRecord = () => {
 
     return (
         <Box sx={{ p: 4, maxWidth: '95vw', overflowX: 'auto' }}>
-
             <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
                 <Table sx={{ minWidth: 1000 }}>
                     <TableHead>
@@ -379,6 +386,16 @@ const SessionRecord = () => {
                 </DialogActions>
             </Dialog>
 
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={6000}
+                onClose={() => setSnackbarOpen(false)}
+            >
+                <Alert onClose={() => setSnackbarOpen(false)} severity="info" sx={{ width: '100%' }}>
+                    {snackbarMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

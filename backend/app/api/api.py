@@ -301,6 +301,20 @@ async def delete_session(session_id: str):
 
     return {"message": "Session deleted successfully"}
 
+@app.post("/update_question_count")
+async def update_question_count(payload: dict):
+    session_id = payload.get("session_id")
+    current_question_count = payload.get("current_question_count")
+
+    if not session_id or current_question_count is None:
+        raise HTTPException(status_code=400, detail="Session ID and current question count are required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    neo4j_db.update_current_question_count(session_id, current_question_count)
+    neo4j_db.close()
+
+    return {"message": "Current question count updated successfully"}
+
 ##########
 
 @app.get(

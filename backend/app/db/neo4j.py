@@ -28,7 +28,7 @@ neo4j.py [Database Operation]
 12. `create_session`            (Creates) creates a new Quiz session based on user prefence. 
 13. `_get_latest_user_aisession`(Read) Fetches the most recent quiz session for a user.  
 13. `_get_latest_user_quizsession(Read) Fetches the most recent quiz session for a user.  
-14. `_create_user_session`:     (Creates) a new session node for a user. (user_id, question_count, topics, selected_pdfs, sname, score, done)
+14. `_create_user_session`:     (Creates) a new session node for a user. (user_id, question_count, topics, selected_pdfs, sname, score, current_question_count)
 
 15. `get_quizsessions_for_user`:(Read) Retrieves all quiz sessions associated with a user.  
 16. `_find_quizsessions_for_user(Read) fetch user quiz sessions.  
@@ -112,6 +112,24 @@ class Neo4jDatabase:
             """
             result = session.run(query, session_id=session_id)
             return [record["result"] for record in result]
+
+    def get_all_chat_histories_for_user(self, user_id):
+        with self.driver.session() as session:
+            query = """
+            MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)-[:LAST_MESSAGE]->(last_message)
+            WITH s, last_message
+            MATCH p=(last_message)<-[:NEXT*0..]-(previous_messages)
+            WITH s, p, length(p) AS path_length
+            ORDER BY s.timestamp DESC, path_length DESC
+            UNWIND reverse(nodes(p)) AS node
+            WITH s.id AS session_id, COLLECT(DISTINCT {data: {content: node.content}, type: node.type}) AS results
+            RETURN session_id, results
+            """
+            result = session.run(query, user_id=user_id)
+            sessions = {}
+            for record in result:
+                sessions[record["session_id"]] = record["results"]
+            return sessions
 
     def delete_chat_history(self, session_id):
         with self.driver.session() as session:
@@ -208,18 +226,44 @@ class Neo4jDatabase:
 
             return bool(result.single()) 
 
-    def delete_session(self, session_id: str) -> bool:
+    def delete_session(self, session_id: str) -> dict:
+        """
+        Deletes a session and all its recursively related nodes downstream.
+        
+        Args:
+            session_id (str): The ID of the session to delete.
+        
+        Returns:
+            dict: A dictionary with 'success' (bool) and 'nodes_deleted' (int).
+        
+        Raises:
+            ValueError: If session_id is empty or None.
+            Exception: If the database operation fails.
+        """
+        if not session_id or not isinstance(session_id, str):
+            raise ValueError("session_id must be a non-empty string")
+
         with self.driver.session() as session:
-            result = session.run(
-                """
-                MATCH (s:Session {id: $session_id})
-                OPTIONAL MATCH (s)-[*]->(related)
-                DETACH DELETE s, related
-                RETURN COUNT(s) > 0 AS deleted
-                """,
-                session_id=session_id
-            )
-            return result.single()["deleted"]
+            try:
+                result = session.run(
+                    """
+                    MATCH (s:Session {id: $session_id})
+                    OPTIONAL MATCH (s)-[*]->(related)
+                    DETACH DELETE s, related
+                    WITH COUNT(s) AS session_count, COUNT(related) AS related_count
+                    RETURN session_count > 0 AS success, 
+                        (session_count + related_count) AS nodes_deleted
+                    """,
+                    session_id=session_id
+                )
+                record = result.single()
+                return {
+                    "success": record["success"],
+                    "nodes_deleted": record["nodes_deleted"]
+                }
+            except Exception as e:
+                raise Exception(f"Failed to delete session {session_id}: {str(e)}")
+
 
     @staticmethod
     def _get_latest_user_aisession(tx, user_id):
@@ -244,7 +288,7 @@ class Neo4jDatabase:
         return result.single()
 
     @staticmethod
-    def _create_user_session(tx, user_id, sname, question_count, topics, selected_pdfs, score, done):
+    def _create_user_session(tx, user_id, sname, question_count, topics, selected_pdfs, score, current_question_count):
         session_id = str(uuid.uuid4())  # Generate a unique session ID
         
         tx.run(
@@ -258,7 +302,7 @@ class Neo4jDatabase:
                 topics: COALESCE($topics, []), 
                 selected_pdfs: COALESCE($selected_pdfs, []), 
                 score: COALESCE($score, 0),  
-                done: COALESCE($done, false)
+                current_question_count: COALESCE($current_question_count, 0)
             })
             CREATE (u)-[:HAS_SESSION]->(s)
 
@@ -270,7 +314,7 @@ class Neo4jDatabase:
             topics=topics,
             selected_pdfs=selected_pdfs,
             score = score,
-            done = done
+            current_question_count = current_question_count
         )
         return session_id
     
@@ -285,7 +329,7 @@ class Neo4jDatabase:
         query = """
         MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)
         WHERE s.question_count <> 0 
-        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp, s.sname AS sname, s.score AS score, s.done AS done
+        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp, s.sname AS sname, s.score AS score, s.current_question_count AS current_question_count
         """
         result = tx.run(query, user_id=user_id)
         sessions = []
@@ -298,7 +342,7 @@ class Neo4jDatabase:
                 "timestamp": record["timestamp"],
                 "sname": record["sname"] ,
                 "score": record["score"] ,
-                "done": record["done"] 
+                "current_question_count": record["current_question_count"] 
             })
         return sessions
 
@@ -351,24 +395,18 @@ class Neo4jDatabase:
         tx.run(query, session_id=session_id, question_id=question_id, question_text=question_text, difficulty=difficulty, completeness=completeness, xp=xp)
         logging.info(f"Question node with ID: {question_id} created successfully")
 
-    def get_all_chat_histories_for_user(self, user_id):
+    def update_current_question_count(self, session_id, current_question_count):
         with self.driver.session() as session:
-            query = """
-            MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)-[:LAST_MESSAGE]->(last_message)
-            WITH s, last_message
-            MATCH p=(last_message)<-[:NEXT*0..]-(previous_messages)
-            WITH s, p, length(p) AS path_length
-            ORDER BY s.timestamp DESC, path_length DESC
-            UNWIND reverse(nodes(p)) AS node
-            WITH s.id AS session_id, COLLECT(DISTINCT {data: {content: node.content}, type: node.type}) AS results
-            RETURN session_id, results
-            """
-            result = session.run(query, user_id=user_id)
-            sessions = {}
-            for record in result:
-                sessions[record["session_id"]] = record["results"]
-            return sessions
+            session.write_transaction(self._update_current_question_count, session_id, current_question_count)
 
+    @staticmethod
+    def _update_current_question_count(tx, session_id, current_question_count):
+        query = """
+        MATCH (s:Session {id: $session_id})
+        SET s.current_question_count = $current_question_count
+        RETURN s
+        """
+        tx.run(query, session_id=session_id, current_question_count=current_question_count)    
 
 # stackoverflow questions
 def create_vector_index(driver) -> None:
