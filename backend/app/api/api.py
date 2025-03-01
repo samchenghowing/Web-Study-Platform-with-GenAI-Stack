@@ -368,33 +368,6 @@ async def submit_quiz(task: Quiz_submission):
 
     return StreamingResponse(generate(), media_type="application/json")
 
-@app.post("/submit/quiz_json")
-async def submit_quiz(task: Quiz_submission):
-    q = Queue()
-
-    def cb():
-        check_quiz_correctness_json(
-            user_id=task.user,
-            llm_chain=llm_history_chain,
-            task=task.question,
-            answer=task.answer,
-            callbacks=[QueueCallback(q)],
-        )
-
-    def generate():
-        result = check_quiz_correctness_json(
-            user_id=task.user,
-            llm_chain=llm_history_chain,
-            task=task.question,
-            answer=task.answer,
-            callbacks=[QueueCallback(q)],
-        )
-        yield json.dumps(result) 
-
-
-    return StreamingResponse(generate(), media_type="application/json")
-
-
 @app.post("/submit/settings")
 async def submit_settings(task: Quiz_submission):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
