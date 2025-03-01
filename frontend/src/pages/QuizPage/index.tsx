@@ -390,19 +390,26 @@ const QuizPage: React.FC = () => {
                             onAnswer={handleAnswer}
                         />
                     ) : currentQuestion.type === 'Suggestions' ? (
-                        <Card style={{ maxHeight: '80vh', overflow: 'auto' }}>
-                            <CardContent>
-                                <MarkdownRenderer content={question} />
-                                <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => handleAnswer(true)}
-                                    sx={{ mt: 2 }}
+                        <>
+                            <Typography variant="h6" gutterBottom>
+                                5-step learning path to learn HTML, CSS, and JavaScript!
+                            </Typography>
+                            <Card style={{ maxHeight: '60vh', overflow: 'auto' }}>
+                                <CardContent>
+                                    <MarkdownRenderer content={question} />
+                                </CardContent>
+                            </Card>
+
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                onClick={() => handleAnswer(true)}
+                                sx={{ mt: 2 }}
                                 >
-                                    Next Question
-                                </Button>
-                            </CardContent>
-                        </Card>
+                            Next Question
+                            </Button>
+                        </>
+
                     ) : null}
                 </div>
             </div>

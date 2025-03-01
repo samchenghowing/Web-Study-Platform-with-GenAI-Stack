@@ -159,8 +159,19 @@ export default function FormDialog() {
                 sx={{
                     '& .MuiDialog-paper': {
                         borderRadius: '16px',
-                        overflow: 'hidden',
                         backgroundColor: '#f5f5f5',
+                        height: 'auto',  // Let height adjust automatically
+                        maxHeight: '90vh', // Maximum height of 90% viewport height
+                    },
+                    '& .MuiDialogContent-root': {
+                        padding: '16px',
+                        height: 'auto',
+                        maxHeight: 'calc(90vh - 130px)', // Subtract space for header and footer
+                        overflowX: 'hidden' // Hide horizontal scrollbar
+                    },
+                    '& .MuiGrid-container': {
+                        margin: 0,
+                        width: '100%'
                     }
                 }}
             >
@@ -215,7 +226,12 @@ export default function FormDialog() {
                             <Box component="form" sx={{ p: 2 }}>
                                 <Typography gutterBottom>Questions: {QuestionNum}</Typography>
                                 <Box display="flex" alignItems="center">
-                                    <DialogContentText sx={{ textAlign: 'left', fontSize: '14px', color: '#555' }}>
+                                    <DialogContentText sx={{ 
+                                        textAlign: 'left', 
+                                        fontSize: '14px', 
+                                        color: '#555', 
+                                        mr: 2  
+                                    }}>
                                         How deep you want to divde in for these topics?
                                     </DialogContentText>
                                     <Slider
@@ -225,12 +241,12 @@ export default function FormDialog() {
                                         valueLabelDisplay="auto"
                                         step={1}
                                         marks={[
-                                            { value: 0, label: '0' },
+                                            { value: 1, label: '1' },
                                             { value: 4, label: '4' },
-                                            { value: 8, label: '8' }
+                                            { value: 10, label: '10' }
                                         ]}
-                                        min={0}
-                                        max={8}
+                                        min={1}
+                                        max={10}
                                     />
                                 </Box>
                             </Box>
