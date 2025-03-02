@@ -11,6 +11,14 @@ import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Chip, Typography, Dialog, DialogContent, DialogTitle, Tabs, Tab, Box, CircularProgress } from '@mui/material';
 import MarkdownRenderer from '../../components/MarkdownRenderer';
+import CodeMirrorMerge from 'react-codemirror-merge';
+import { javascript } from '@codemirror/lang-javascript';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
+import { languages } from '@codemirror/language-data';
+import { useTheme } from '@mui/material/styles';
+import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { useAuth } from '../../authentication/AuthContext';
 import { extract_task } from './utils';
 import DialogActions from '@mui/material/DialogActions';
@@ -22,9 +30,11 @@ import ResizablePanel from './ResizablePanel';
 import { EditorConfigType, EditorDocType } from './utils';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
-const BACKGROUND_TASK_STATUS_ENDPOINT = 'http://localhost:8504/bgtask';
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const UPDATE_QUESTION_COUNT_ENDPOINT = 'http://localhost:8504/update_question_count';
+
+const Original = CodeMirrorMerge.Original;
+const Modified = CodeMirrorMerge.Modified;
 
 export default function MainComponent() {
     const [editorConfig, setEditorConfig] = React.useState<EditorConfigType>({
@@ -43,7 +53,6 @@ export default function MainComponent() {
         cssDoc: 'h1 {color: black;text-align: center;}',
     });
     const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
-    const [submissionUID, setSubmissionUID] = React.useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
     const [snackbarText, setSnackbarText] = React.useState<string>('');
     const [countdown, setCountdown] = React.useState(1);
@@ -143,18 +152,18 @@ export default function MainComponent() {
     };
 
     const handleCodeSubmit = async () => {
-		if (isQuestionLoading) {
-			// If the question is still loading, do not allow submission
-			setSnackbarText('Please wait until the question is fully loaded.');
-			setSnackbarOpen(true);
-			return;
-		}
-		
+        if (isQuestionLoading) {
+            // If the question is still loading, do not allow submission
+            setSnackbarText('Please wait until the question is fully loaded.');
+            setSnackbarOpen(true);
+            return;
+        }
+
         setIsLoading(true);
         setIsReadingComplete(false);
         setDialogOpen(true);
         setCardContent([]); // Reset card content before new submission
-    
+
         try {
             const response = await fetch(`${SUBMIT_API_ENDPOINT}/quiz`, {
                 method: 'POST',
@@ -168,18 +177,18 @@ export default function MainComponent() {
                     answer: editorDoc.jsDoc,
                 }),
             });
-    
+
             const reader = response.body?.getReader();
             if (!reader) {
                 throw new Error('Stream reader is not available');
             }
-    
+
             let fullMessage = ''; // Store complete message
-    
+
             const readStream = async () => {
                 while (true) {
                     const { done, value } = await reader.read();
-                    
+
                     if (done) {
                         setIsReadingComplete(true);
                         setIsLoading(false);
@@ -192,10 +201,10 @@ export default function MainComponent() {
                         }]);
                         break;
                     }
-    
+
                     const chunk = new TextDecoder('utf-8').decode(value);
                     const jsonStrings = chunk.split('\n').filter(Boolean);
-    
+
                     for (const jsonString of jsonStrings) {
                         try {
                             const jsonChunk = JSON.parse(jsonString);
@@ -206,14 +215,14 @@ export default function MainComponent() {
                     }
                 }
             };
-    
+
             await readStream();
         } catch (error) {
             console.error(error);
             setIsLoading(false); // Stop loading on error
         }
     };
-    
+
 
     const checkSubmissionResult = async () => {
         // if (!submissionUID) return;
@@ -375,25 +384,39 @@ export default function MainComponent() {
                 </Alert>
             </Snackbar>
 
-            <Dialog open={dialogOpen} onClose={() => {}} disableEscapeKeyDown>
+            <Dialog open={dialogOpen} onClose={() => { }} disableEscapeKeyDown>
                 <DialogTitle>Submission Result</DialogTitle>
                 <DialogContent>
-                        {isLoading ? (
-                            <Box sx={{ 
-                                display: 'flex', 
-                                justifyContent: 'center', 
-                                alignItems: 'center', 
-                                p: 3 
-                            }}>
-                                <CircularProgress />
-                            </Box>
-                        ) : (
-                            cardContent.map((card) => (
-                                <div key={card.id}>
-                                    <MarkdownRenderer content={card.question} />
-                                </div>
-                            ))
-                        )}
+                    {isLoading ? (
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        cardContent.map((card) => (
+                            <div key={card.id}>
+                                <Typography variant="body1" gutterBottom>
+                                    {card.question.split('```')[0]} {/* Display text explanation */}
+                                </Typography>
+                                <CodeMirrorMerge
+                                    orientation="a-b"
+                                    theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+                                >
+                                    <Original
+                                        value={`${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`}
+                                        extensions={[javascript({ jsx: true }), html(), css()]}
+                                    />
+                                    <Modified
+                                        value={card.question.split('```')[1] || ''}
+                                        extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
+                                    />
+                                </CodeMirrorMerge>
+                            </div>
+                        ))
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleNextQuestion} color="primary">
