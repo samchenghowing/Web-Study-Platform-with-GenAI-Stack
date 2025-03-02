@@ -72,6 +72,8 @@ export default function MainComponent() {
 
     const { user } = useAuth(); // Accessing user from AuthContext
 
+    const questionRef = React.useRef<HTMLDivElement>(null);
+
     React.useEffect(() => {
         if (quiz) {
             setCountdown(3);
@@ -87,6 +89,12 @@ export default function MainComponent() {
             generateQuestion();
         }
     }, [countdown]);
+
+    React.useEffect(() => {
+        if (questionRef.current) {
+            questionRef.current.scrollTop = questionRef.current.scrollHeight;
+        }
+    }, [question]);
 
     const generateQuestion = async () => {
         try {
@@ -322,7 +330,10 @@ export default function MainComponent() {
                                     <Typography variant="body2">
 
                                         {/* 3. Quesustion field */}
-                                        <Box sx={{ overflowWrap: "break-word", whiteSpace: "pre-wrap" }}>
+                                        <Box
+                                            ref={questionRef}
+                                            sx={{ overflowY: 'auto', maxHeight: '400px', overflowWrap: "break-word", whiteSpace: "pre-wrap" }}
+                                        >
                                             <MarkdownRenderer content={question || "Loading..."} />
                                         </Box>
 
