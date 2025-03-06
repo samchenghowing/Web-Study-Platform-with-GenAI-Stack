@@ -13,7 +13,7 @@ Available variables:
 | NEO4J_USERNAME         | neo4j                                | REQUIRED - Username for Neo4j database                                  |
 | NEO4J_PASSWORD         | password                             | REQUIRED - Password for Neo4j database                                  |
 | MONGODB_URI            | mongodb://mongo:27017                | REQUIRED - URL to Mongo database                                        |
-| LLM                    | llama3.1                             | REQUIRED - Can be any Ollama model tag |
+| LLM                    | phi4-mini                            | REQUIRED - Can be any Ollama model tag |
 | EMBEDDING_MODEL        | nomic-embed-text                     | REQUIRED - Can be nomic-embed-text, or any Ollama model tag |
 | LANGCHAIN_ENDPOINT     | "https://api.smith.langchain.com"    | OPTIONAL - URL to Langchain Smith API                                   |
 | LANGCHAIN_TRACING_V2   | false                                | OPTIONAL - Enable Langchain tracing v2                                  |
@@ -22,6 +22,10 @@ Available variables:
 
 ## LLM Configuration
 MacOS and Linux users can use any LLM that's available via Ollama. Check the "tags" section under the model page you want to use on https://ollama.ai/library and write the tag for the value of the environment variable `LLM=` in the `.env` file.
+
+> [!WARNING]
+> In this update, [phi4-mini](https://ollama.com/library/phi4-mini) requires  Ollama 0.5.13 or later. Please upgrade to the latest release of ollama before using.
+
 
 **MacOS**
 Install [Ollama](https://ollama.ai) on MacOS and start it before running `docker compose up` using `ollama serve` in a separate terminal.
@@ -95,9 +99,9 @@ chunks and embed it into Neo4j so you can ask questions about
 its contents and have the LLM answer them using vector similarity
 search.
 
-### - Quiz (TODO: Backend)
-- Let user take quiz in frontend, save result in mongo db, then analysis the result with neo4j
-- Analyze the result and suggest relavent tasks for user
+### - Quiz & User code submission
+- Let user take quiz in frontend, save result in neo4j
+- Analyze the result and suggest relavent correction for user
 
 ### - Loader
 - import recent Stack Overflow data for certain tags into a KG
@@ -108,12 +112,6 @@ search.
 ### - Web Loader
 - import website data for given url into mongodb
 - UI: Input URL, run import, see progress, some stats of data in the database
-
-### - User code submission
-Security Considerations (TODO: Run in docker)
-- Sandboxing: Ensure the sandboxed environment is isolated and has limited permissions.
-- Resource Limits: Set limits on CPU and memory usage to prevent abuse.
-- Validation: Perform thorough validation of user input and code.
 
 ## Others
 This application built separate from the back-end code using React.
@@ -139,7 +137,8 @@ The auto-reload on changes are instant using the Docker watch `sync` config.
 - [LangChain](https://python.langchain.com/v0.2/docs/introduction/)
 - [Neo4j](https://neo4j.com/docs/getting-started/introduction/)
 - [Ollama](https://ollama.ai)
-- [llama3.1](https://ai.meta.com/blog/meta-llama-3-1/)
+- [llama-3-1](https://ai.meta.com/blog/meta-llama-3-1/)
+- [phi4-mini](https://arxiv.org/abs/2503.01743/)
 - [Error when runnig some llm inside container](https://github.com/docker/genai-stack/issues/170)
 
 ## Frontend
