@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
 const CHANGENAME_API_ENDPOINT = 'http://localhost:8504/update_session_name';
 const DELETE_API_ENDPOINT = 'http://localhost:8504/delete_session';
+const DELETE_CHAT_HISTORY_API_ENDPOINT = 'http://localhost:8504/chat_histories/';
 
 interface QuizRecord {
     session_id: string;
@@ -35,7 +36,7 @@ interface QuizRecord {
     question_count: number;
     timestamp: string;
     progress: number;
-    state: 'Done' | 'In Progress';
+    progressstate: 'Done' | 'In Progress';
     score: string; // e.g., "8/10"
     topics: string[];
     current_question_count: number; 
@@ -79,7 +80,7 @@ const SessionRecord = () => {
                             question_count: item.question_count,
                             timestamp: timestamp,
                             progress: item.current_question_count,
-                            state: item.current_question_count === item.question_count ? 'Done' : 'In Progress',
+                            progressstate: item.current_question_count == (item.question_count+1) ? 'Done' : 'In Progress',
                             score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
                             current_question_count: item.current_question_count, // Add this field
@@ -139,6 +140,19 @@ const SessionRecord = () => {
 
     // Delete Record
     const handleDeleteSubmit = async (id: string) => {
+
+        fetch(`${DELETE_CHAT_HISTORY_API_ENDPOINT}/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log("Chat history deleted successfully");
+            } else {
+                throw new Error('Failed to delete');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+
         try {
             const response = await fetch(`${DELETE_API_ENDPOINT}/${id}`, {
                 method: 'DELETE',
@@ -202,7 +216,7 @@ const SessionRecord = () => {
     };
 
     const handleBeginQuiz = (quiz: QuizRecord) => {
-        if (quiz.progress === quiz.question_count) {
+        if (quiz.progress == (quiz.question_count +1)) {
             setSnackbarMessage('This quiz is already done.');
             setSnackbarOpen(true);
         } else {
@@ -275,12 +289,12 @@ const SessionRecord = () => {
                                 }}
                             >
                                 <TableCell sx={{ fontSize: '14px' }}>{quiz.name}</TableCell>
-                                <TableCell sx={{ fontSize: '14px' }}>{quiz.question_count}</TableCell>
+                                <TableCell sx={{ fontSize: '14px' }}>{quiz.progress-1}/{quiz.question_count}</TableCell>
                                 <TableCell sx={{ fontSize: '14px' }}>{quiz.timestamp}</TableCell>
                                 <TableCell sx={{ fontSize: '14px' }}>
                                     <Chip
-                                        label={quiz.state}
-                                        color={quiz.state === 'Done' ? 'success' : 'warning'}
+                                        label={quiz.progressstate}
+                                        color={quiz.progressstate === 'Done' ? 'success' : 'warning'}
                                         variant="outlined"
                                     />
                                 </TableCell>

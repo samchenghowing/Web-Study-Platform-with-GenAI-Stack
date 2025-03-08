@@ -302,10 +302,10 @@ class Neo4jDatabase:
                 topics: COALESCE($topics, []), 
                 selected_pdfs: COALESCE($selected_pdfs, []), 
                 score: COALESCE($score, 0),  
-                current_question_count: COALESCE($current_question_count, 0)
+                current_question_count: COALESCE($current_question_count, 1)
             })
             CREATE (u)-[:HAS_SESSION]->(s)
-
+ 
             """,
             user_id=user_id,
             session_id=session_id,
@@ -322,6 +322,12 @@ class Neo4jDatabase:
     def get_quizsessions_for_user(self, user_id):
         with self.driver.session() as session:
             sessions = session.read_transaction(self._find_quizsessions_for_user, user_id)
+            return sessions
+
+    # get single quiz sessions for a user
+    def get_quizsessions_for_sessionid(self, user_id):
+        with self.driver.session() as session:
+            sessions = session.read_transaction(self._find_quizsession_by_sessionid, user_id)
             return sessions
 
     @staticmethod
@@ -345,6 +351,29 @@ class Neo4jDatabase:
                 "current_question_count": record["current_question_count"] 
             })
         return sessions
+
+    @staticmethod
+    def _find_quizsession_by_sessionid(tx, session_id):
+        query = """
+        MATCH (s:Session {id: $session_id})
+        RETURN s.id AS session_id, s.question_count AS question_count, s.topics AS topics, 
+            s.selected_pdfs AS selected_pdfs, s.timestamp AS timestamp, s.sname AS sname, 
+            s.score AS score, s.current_question_count AS current_question_count
+        """
+        result = tx.run(query, session_id=session_id)
+        record = result.single()  # Fetch a single record
+        if record:
+            return {
+                "session_id": record["session_id"],
+                "question_count": record["question_count"],
+                "topics": record["topics"],
+                "selected_pdfs": record["selected_pdfs"],
+                "timestamp": record["timestamp"],
+                "sname": record["sname"],
+                "score": record["score"],
+                "current_question_count": record["current_question_count"]
+            }
+        return None
 
     # get all AI Chat sessions for a user
     def get_sessions_for_user(self, user_id):

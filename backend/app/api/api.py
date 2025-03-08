@@ -274,6 +274,13 @@ async def list_session(user_id: str):
     neo4j_db.close()
     return sessions
 
+@app.get("/list_single_session/{session_id}")
+async def list_single_session(session_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    sessions = neo4j_db.get_quizsessions_for_sessionid(session_id)
+    neo4j_db.close()
+    return sessions
+
 @app.post("/update_session_name/{session_id}")
 async def update_session_name(session_id: str, payload: dict):
     new_name = payload.get("new_name")

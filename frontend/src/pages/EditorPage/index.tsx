@@ -32,6 +32,7 @@ import { EditorConfigType, EditorDocType } from './utils';
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
 const UPDATE_QUESTION_COUNT_ENDPOINT = 'http://localhost:8504/update_question_count';
+const LIST_SINGLE_SESSION_API_ENDPOINT = 'http://localhost:8504/list_single_session';
 
 const Original = CodeMirrorMerge.Original;
 const Modified = CodeMirrorMerge.Modified;
@@ -95,6 +96,36 @@ export default function MainComponent() {
             questionRef.current.scrollTop = questionRef.current.scrollHeight;
         }
     }, [question]);
+
+    React.useEffect(() => {
+        const fetchSessions = async () => {
+            try {
+                const response = await fetch(`${LIST_SINGLE_SESSION_API_ENDPOINT}/${quiz.session_id}`, {
+                    method: 'GET',
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setCurrentQuestionNumber(data.current_question_count);
+                } else {
+                    console.error('Failed to fetch sessions');
+                }
+            } catch (error) {
+                console.error('Error fetching sessions:', error);
+            }
+        };
+        fetchSessions(); 
+
+        // Listen for the custom event
+        const handleCustomEvent = () => {
+            fetchSessions();
+        };
+
+        window.addEventListener('fetchSessionsEvent', handleCustomEvent);
+
+        return () => {
+            window.removeEventListener('fetchSessionsEvent', handleCustomEvent);
+        };
+    }, []);
 
     const generateQuestion = async () => {
         try {
@@ -231,7 +262,6 @@ export default function MainComponent() {
         }
     };
 
-
     const checkSubmissionResult = async () => {
         // if (!submissionUID) return;
         // try {
@@ -255,28 +285,40 @@ export default function MainComponent() {
 
     const handleNextQuestion = async () => {
         setDialogOpen(false);
-        if (currentQuestionNumber < quiz?.question_count) {
+        if (currentQuestionNumber <= quiz?.question_count -1 ) {
             const newQuestionNumber = currentQuestionNumber + 1;
             setCurrentQuestionNumber(newQuestionNumber);
-            await updateQuestionCount(newQuestionNumber); // Update the question count in the database
-            generateQuestion();
+            try {
+                await updateQuestionCount(newQuestionNumber);
+                await generateQuestion();
+            } catch (error) {
+                // Handle failure (e.g., revert state or notify user)
+                setCurrentQuestionNumber(currentQuestionNumber);
+            }
         } else {
-            navigate('/main'); // Navigate to the summary page
+            await updateQuestionCount(quiz?.question_count+1);
+            navigate('/main'); 
         }
     };
 
     const updateQuestionCount = async (newQuestionNumber: number) => {
+        if (!quiz?.session_id) {
+            throw new Error('Invalid session ID');
+        }
         try {
-            await fetch(UPDATE_QUESTION_COUNT_ENDPOINT, {
+            console.log('Sending update:', { session_id: quiz.session_id, current_question_count: newQuestionNumber });
+            const response = await fetch(UPDATE_QUESTION_COUNT_ENDPOINT, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: quiz.session_id,
                     current_question_count: newQuestionNumber,
                 }),
             });
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
         } catch (error) {
             console.error('Error updating question count:', error);
         }
@@ -439,3 +481,8 @@ export default function MainComponent() {
         </Stack>
     );
 }
+
+function useEffect(arg0: () => () => void, arg1: never[]) {
+    throw new Error('Function not implemented.');
+}
+
