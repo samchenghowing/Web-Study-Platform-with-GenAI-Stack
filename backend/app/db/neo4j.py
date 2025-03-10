@@ -66,19 +66,23 @@ class Neo4jDatabase:
             is_correct=is_correct
         )
 
-    def update_user_model(self, user_id, properties):
+    def update_user_model(self, user_id, properties, username=None):
         with self.driver.session() as session:
-            session.write_transaction(self._update_user_record, user_id, properties)
+            session.write_transaction(self._update_user_record, user_id, properties, username)
 
     @staticmethod
-    def _update_user_record(tx, user_id, properties):
+    def _update_user_record(tx, user_id, properties, username=None):
         set_clauses = [f"u.{key} = ${key}" for key in properties]
+        if username:
+            set_clauses.append("u.username = $username")
         set_clause = ", ".join(set_clauses)
         query = f"""
         MERGE (u:User {{id: $user_id}})
         SET {set_clause}
         """
         properties['user_id'] = user_id
+        if username:
+            properties['username'] = username
         tx.run(query, **properties)
 
     def get_user_by_id(self, user_id):
@@ -90,12 +94,73 @@ class Neo4jDatabase:
     def _find_user_by_id(tx, user_id):
         query = """
         MATCH (u:User {id: $user_id})
-        RETURN u
+        RETURN u {.*, relationships: [(u)-[r]->(other:User) | {
+            type: type(r),
+            target: other.username,
+            target_id: other.id
+        }]}
         """
         result = tx.run(query, user_id=user_id)
         record = result.single()
         return record["u"] if record else None
 
+    def create_user_relationship(self, from_user_id, to_user_id, relationship_type):
+        with self.driver.session() as session:
+            return session.write_transaction(
+                self._create_relationship, 
+                from_user_id, 
+                to_user_id,
+                relationship_type
+            )
+
+    @staticmethod
+    def _create_relationship(tx, from_user_id, to_user_id, relationship_type):
+        # Validate that both users exist first
+        validation_query = """
+        MATCH (u1:User {id: $from_id})
+        MATCH (u2:User {id: $to_id})
+        RETURN u1, u2
+        """
+        validation_result = tx.run(validation_query, from_id=from_user_id, to_id=to_user_id)
+        validation_record = validation_result.single()
+        
+        if not validation_record:
+            return None
+            
+        # Create relationship if validation passed
+        query = """
+        MATCH (u1:User {id: $from_id})
+        MATCH (u2:User {id: $to_id}) 
+        WHERE u1 <> u2
+        MERGE (u1)-[r:%s]->(u2)
+        RETURN {
+            from_user: u1.username,
+            to_user: u2.username,
+            relationship_type: type(r)
+        } as result
+        """ % relationship_type
+        
+        result = tx.run(query, from_id=from_user_id, to_id=to_user_id)
+        record = result.single()
+        return record["result"] if record else None
+
+    def get_user_relationships(self, user_id):
+        with self.driver.session() as session:
+            return session.read_transaction(self._get_relationships, user_id)
+
+    @staticmethod
+    def _get_relationships(tx, user_id):
+        query = """
+        MATCH (u:User {id: $user_id})-[r]->(other:User)
+        RETURN {
+            from: u.username,
+            type: type(r),
+            to: other.username,
+            to_id: other.id
+        } as relationship
+        """
+        result = tx.run(query, user_id=user_id)
+        return [record["relationship"] for record in result]
 
     def get_all_chat_histories(self, session_id):
         with self.driver.session() as session:
@@ -263,7 +328,6 @@ class Neo4jDatabase:
                 }
             except Exception as e:
                 raise Exception(f"Failed to delete session {session_id}: {str(e)}")
-
 
     @staticmethod
     def _get_latest_user_aisession(tx, user_id):

@@ -324,8 +324,7 @@ async def update_question_count(payload: dict):
 
 ##########
 
-@app.get(
-    "/quiz/{id}",
+@app.get( "/quiz/{id}",
     response_description="Get quiz",
     response_model=QuestionCollection,
     response_model_by_alias=False,
@@ -366,7 +365,6 @@ async def get_quiz(id: str):
                 raise HTTPException(status_code=500, detail=f"Error loading questions: {str(e)}")
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
-
 
 @app.post("/submit/quiz")
 async def submit_quiz(task: Quiz_submission):
@@ -409,7 +407,6 @@ async def submit_settings(task: Quiz_submission):
 async def status_handler(uid: UUID):
     return jobs[uid]
 
-
 async def get_file_content(files: List[UploadFile]): # PDF backgroud task API
     byte_files = {}
     for file in files:
@@ -419,8 +416,7 @@ async def get_file_content(files: List[UploadFile]): # PDF backgroud task API
 ##########
 
 # Authenticates a user by email and password.
-@app.post(
-    "/login",
+@app.post( "/login",
     response_description="Login student",
     response_model=UpdateStudentModel,
     status_code=HTTPStatus.OK,
@@ -437,13 +433,12 @@ async def login_student(login: LoginModel = Body(...)):
     student.pop("password")  # Remove the hashed password from the response
     return student
 
-
-@app.post(
-    "/signup/",
+@app.post( "/signup/",
     response_description="Add new student",
     response_model=StudentModel,
     status_code=HTTPStatus.CREATED,
 )
+
 async def create_student(student: StudentModel = Body(...)):
     # Explicit email validation (additional layer)
     if not isinstance(student.email, str) or '@' not in student.email:
@@ -463,7 +458,7 @@ async def create_student(student: StudentModel = Body(...)):
     hashed_password = bcrypt.hashpw(student.password.encode('utf-8'), bcrypt.gensalt())
     student.password = hashed_password.decode('utf-8')  # Store the hashed password
 
-    # Create Student 
+    # Create Student in MongoDB
     new_student = await student_collection.insert_one(
         student.model_dump(by_alias=True, exclude=["id"])
     )
@@ -473,14 +468,83 @@ async def create_student(student: StudentModel = Body(...)):
     if created_student:
         created_student["_id"] = str(created_student["_id"])
 
-    # create user in neo4j 
+    # Create user in neo4j with username
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    neo4j_db.update_user_model(created_student["_id"], {"login": 0})
+    neo4j_db.update_user_model(
+        created_student["_id"], 
+        {"login": 0},
+        username=student.username  
+    )
     neo4j_db.close()
 
     return created_student
 
-@app.get("/check_new_student/{user_id}", response_model=StudentCheckResponse) 
+@app.get("/users/{user_id}/profile")
+async def get_user_profile(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    user = neo4j_db.get_user_by_id(user_id)
+    neo4j_db.close()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user
+
+@app.post("/users/relationship")
+async def create_relationship(relationship: dict = Body(...)):
+    # Validate input
+    required_fields = ["from_user_id", "to_user_id", "type"]
+    for field in required_fields:
+        if field not in relationship:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Missing required field: {field}"
+            )
+    
+    # Validate relationship type
+    allowed_types = ["FOLLOWS", "FRIENDS", "BLOCKS"]  # Add your allowed relationship types
+    if relationship["type"] not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid relationship type. Must be one of: {', '.join(allowed_types)}"
+        )
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        result = neo4j_db.create_user_relationship(
+            relationship["from_user_id"],
+            relationship["to_user_id"],
+            relationship["type"]
+        )
+        neo4j_db.close()
+
+        if not result:
+            raise HTTPException(
+                status_code=404, 
+                detail="Could not create relationship. Users not found or already connected."
+            )
+        
+        return {
+            "status": "success",
+            "relationship": result
+        }
+
+    except Exception as e:
+        neo4j_db.close()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users/{user_id}/relationships")
+async def get_user_relationships(user_id: str):
+    """获取用户的所有关系"""
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    relationships = neo4j_db.get_user_relationships(user_id)
+    neo4j_db.close()
+    
+    return {"relationships": relationships}
+
+##########
+
+@app.get( "/check_new_student/{user_id}", response_model=StudentCheckResponse) 
 async def check_new_student(user_id: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     user = neo4j_db.get_user_by_id(user_id)
@@ -495,8 +559,7 @@ async def check_new_student(user_id: str):
     return {"is_new": is_new}
 
 
-@app.get(
-    "/students/",
+@app.get( "/students/",
     response_description="List all students",
     response_model=StudentCollection,
     response_model_by_alias=False,
@@ -516,8 +579,7 @@ async def list_students():
 
     return StudentCollection(students=students)
 
-@app.get(
-    "/students/{id}",
+@app.get( "/students/{id}",
     response_description="Get a single student",
     response_model=StudentModel,
     response_model_by_alias=False,
@@ -534,8 +596,7 @@ async def show_student(id: str):
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 ## Untested
-@app.put(
-    "/students/{id}",
+@app.put( "/students/{id}",
     response_description="Update a student",
     response_model=StudentModel,
     response_model_by_alias=False,
@@ -569,7 +630,7 @@ async def update_student(id: str, student: UpdateStudentModel = Body(...)):
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
 
 ## Untested
-@app.delete("/students/{id}", response_description="Delete a student")
+@app.delete( "/students/{id}", response_description="Delete a student")
 async def delete_student(id: str):
     """
     Remove a single student record from the database.
@@ -583,8 +644,7 @@ async def delete_student(id: str):
 
 ####################
 
-
-@app.post("/upload/pdf", status_code=HTTPStatus.ACCEPTED)
+@app.post( "/upload/pdf", status_code=HTTPStatus.ACCEPTED)
 async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
@@ -628,7 +688,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
     except Exception as error:
         return f"Saving pdf fails with error: {error}"
 
-@app.get("/pdfs", status_code=HTTPStatus.ACCEPTED)
+@app.get( "/pdfs", status_code=HTTPStatus.ACCEPTED)
 async def list_pdfs():
     response_data = []
 
@@ -654,7 +714,7 @@ async def list_pdfs():
 
     return response_data
 
-@app.delete("/pdfs/{id}", response_description="Delete a pdf in database")
+@app.delete( "/pdfs/{id}", response_description="Delete a pdf in database")
 async def delete_pdf(id: str):
     """
     Remove a pdf with given id from the database.
@@ -668,7 +728,7 @@ async def delete_pdf(id: str):
 
 # SO Loader backgroud task API
 # TODO: update @app.post("/load/stackoverflow/{tag}", status_code=HTTPStatus.ACCEPTED)
-@app.post("/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
+@app.post( "/load/stackoverflow", status_code=HTTPStatus.ACCEPTED)
 async def load_so(background_tasks: BackgroundTasks, request: LoadDataRequest):
     new_task = Job()
     jobs[new_task.uid] = new_task
@@ -686,9 +746,8 @@ async def load_web(background_tasks: BackgroundTasks, request: LoadWebDataReques
 ####################
 
 ## Chat History
-@app.get(
+@app.get( "/chat_histories/{SessionId}",
     # "/chat_histories/{SessionId}/{QuestionId}", # Should add QuestionId for more specific chat history
-    "/chat_histories/{SessionId}",
     response_description="List all chat histories",
 )
 async def list_chat_histories(SessionId: str):
@@ -712,7 +771,7 @@ async def delete_chat_histories(SessionId: str):
 
     raise HTTPException(status_code=404, detail=f"SessionId {SessionId} not found")
 
-@app.get("/chat_histories/user/{user_id}")
+@app.get( "/chat_histories/user/{user_id}")
 async def list_chat_histories_for_user(user_id: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     chat_histories = neo4j_db.get_all_chat_histories_for_user(user_id)
@@ -721,9 +780,7 @@ async def list_chat_histories_for_user(user_id: str):
         raise HTTPException(status_code=404, detail="No chat histories found for user")
     return chat_histories
 
-
-@app.get(
-    "/web_files/",
+@app.get( "/web_files/",
     response_description="List all web files",
     response_model=WebfileModelCollection,
     response_model_by_alias=False,
