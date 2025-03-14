@@ -220,10 +220,7 @@ export default function FriendsPage() {
                 {users.map(otherUser => (
                     user?._id !== otherUser.id && (
                         <Grid item xs={12} sm={6} md={4} key={otherUser.id}>
-                            <Card
-                                onMouseEnter={() => setHoveredUserId(otherUser.id)}
-                                onMouseLeave={() => setHoveredUserId(null)}
-                            >
+                            <Card>
                                 <CardContent
                                     sx={{
                                         display: 'flex',
@@ -240,7 +237,10 @@ export default function FriendsPage() {
                                         </Typography>
                                     ) : null}
                                 </CardContent>
-                                <CardActions>
+                                <CardActions
+                                    onMouseEnter={() => setHoveredUserId(otherUser.id)}
+                                    onMouseLeave={() => setHoveredUserId(null)}
+                                >
                                     {isFollowing(otherUser.id) ? (
                                         <Button
                                             variant={hoveredUserId === otherUser.id ? "contained" : "outlined"}
