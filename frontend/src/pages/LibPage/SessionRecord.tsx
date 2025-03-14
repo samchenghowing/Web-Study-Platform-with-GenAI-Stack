@@ -28,7 +28,7 @@ import { useNavigate } from 'react-router-dom';
 const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
 const CHANGENAME_API_ENDPOINT = 'http://localhost:8504/update_session_name';
 const DELETE_API_ENDPOINT = 'http://localhost:8504/delete_session';
-const DELETE_CHAT_HISTORY_API_ENDPOINT = 'http://localhost:8504/chat_histories/';
+const DELETE_CHAT_HISTORY_API_ENDPOINT = 'http://localhost:8504/chat_histories';
 
 interface QuizRecord {
     session_id: string;
@@ -140,36 +140,36 @@ const SessionRecord = () => {
 
     // Delete Record
     const handleDeleteSubmit = async (id: string) => {
-
-        fetch(`${DELETE_CHAT_HISTORY_API_ENDPOINT}/${id}`, {
-            method: 'DELETE'
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log("Chat history deleted successfully");
-            } else {
-                throw new Error('Failed to delete');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-
         try {
-            const response = await fetch(`${DELETE_API_ENDPOINT}/${id}`, {
+            // 1. First delete chat history
+            const chatHistoryResponse = await fetch(`${DELETE_CHAT_HISTORY_API_ENDPOINT}/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!chatHistoryResponse.ok) {
+                throw new Error('Failed to delete chat history');
+            }
+            console.log("Chat history deleted successfully");
+
+            // 2. Then delete the session
+            const sessionResponse = await fetch(`${DELETE_API_ENDPOINT}/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-    
-            if (!response.ok) {
+
+            if (!sessionResponse.ok) {
                 throw new Error('Failed to delete session');
             }
-    
+
+            // 3. Update UI only after both deletions are successful
             setQuizData((prev) => prev.filter((quiz) => quiz.session_id !== id));
             console.log('Delete success');
+            
         } catch (error) {
-            console.error('Error deleting session:', error);
-            alert('Failed to delete session. Please try again.');
+            console.error('Error during deletion:', error);
+            alert('Failed to delete. Please try again.');
         }
     };
     

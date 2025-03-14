@@ -85,6 +85,30 @@ class Neo4jDatabase:
             properties['username'] = username
         tx.run(query, **properties)
 
+    ###### User #####
+    def get_all_user(self):
+        with self.driver.session() as session:
+            result = session.read_transaction(self._get_all_user)
+            return result
+
+    @staticmethod
+    def _get_all_user(tx):
+        query = """
+        MATCH (u:User)
+        RETURN collect(u {
+            .*, 
+            relationships: [(u)-[r]->(other:User) | {
+                type: type(r),
+                target: other.username,
+                target_id: other.id
+            }]
+        }) as users
+        """
+        result = tx.run(query)
+        record = result.single()
+        return record["users"] if record else []
+
+    #
     def get_user_by_id(self, user_id):
         with self.driver.session() as session:
             result = session.read_transaction(self._find_user_by_id, user_id)
@@ -161,6 +185,31 @@ class Neo4jDatabase:
         """
         result = tx.run(query, user_id=user_id)
         return [record["relationship"] for record in result]
+
+    def delete_user_relationship(self, from_user_id, to_user_id, relationship_type):
+        with self.driver.session() as session:
+            return session.write_transaction(
+                self._delete_relationship, 
+                from_user_id, 
+                to_user_id,
+                relationship_type
+            )
+
+    @staticmethod
+    def _delete_relationship(tx, from_user_id, to_user_id, relationship_type):
+        query = """
+        MATCH (u1:User {id: $from_id})-[r:%s]->(u2:User {id: $to_id})
+        DELETE r
+        RETURN {
+            from_user: u1.username,
+            to_user: u2.username,
+            relationship_type: type(r)
+        } as result
+        """ % relationship_type
+        
+        result = tx.run(query, from_id=from_user_id, to_id=to_user_id)
+        record = result.single()
+        return record["result"] if record else None
 
     def get_all_chat_histories(self, session_id):
         with self.driver.session() as session:

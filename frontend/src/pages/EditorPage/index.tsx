@@ -343,7 +343,7 @@ export default function MainComponent() {
                         width={aiChatWidth}
                         onWidthChange={setAiChatWidth}
                         minWidth={300} // Minimum width in pixels
-                        maxWidth={600} // Maximum width in pixels
+                        maxWidth={1000} // Maximum width in pixels
                     >
                         <Alert severity="info">
                             <AlertTitle>{quiz?.name}</AlertTitle>
@@ -437,7 +437,18 @@ export default function MainComponent() {
                 </Alert>
             </Snackbar>
 
-            <Dialog open={dialogOpen} onClose={() => { }} disableEscapeKeyDown>
+            <Dialog 
+                open={dialogOpen} 
+                onClose={() => { }} 
+                disableEscapeKeyDown
+                maxWidth={false}
+                PaperProps={{
+                    sx: {
+                        maxWidth: '1000px',
+                        width: '100%'
+                    }
+                }}
+                >
                 <DialogTitle>Submission Result</DialogTitle>
                 <DialogContent>
                     {isLoading ? (
