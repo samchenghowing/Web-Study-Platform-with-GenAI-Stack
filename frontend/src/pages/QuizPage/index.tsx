@@ -34,6 +34,8 @@ const QuizPage: React.FC = () => {
 
     const [question, setQuestion] = React.useState('.');
 
+    const questionRef = React.useRef<HTMLDivElement>(null);
+
     // TODO: Generate questions by prompting user's answer and textbook content
     // Save the created session in db, real time generation
 
@@ -107,6 +109,12 @@ const QuizPage: React.FC = () => {
             generateLp();
         }
     }, [currentQuestion]);
+
+    React.useEffect(() => {
+        if (questionRef.current) {
+            questionRef.current.scrollTop = questionRef.current.scrollHeight;
+        }
+    }, [question]);
 
     /**
      * If the answer is correct, increment the score
@@ -396,7 +404,9 @@ const QuizPage: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                                 5-step learning path to learn HTML, CSS, and JavaScript!
                             </Typography>
-                            <Card style={{ maxHeight: '60vh', overflow: 'auto' }}>
+
+                            {/* add auto scrolling here when the markdown content exceed the length of the page */}
+                            <Card style={{ maxHeight: '60vh', overflowY: 'auto' }} ref={questionRef}>
                                 <CardContent>
                                     <MarkdownRenderer content={question} />
                                 </CardContent>
