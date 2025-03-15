@@ -2,13 +2,12 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { Divider, TextField, Button } from '@mui/material';
+import { Divider, Grid, Button, Avatar } from '@mui/material';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
-import Grid from '@mui/material/Grid';
 import { useAuth } from '../../authentication/AuthContext';
-import Avatar from '@mui/material/Avatar';
+import RealTimeMessaging from './RealTimeMessaging';
 
 const LIST_ALL_USER = 'http://localhost:8504/users/all';
 const CREATE_USER_FOLLOW = 'http://localhost:8504/users/relationship';
@@ -26,42 +25,8 @@ interface User {
 
 export default function FriendsPage() {
     const [users, setUsers] = useState<User[]>([]);
-    const [messages, setMessages] = useState<string[]>([]);
-    const [input, setInput] = useState<string>('');
     const { user } = useAuth();
-    const ws = React.useRef<WebSocket | null>(null);
     const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
-
-
-    // WebSocket connection
-    useEffect(() => {
-        ws.current = new WebSocket(`ws://localhost:8504/ws/${user?._id}`);
-
-        ws.current.onopen = () => {
-            console.log('WebSocket connection opened');
-        };
-
-        ws.current.onmessage = (event) => {
-            setMessages(prevMessages => [...prevMessages, event.data]);
-        };
-
-        ws.current.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
-
-        return () => {
-            if (ws.current) {
-                ws.current.close();
-            }
-        };
-    }, [user?._id]);
-
-    const sendMessage = () => {
-        if (ws.current && input) {
-            ws.current.send(user?.username + " said: " + input);
-            setInput('');
-        }
-    };
 
     // Fetch all users
     useEffect(() => {
@@ -275,29 +240,7 @@ export default function FriendsPage() {
                 )}
             </Grid>
 
-            <Divider sx={{ margin: 2 }} />
-
-            {/* Real-time messaging */}
-            <Typography variant="h5" gutterBottom>
-                Real-time Messaging
-            </Typography>
-            <TextField
-                label="Message"
-                variant="outlined"
-                fullWidth
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                sx={{ marginBottom: 2 }}
-            />
-            <Button variant="contained" color="primary" onClick={sendMessage}>
-                Send
-            </Button>
-
-            <ul>
-                {messages.map((message, index) => (
-                    <li key={index}>{message}</li>
-                ))}
-            </ul>
+            <RealTimeMessaging />
         </Container>
     );
 }
