@@ -402,7 +402,6 @@ def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, call
     return llm_response
 
 def convert_question_to_attribute(question, llm):
-    # change to embedding??
     gen_system_template = f"""
     Convert user question to a single word attribute.
     Do not return more than one word. 
@@ -432,11 +431,14 @@ def convert_question_to_attribute(question, llm):
         | StrOutputParser()
     )
     answer = tool_chain.invoke(question)
-    print(answer)
-    answer_dict = json.loads(answer)
-    attribute = answer_dict["parameters"]["attribute"].replace(" ", "_")
-    print(attribute)
-    return attribute
+    print("convert_question_to_attribute"+answer)
+    try:
+        # tools invoked
+        answer_dict = json.loads(answer)
+        attribute = answer_dict["parameters"]["attribute"].replace(" ", "_")
+        return attribute
+    except:
+        return answer
 
 def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
     # TODO with TOOLS
