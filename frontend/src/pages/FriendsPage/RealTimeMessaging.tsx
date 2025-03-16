@@ -3,14 +3,39 @@ import { useState, useEffect, useRef } from 'react';
 import { TextField, Button, Typography, Divider } from '@mui/material';
 import { useAuth } from '../../authentication/AuthContext';
 
-export default function RealTimeMessaging() {
+interface RealTimeMessagingProps {
+    targetUserId: string | null;
+}
+
+export default function RealTimeMessaging({ targetUserId }: RealTimeMessagingProps) {
     const [messages, setMessages] = useState<string[]>([]);
     const [input, setInput] = useState<string>('');
     const { user } = useAuth();
     const ws = useRef<WebSocket | null>(null);
 
     useEffect(() => {
-        ws.current = new WebSocket(`ws://localhost:8504/ws/${user?._id}`);
+        if (!targetUserId || !user?._id) return;
+
+        const token = localStorage.getItem('authToken'); // Retrieve the token from local storage
+        const wsUrl = `ws://localhost:8504/ws/${user._id}/${targetUserId}`;
+
+        // Custom WebSocket implementation to include headers
+        class CustomWebSocket extends WebSocket {
+            constructor(url: string, protocols?: string | string[]) {
+                super(url, protocols);
+            }
+
+            setHeaders(headers: { [key: string]: string }) {
+                this.headers = headers;
+            }
+
+            headers: { [key: string]: string } = {};
+        }
+
+        ws.current = new CustomWebSocket(wsUrl);
+        (ws.current as CustomWebSocket).setHeaders({
+            Authorization: `Bearer ${token}`
+        });
 
         ws.current.onopen = () => {
             console.log('WebSocket connection opened');
@@ -29,7 +54,7 @@ export default function RealTimeMessaging() {
                 ws.current.close();
             }
         };
-    }, [user?._id]);
+    }, [targetUserId, user?._id]);
 
     const sendMessage = () => {
         if (ws.current && input) {

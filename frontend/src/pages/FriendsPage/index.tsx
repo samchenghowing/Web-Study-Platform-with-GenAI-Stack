@@ -2,12 +2,14 @@ import * as React from 'react';
 import { useState, useEffect } from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { Divider, Grid, Button, Avatar } from '@mui/material';
+import { Divider, TextField, Button, Drawer } from '@mui/material';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
+import Grid from '@mui/material/Grid';
 import { useAuth } from '../../authentication/AuthContext';
-import RealTimeMessaging from './RealTimeMessaging';
+import Avatar from '@mui/material/Avatar';
+import RealTimeMessaging from './RealTimeMessaging'; // Import the new component
 
 const LIST_ALL_USER = 'http://localhost:8504/users/all';
 const CREATE_USER_FOLLOW = 'http://localhost:8504/users/relationship';
@@ -27,6 +29,8 @@ export default function FriendsPage() {
     const [users, setUsers] = useState<User[]>([]);
     const { user } = useAuth();
     const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
+    const [isMessagingOpen, setIsMessagingOpen] = useState(false);
+    const [targetUserId, setTargetUserId] = useState<string | null>(null);
 
     // Fetch all users
     useEffect(() => {
@@ -226,6 +230,17 @@ export default function FriendsPage() {
                                                 Follow
                                             </Button>
                                         )}
+                                        <Button
+                                            variant="contained"
+                                            color="secondary"
+                                            onClick={() => {
+                                                setTargetUserId(otherUser.id);
+                                                setIsMessagingOpen(true);
+                                            }}
+                                            fullWidth
+                                        >
+                                            Message
+                                        </Button>
                                     </CardActions>
                                 </Card>
                             </Grid>
@@ -240,7 +255,13 @@ export default function FriendsPage() {
                 )}
             </Grid>
 
-            <RealTimeMessaging />
+            <Drawer
+                anchor="right"
+                open={isMessagingOpen}
+                onClose={() => setIsMessagingOpen(false)}
+            >
+                <RealTimeMessaging targetUserId={targetUserId} />
+            </Drawer>
         </Container>
     );
 }

@@ -155,20 +155,43 @@ async def root():
 
 jobs: Dict[UUID, Job] = {}
 
-connected_clients: List[WebSocket] = []
+connected_clients: Dict[str, List[WebSocket]] = {}
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
-    connected_clients.append(websocket)
+    if client_id not in connected_clients:
+        connected_clients[client_id] = []
+    connected_clients[client_id].append(websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            for client in connected_clients:
+            for client in connected_clients[client_id]:
                 await client.send_text(f"Message text was: {data}")
     except WebSocketDisconnect:
-        connected_clients.remove(websocket)
+        connected_clients[client_id].remove(websocket)
+        if not connected_clients[client_id]:
+            del connected_clients[client_id]
         print(f"Client #{client_id} disconnected")
+
+@app.websocket("/ws/{user_id}/{target_user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str, target_user_id: str):
+    await websocket.accept()
+    if user_id not in connected_clients:
+        connected_clients[user_id] = []
+    connected_clients[user_id].append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = f"{user_id} said: {data}"
+            if target_user_id in connected_clients:
+                for client in connected_clients[target_user_id]:
+                    await client.send_text(message)
+    except WebSocketDisconnect:
+        connected_clients[user_id].remove(websocket)
+        if not connected_clients[user_id]:
+            del connected_clients[user_id]
+        print(f"User #{user_id} disconnected")
 
 
 # Chat bot API
