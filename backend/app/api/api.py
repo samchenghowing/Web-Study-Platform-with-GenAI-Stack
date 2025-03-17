@@ -523,6 +523,9 @@ async def create_student(student: StudentModel = Body(...)):
         {"login": 0},
         username=student.username  
     )
+    neo4j_db.create_landing_session(
+        created_student["_id"],
+    )
     neo4j_db.close()
 
     return created_student

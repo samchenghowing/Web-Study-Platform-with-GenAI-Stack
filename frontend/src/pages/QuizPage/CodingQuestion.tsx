@@ -68,7 +68,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
 
         try {
             let newSession = {
-                session_id: '12345',
+                session_id: user ? user._id : 'test_user',
                 name: 'landing session',
                 question_count: 1,
                 timestamp: new Date().toISOString(),

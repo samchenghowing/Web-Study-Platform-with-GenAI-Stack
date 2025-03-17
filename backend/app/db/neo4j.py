@@ -85,6 +85,29 @@ class Neo4jDatabase:
             properties['username'] = username
         tx.run(query, **properties)
 
+    def create_landing_session(self, user_id):
+        with self.driver.session() as session:
+            session.write_transaction(self._create_landing_session, user_id)
+        
+    @staticmethod
+    def _create_landing_session(tx, user_id):
+        session_id = user_id
+        query = """
+        MERGE (u:User {id: $user_id})
+        CREATE (s:Session {
+            id: $session_id, 
+            timestamp: datetime(), 
+            sname: 'landing session',
+            question_count: 0, 
+            topics: [], 
+            selected_pdfs: [], 
+            score: 0,  
+            current_question_count: 0
+        })
+        CREATE (u)-[:landing_session]->(s)
+        """
+        tx.run(query, user_id=user_id, session_id=session_id)
+
     ###### User #####
     def get_all_user(self):
         with self.driver.session() as session:
