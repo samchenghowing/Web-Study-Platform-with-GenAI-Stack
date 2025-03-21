@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Grid from '@mui/material/Grid2';
+import { Grid } from '@mui/material';  // Change this line, remove Grid2 import
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -28,6 +28,7 @@ import EditorView from './EditorView';
 import EditorConfig from './EditorConfig';
 import ResizablePanel from './ResizablePanel';
 import { EditorConfigType, EditorDocType } from './utils';
+import { mergeScrollerStyles, leftpanelStyles, dialogStyles, loadingBoxStyles, questionBoxStyles, snackbarAlertStyles, codeMirrorHeight, editorPageStyles } from './styles';
 
 const SUBMIT_API_ENDPOINT = 'http://localhost:8504/submit';
 const TASK_API_ENDPOINT = 'http://localhost:8504/generate-task';
@@ -336,102 +337,109 @@ export default function MainComponent() {
     }
 
     return (
-        <Stack>
-            <Grid container spacing={2}>
-                <Grid>
+        <Box sx={editorPageStyles.root}>
+            <Grid container sx={editorPageStyles.mainContainer}>
+                {/* Left Panel */}
+                <Grid item>  {/* Remove xs prop here */}
                     <ResizablePanel
                         width={aiChatWidth}
                         onWidthChange={setAiChatWidth}
-                        minWidth={300} // Minimum width in pixels
-                        maxWidth={1000} // Maximum width in pixels
+                        minWidth={300}
+                        maxWidth={1000}
                     >
-                        <Alert severity="info">
-                            <AlertTitle>{quiz?.name}</AlertTitle>
-                            <Typography variant="body1">Question Count: {currentQuestionNumber} of {quiz?.question_count}</Typography>
-                        </Alert>
+                        <Box sx={editorPageStyles.leftPanel}>
+                            <Alert  severity="info">
+                                <AlertTitle><strong>Quiz: {quiz?.name}</strong></AlertTitle>
+                                <Typography variant="body1">
+                                    Question Count: {currentQuestionNumber} of {quiz?.question_count}
+                                </Typography>
+                            </Alert>
 
-                        <Tabs value={tabIndex} onChange={handleTabChange} aria-label="simple tabs example">
-                            <Tab label="Question" />
-                            <Tab label="AI Chat" />
-                        </Tabs>
+                            <Tabs value={tabIndex} onChange={handleTabChange}>
+                                <Tab label="Question" />
+                                <Tab label="AI Chat" />
+                            </Tabs>
 
-                        {tabIndex === 0 && (
-                            <Card variant="outlined">
-                                <CardContent>
-
-                                    {/* 1. Question number */}
-                                    <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
-                                        Question number {currentQuestionNumber}
-                                    </Typography>
-
-                                    {/* 2. Topic */}
-                                    <Typography sx={{ color: 'text.secondary', mb: 1.5 }}>Topics:
-                                        {quiz?.topics.map((topic: string, index: number) => (
-                                            <Chip key={index} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                                        ))}</Typography>
-                                    <Typography variant="body2">
-
-                                        {/* 3. Quesustion field */}
-                                        <Box
-                                            ref={questionRef}
-                                            sx={{ overflowY: 'auto', maxHeight: '400px', overflowWrap: "break-word", whiteSpace: "pre-wrap" }}
-                                        >
-                                            <MarkdownRenderer content={question || "Loading..."} />
-                                        </Box>
-
-                                    </Typography>
-                                </CardContent>
-                                <CardActions>
-                                    {/* 4. Button to sent code to the right*/}
-                                    <Button size="small" onClick={() => {
-                                        const [jsCode, htmlCode, cssCode] = extract_task(question);
-                                        var task = { jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode };
-                                        setTask(task);
-                                        setEditorConfig(prevState => ({
-                                            ...prevState,
-                                            language: 'combined' // Ensure default is 'combined'
-                                        }));
-                                    }}>
-                                        Click to Begin
+                            {tabIndex === 0 && (
+                                <Card variant="outlined" sx={editorPageStyles.questionCard}>
+                                    <Button 
+                                        size="small" 
+                                        variant="contained"
+                                        sx={editorPageStyles.startButton}
+                                        onClick={() => {
+                                            const [jsCode, htmlCode, cssCode] = extract_task(question);
+                                            setTask({ jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode });
+                                        }}
+                                    >
+                                        Start Coding
                                     </Button>
-                                </CardActions>
-                            </Card>
-                        )}
+                                    <CardContent sx={editorPageStyles.questionContent}>
+                                        <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
+                                            Question number {currentQuestionNumber}
+                                        </Typography>
+                                        <Typography sx={{ color: 'text.secondary', mb: 1.5, margin:'0px' }}>
+                                            Topics:
+                                            {quiz?.topics.map((topic: string, index: number) => (
+                                                <Chip 
+                                                    key={index} 
+                                                    label={topic} 
+                                                    size="small" 
+                                                    sx={{ mr: 0.5, mb: 0.5 }} 
+                                                />
+                                            ))}
+                                        </Typography>
+                                        <Box ref={questionRef} sx={editorPageStyles.questionContent}>
+                                            <MarkdownRenderer content={question || "Loading Question..."} />
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            )}
 
-                        {tabIndex === 1 && (
-                            <AIChat
-                                question={question}
-                                setQuestion={setQuestion}
-                                task={task}
-                                setTask={setTask}
-                                quiz={quiz} // Pass the quiz object to AIChat // Should using AI CHat type session node 
-                            />
-                        )}
-
+                            {tabIndex === 1 && (
+                                <AIChat
+                                    question={question}
+                                    setQuestion={setQuestion}
+                                    task={task}
+                                    setTask={setTask}
+                                    quiz={quiz}
+                                />
+                            )}
+                        </Box>
                     </ResizablePanel>
                 </Grid>
-                <Grid>
-                    <EditorConfig
-                        editorConfig={editorConfig}
-                        editorDoc={editorDoc}
-                        setEditorConfig={setEditorConfig}
-                        handleCodeSubmit={handleCodeSubmit}
-                        checkSubmissionResult={checkSubmissionResult}
-                    />
-                    <EditorView
-                        editorConfig={editorConfig}
-                        editorDoc={editorDoc}
-                        setEditorDoc={setEditorDoc}
-                    />
+
+                {/* Right Panel */}
+                <Grid 
+                    item 
+                    xs={true}
+                    sx={editorPageStyles.rightPanel}
+                >
+                    <Box sx={editorPageStyles.editorContainer}>
+                        <EditorConfig
+                            editorConfig={editorConfig}
+                            editorDoc={editorDoc}
+                            setEditorConfig={setEditorConfig}
+                            handleCodeSubmit={handleCodeSubmit}
+                            checkSubmissionResult={checkSubmissionResult}
+                        />
+                        <Box sx={editorPageStyles.codeMirror}>
+                            <EditorView
+                                editorConfig={editorConfig}
+                                editorDoc={editorDoc}
+                                setEditorDoc={setEditorDoc}
+                            />
+                        </Box>
+                    </Box>
                 </Grid>
             </Grid>
 
-            <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={handleClose}>
+            {/* Keep your existing Snackbar and Dialog components */}
+            <Snackbar open={snackbarOpen} sx={{ left: '100px !important' }}  autoHideDuration={6000} onClose={handleClose}>
                 <Alert
                     onClose={handleClose}
-                    severity="success"
+                    severity="warning"
                     variant="filled"
-                    sx={{ width: '100%' }}
+                    sx={snackbarAlertStyles}
                 >
                     {snackbarText}
                 </Alert>
@@ -442,22 +450,14 @@ export default function MainComponent() {
                 onClose={() => { }} 
                 disableEscapeKeyDown
                 maxWidth={false}
-                PaperProps={{
-                    sx: {
-                        maxWidth: '1000px',
-                        width: '100%'
-                    }
-                }}
+                PaperProps={{ sx: dialogStyles.paper }}
                 >
                 <DialogTitle>Submission Result</DialogTitle>
                 <DialogContent>
                     {isLoading ? (
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                        }}>
-                            <CircularProgress />
+                        <Box sx={loadingBoxStyles}>
+                            <CircularProgress /><br></br>
+                            <Typography variant="body2" sx={{ ml: 2 }}><br></br>Analyzing your Answer...</Typography>
                         </Box>
                     ) : (
                         cardContent.map((card) => (
@@ -465,19 +465,21 @@ export default function MainComponent() {
                                 <Typography variant="body1" gutterBottom>
                                     {card.question.split('```')[0]} {/* Display text explanation */}
                                 </Typography>
-                                <CodeMirrorMerge
-                                    orientation="a-b"
-                                    theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
-                                >
-                                    <Original
-                                        value={`${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`}
-                                        extensions={[javascript({ jsx: true }), html(), css()]}
-                                    />
-                                    <Modified
-                                        value={card.question.split('```')[1] || ''}
-                                        extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
-                                    />
-                                </CodeMirrorMerge>
+                                <Box sx={mergeScrollerStyles}>
+                                    <CodeMirrorMerge
+                                        orientation="a-b"
+                                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+                                    >
+                                        <Original
+                                            value={`${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`}
+                                            extensions={[javascript({ jsx: true }), html(), css()]}
+                                        />
+                                        <Modified
+                                            value={card.question.split('```')[1] || ''}
+                                            extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
+                                        />
+                                    </CodeMirrorMerge>
+                                </Box>
                             </div>
                         ))
                     )}
@@ -488,8 +490,7 @@ export default function MainComponent() {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-        </Stack>
+        </Box>
     );
 }
 

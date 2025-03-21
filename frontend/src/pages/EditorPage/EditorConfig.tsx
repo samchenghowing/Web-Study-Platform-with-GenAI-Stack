@@ -82,7 +82,7 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
                 </IconButton>
             </Tooltip>
 
-            <Tooltip title="Check Submit Result">
+            {/* <Tooltip title="Check Submit Result">
                 <IconButton color="inherit" onClick={props.checkSubmissionResult}>
                     <GradingIcon />
                 </IconButton>
@@ -92,7 +92,7 @@ const EditorConfig = React.forwardRef<HTMLDivElement, EditorConfigProps>(functio
                 <IconButton color="inherit" onClick={onDownload}>
                     <SaveAsIcon />
                 </IconButton>
-            </Tooltip>
+            </Tooltip> */}
         </Toolbar>
     );
 });

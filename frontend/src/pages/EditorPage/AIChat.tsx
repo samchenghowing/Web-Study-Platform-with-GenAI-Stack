@@ -12,6 +12,9 @@ import SendIcon from '@mui/icons-material/Send';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { backgroundPaperStyles, styledCardStyles, chatInputContainerStyles, chatActionsBoxStyles, chatInputBoxStyles, leftpanelStyles } from './styles';
+import { useTheme } from '@mui/material/styles';
+
 
 import MarkdownRenderer from '../../components/MarkdownRenderer'
 import { useAuth } from '../../authentication/AuthContext';
@@ -38,14 +41,18 @@ const StyledCard = styled(Card)(({ theme, role }) => ({
 }));
 
 function InfoCard({ data, AIChatprops }) {
+    const theme = useTheme();
     return (
-        <StyledCard role={data.role} sx={{ minWidth: 275, marginBottom: 2 }}>
+        <StyledCard role={data.role} sx={styledCardStyles(theme, data.role)}>
             <CardContent>
                 <Typography sx={{ fontSize: 16 }} gutterBottom>
                     {data.role}
                 </Typography>
                 <Typography component={'span'} sx={{ fontSize: 14 }} >
                     <MarkdownRenderer content={data.question} />
+                </Typography>
+                <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>
+                    {new Date(data.id).toLocaleTimeString()}
                 </Typography>
             </CardContent>
             {/* {data.role === 'ai' && (
@@ -66,7 +73,7 @@ function InfoCard({ data, AIChatprops }) {
 
 function ChatInput({ userQuestion, setUserQuestion, handleChat }) {
     return (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={chatInputContainerStyles}>
             <TextField
                 fullWidth
                 multiline
@@ -118,6 +125,7 @@ export default function AIChat(props: AIChatProps) {
     const [cardContent, setCardContent] = React.useState<CardContentType[]>([]);
     const cardRef = React.useRef<HTMLDivElement>(null);
     const { user } = useAuth(); // Accessing user from AuthContext
+    const theme = useTheme();
 
     React.useEffect(() => {
         const abortController = new AbortController();
@@ -239,19 +247,19 @@ export default function AIChat(props: AIChatProps) {
     }, [cardContent]);
 
     return (
-        <Box>
-            <BackgroundPaper ref={cardRef} sx={{ overflow: 'auto' }}>
+        <Box >
+            <BackgroundPaper ref={cardRef} sx={backgroundPaperStyles(theme)}>
                 {cardContent.map(data => (
                     <InfoCard key={data.id} data={data} AIChatprops={props} />
                 ))}
             </BackgroundPaper>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box sx={chatActionsBoxStyles}>
                 <Tooltip title="Delete chat history" arrow>
                     <IconButton onClick={deleteChatHistory} color="secondary">
                         <DeleteIcon />
                     </IconButton>
                 </Tooltip>
-                <Box sx={{ flexGrow: 1, ml: 1 }}>
+                <Box sx={chatInputBoxStyles}>
                     <ChatInput
                         userQuestion={userQuestion}
                         setUserQuestion={setUserQuestion}

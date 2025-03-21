@@ -8,6 +8,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import Slide from '@mui/material/Slide';
 import { TransitionProps } from '@mui/material/transitions';
+import { iframeStyles, consoleOutputStyles } from './styles';
 
 const Transition = React.forwardRef<HTMLDivElement, TransitionProps & { children: React.ReactElement<any> }>(
     function Transition(props, ref) {
@@ -74,7 +75,7 @@ export default function Preview({ editorDoc }: PreviewProps) {
                 edge="start"
                 color="inherit"
                 onClick={handleClickOpen}
-                aria-label="run"
+                aria-label="run preview"
             >
                 <PlayArrowIcon />
             </IconButton>
@@ -104,9 +105,9 @@ export default function Preview({ editorDoc }: PreviewProps) {
                     title="Preview"
                     width="100%"
                     height="80%"
-                    style={{ border: 'none' }}
+                    style={iframeStyles}
                 ></iframe>
-                <div style={{ height: '20%', overflowY: 'auto', padding: '8px', background: '#f5f5f5' }}>
+                <div style={consoleOutputStyles}>
                     <strong>Console Output:</strong>
                     <pre>{consoleOutput.join('\n')}</pre>
                 </div>

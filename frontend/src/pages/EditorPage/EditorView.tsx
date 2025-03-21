@@ -7,6 +7,8 @@ import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { EditorConfigType, EditorDocType } from './utils';
+import { codeMirrorHeight } from './styles';
+import {  Box } from '@mui/material';
 
 interface EditorViewProps {
     editorDoc: EditorDocType;
@@ -66,14 +68,16 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
     };
 
     return (
-        <CodeMirror
-            ref={editorRef}
-            value={getValue}
-            extensions={[javascript({ jsx: true }), html(), css()]}
-            onChange={handleChange}
-            height="500px"
-            theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
-        />
+        <Box >
+            <CodeMirror
+                ref={editorRef}
+                value={getValue}
+                extensions={[javascript({ jsx: true }), html(), css()]}
+                onChange={handleChange}
+                style={{ height: '75vw', width: 'auto' , overflow: 'auto' }}
+                theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+            />
+        </Box>
     );
 }
 
