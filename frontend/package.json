@@ -3,8 +3,8 @@
 	"version": "1.0.0",
 	"main": "index.tsx",
 	"scripts": {
-		"dev": "cross-env NODE_ENV=development webpack-dev-server --mode=development",
-		"build": "INLINE_RUNTIME_CHUNK=false cross-env NODE_ENV=production webpack --mode=production --progress"
+		"dev": "npx cross-env NODE_ENV=development webpack-dev-server --mode=development",
+		"build": "npx cross-env NODE_ENV=production INLINE_RUNTIME_CHUNK=false webpack --mode=production --progress"
 	},
 	"keywords": [],
 	"author": "Sam Cheng",
@@ -52,9 +52,13 @@
 		"@types/react-dom": "19.0.2",
 		"@uiw/codemirror-theme-github": "^4.23.7",
 		"@uiw/react-codemirror": "^4.23.7",
+		"date-fns": "^4.1.0",
 		"file-saver": "^2.0.5",
 		"react": "19.0.0",
+		"react-calendar": "^5.1.0",
+		"react-code-blocks": "^0.1.6",
 		"react-codemirror-merge": "^4.23.5",
+		"react-day-picker": "^9.6.3",
 		"react-dom": "19.0.0",
 		"react-markdown": "^9.0.1",
 		"react-router-dom": "^6.23.1",

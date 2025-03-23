@@ -24,6 +24,7 @@ import {
 import { Delete as DeleteIcon, Start as StartICON, DriveFileRenameOutline as RenameIcon, Add as AddIcon, Refresh as ReviseIcon } from '@mui/icons-material';
 import { useAuth } from '../../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import CreateSessionDialog from './CreateSessionDialog';
 
 const LISTSESSION_API_ENDPOINT = 'http://localhost:8504/list_session';
 const CHANGENAME_API_ENDPOINT = 'http://localhost:8504/update_session_name';
@@ -36,13 +37,23 @@ interface QuizRecord {
     question_count: number;
     timestamp: string;
     progress: number;
-    progressstate: 'Done' | 'In Progress';
+    progressstate: 'Done' | 'In Progress' | 'Not Started';
     score: string; // e.g., "8/10"
     topics: string[];
     current_question_count: number; 
 }
 
-const SessionRecord = () => {
+interface SessionRecordProps {
+  searchTerm: string;
+  selectedFilters: string[];
+  onSearchChange: (value: string) => void;
+}
+
+const SessionRecord: React.FC<SessionRecordProps> = ({ 
+  searchTerm, 
+  selectedFilters, 
+  onSearchChange 
+}) => {
     const [quizData, setQuizData] = useState<QuizRecord[]>([]);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [newName, setNewName] = useState('');
@@ -80,7 +91,7 @@ const SessionRecord = () => {
                             question_count: item.question_count,
                             timestamp: timestamp,
                             progress: item.current_question_count,
-                            progressstate: item.current_question_count == (item.question_count+1) ? 'Done' : 'In Progress',
+                            progressstate: item.current_question_count == (item.question_count+1) ? 'Done' : (item.current_question_count == 1)? 'Not Started' :'In Progress',
                             score: `${item.score}/${item.question_count}`,
                             topics: item.topics,
                             current_question_count: item.current_question_count, // Add this field
@@ -263,11 +274,29 @@ const SessionRecord = () => {
     const currentPageData = quizData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
-        <Box sx={{ p: 4, maxWidth: '95vw', overflowX: 'auto' }}>
-            <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 3 }}>
-                <Table sx={{ minWidth: 1000 }}>
+        
+        <Box sx={{ p: 1, maxWidth: '95vw', overflowX: 'auto' }}>
+            <Box sx={{ py: 2 }}>
+                <CreateSessionDialog />
+            </Box>
+            
+            <TableContainer component={Paper} sx={{ borderRadius: 3}}>
+                <Table 
+                    sx={{ 
+                        minWidth: 1000,
+                        '& .MuiTableRow-root': {
+                            height: '32px', // Reduced from default 56px
+                        },
+                        '& .MuiTableCell-root': {
+                            py: 1, // Reduced vertical padding
+                        }
+                    }}
+                >
                     <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f9fafb' }}>
+                        <TableRow sx={{ 
+                            backgroundColor: '#f9fafb',
+                            height: '44px' // Even smaller header height
+                        }}>
                             <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Quiz Name</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Q. Count</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Created At</TableCell>
@@ -294,7 +323,7 @@ const SessionRecord = () => {
                                 <TableCell sx={{ fontSize: '14px' }}>
                                     <Chip
                                         label={quiz.progressstate}
-                                        color={quiz.progressstate === 'Done' ? 'success' : 'warning'}
+                                        color={quiz.progressstate === 'Done' ? 'success' : quiz.progressstate === 'In Progress' ? 'warning' : 'info'}
                                         variant="outlined"
                                     />
                                 </TableCell>

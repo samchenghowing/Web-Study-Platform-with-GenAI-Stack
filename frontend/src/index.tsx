@@ -12,6 +12,10 @@ import ErrorPage from './pages/ErrorPage';
 import LoadingPage from './pages/LoadingPage';
 import PrivateRoute from './authentication/PrivateRoute';
 import { AuthProvider } from './authentication/AuthContext';
+import StudyMainPage from "./pages/StudyPlan/StudyMainPage";
+import StudyHtmlPage from "./pages/StudyPlan/StudyHtmlPage";
+import StudyCssPage from "./pages/StudyPlan/StudyCssPage";
+import StudyJavaScriptPage from "./pages/StudyPlan/StudyJavaScriptPage";
 
 
 const HomePage = lazy(() => import('./pages/LandingPage'));
@@ -60,6 +64,59 @@ const router = createBrowserRouter([
             </Suspense>
         ),
         errorElement: <ErrorPage />,
+    },
+    {
+        path: '/studyplan',
+        element: (
+            <PrivateRoute>
+                <Suspense fallback={<LoadingPage />}>
+                    
+                </Suspense>
+            </PrivateRoute>
+        ),
+        errorElement: <ErrorPage />,
+        children: [
+            {
+                index: true,
+                element: <Navigate to="/studyplan/html" replace />,
+            },
+            {
+                path: 'main',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <StudyMainPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {  
+                path: 'html',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        < StudyHtmlPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'css',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        <StudyCssPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            },
+            {
+                path: 'javascript',
+                element: (
+                    <Suspense fallback={<LoadingPage />}>
+                        < StudyJavaScriptPage />
+                    </Suspense>
+                ),
+                errorElement: <ErrorPage />,
+            }
+        ],
     },
     {
         path: '/main',
