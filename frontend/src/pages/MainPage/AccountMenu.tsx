@@ -18,9 +18,7 @@ import Logout from '@mui/icons-material/Logout';
 import { useAuth } from '../../authentication/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-
-
-export default function AccountMenu() {
+const AccountMenu: React.FC = () => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const { user, logout } = useAuth();
@@ -36,6 +34,11 @@ export default function AccountMenu() {
         logout();
         navigate('/');
     };
+    const handleAvatarChange = () => {
+        handleClose();
+        navigate('/avatar-selection');
+    };
+
     return (
         <React.Fragment>
             <Box sx={{ display: 'flex', alignItems: 'center', textAlign: 'center' }}>
@@ -102,11 +105,11 @@ export default function AccountMenu() {
                     <Avatar alt={user ? user.username : 'Guest'} src={user ? user.avatarUrl : undefined} /> {user ? user.username : 'Guest'}
                 </MenuItem>
                 <Divider />
-                <MenuItem onClick={handleClose}>
+                <MenuItem onClick={handleAvatarChange}>
                     <ListItemIcon>
                         <PersonAdd fontSize="small" />
                     </ListItemIcon>
-                    Add a friend
+                    Change your avatar
                 </MenuItem>
                 <MenuItem onClick={handleClose}>
                     <ListItemIcon>
@@ -123,4 +126,6 @@ export default function AccountMenu() {
             </Menu>
         </React.Fragment>
     );
-}
+};
+
+export default AccountMenu;

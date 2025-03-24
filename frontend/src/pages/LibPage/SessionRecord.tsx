@@ -139,7 +139,7 @@ const SessionRecord: React.FC<SessionRecordProps> = ({
         const formattedTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`;
 
         // Optionally, you can include the date as well if you want
-        const formattedDate = `${day}/${month}/${year} ${formattedTime}`;
+        const formattedDate = `${day+1}/${month}/${year} ${formattedTime}`;
 
         return formattedDate;
     }

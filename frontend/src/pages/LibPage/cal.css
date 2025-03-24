@@ -1,96 +1,96 @@
-.custom-calendar {
-    width: 100% !important;
-    border: none !important;
-    background: transparent !important;
-    font-family: 'Roboto', sans-serif;
-  }
-  
-  /* Remove all button styling */
-  .react-calendar button {
-    all: unset !important;
-    cursor: default !important;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* Grid layout for days */
-  .react-calendar__month-view__days {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    padding: 8px;
-  }
-  
-  /* Style date tiles */
-  .react-calendar__tile {
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    color: #666;
-    border-radius: 50%;
-    position: relative;
-  }
-  
-  /* Weekday headers */
-  .react-calendar__month-view__weekdays {
-    display: grid !important;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 8px;
-  }
-  
-  .react-calendar__month-view__weekdays__weekday {
-    font-size: 12px;
-    font-weight: 600;
-    color: #999;
-    text-align: center;
-    text-transform: uppercase;
-  }
-  
-  .react-calendar__month-view__weekdays__weekday abbr {
-    text-decoration: none;
-    cursor: default;
-  }
-  
-  /* Hide navigation */
-  .react-calendar__navigation {
-    display: none;
-  }
-  
-  /* Today's date highlight */
-  .today-highlight {
-    background-color: #1976d2 !important;
-    color: white !important;
-  }
-  
-  /* Login date highlight */
-  .login-highlight {
-    background-color: #e3f2fd !important;
-    color: #1976d2 !important;
-  }
-  
-  /* Weekend dates */
-  .react-calendar__month-view__days__day--weekend {
-    color: #d32f2f;
-  }
-  
-  /* Remove all interactive states */
-  .react-calendar__tile:enabled:hover,
-  .react-calendar__tile:enabled:focus,
-  .react-calendar__tile--active,
-  .react-calendar__tile--hasActive,
-  .react-calendar button:enabled:hover,
-  .react-calendar button:enabled:focus {
-    background: none !important;
-    cursor: default !important;
-  }
-  
-  /* Disable all pointer events */
-  .react-calendar__tile,
-  .react-calendar button {
-    pointer-events: none !important;
-  }
+.custom-calendar .react-calendar__tile {
+  /* Add more specific selectors */
+  all: unset !important;
+  width: 36px !important;
+  height: 36px !important;
+  text-align: center !important;
+  line-height: 36px !important;
+  font-size: 14px !important;
+  color: #666 !important;
+}
+
+/* Remove all button styling */
+.react-calendar button {
+  all: unset !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  margin: auto !important;
+  font-size: 14px !important;
+  color: #666 !important;
+}
+
+/* Hide navigation buttons */
+.react-calendar__navigation {
+  display: none !important;
+}
+
+/* Grid layout */
+.react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 4px !important;
+}
+
+/* Weekday headers */
+.react-calendar__month-view__weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  margin-bottom: 8px !important;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  text-align: center !important;
+  text-transform: uppercase !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #999 !important;
+  padding: 4px !important;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none !important;
+}
+
+/* Hide outside month days */
+.react-calendar__month-view__days__day--neighboringMonth {
+  visibility: hidden !important;
+}
+
+/* Highlighted dates */
+.today-highlight {
+  border: 2px solid #ff9800 !important;
+  border-radius: 50% !important;
+  color: #ff9800 !important;
+}
+
+.login-highlight {
+  background-color: #ff9800 !important;
+  border-radius: 50% !important;
+  color: white !important;
+}
+
+.today-highlight.login-highlight {
+  background-color: #ff9800 !important;
+  border: none !important;
+  color: white !important;
+}
+
+/* Remove all interactions */
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus,
+.react-calendar__tile--active,
+.react-calendar button:enabled:hover,
+.react-calendar button:enabled:focus {
+  background: none !important;
+  cursor: default !important;
+}
+
+/* Disable pointer events */
+.react-calendar__tile,
+.react-calendar button {
+  pointer-events: none !important;
+  cursor: default !important;
+}

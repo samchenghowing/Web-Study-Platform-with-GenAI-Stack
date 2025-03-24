@@ -10,14 +10,14 @@ export const mainPageStyles = {
     color: 'primary.main'
   },
   logo: {
-    width: '150px',
+    width: '200px',
     height: 'auto',
   },
   appBar: {
     backgroundColor: '#6887c1'
   },
   menuButton: {
-    marginRight: 5,
+    marginRight: 3,
   },
   drawer: {
     width: drawerWidth,

@@ -5,6 +5,7 @@ import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import CodingQuestion from './CodingQuestion';
+import AvatarChoice from './AvatarSelection';
 import { Typography, Container, Button, Stepper, Step, StepLabel, Card, CardContent } from '@mui/material';
 import { Link } from 'react-router-dom'; // Import Link
 import { useAuth } from '../../authentication/AuthContext';
@@ -422,7 +423,11 @@ const QuizPage: React.FC = () => {
                             </Button>
                         </>
 
-                    ) : null}
+                    ) : currentQuestion.type === 'AvatarChoice' ? (
+                        <>
+                            <AvatarChoice />
+                        </> 
+                        ) : null}
                 </div>
             </div>
         </Container>

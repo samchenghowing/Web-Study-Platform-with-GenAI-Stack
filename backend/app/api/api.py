@@ -25,6 +25,7 @@ from fastapi import (
     File,
     WebSocket,
     WebSocketDisconnect,
+    APIRouter,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, Response
@@ -37,6 +38,7 @@ from pymongo import ReturnDocument
 import bcrypt
 
 from pdf2image import convert_from_bytes
+from pydantic import BaseModel
 
 
 '''
@@ -940,3 +942,35 @@ async def get_streak_reward(user_id: str):
     else:
         raise HTTPException(status_code=404, detail="User not found or no quizzes completed")
 
+@app.get("/users/{user_id}/avatar")
+async def get_user_avatar(user_id: str):
+    """Retrieve the avatar for a specific user."""
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        avatar = neo4j_db.get_user_avatar(user_id)
+        if avatar is None:
+            raise HTTPException(status_code=404, detail="Avatar not found")
+        return {"avatar": avatar}
+    finally:
+        neo4j_db.close()
+
+@app.post("/users/{user_id}/avatar")
+async def update_user_avatar(user_id: str, payload: dict):
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+    
+    avatar = payload.get("avatar")
+    if not avatar:
+        raise HTTPException(status_code=400, detail="Avatar is required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        success = neo4j_db.update_user_avatar(user_id, avatar)
+        if not success:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"message": "Avatar updated successfully"}
+    finally:
+        neo4j_db.close()

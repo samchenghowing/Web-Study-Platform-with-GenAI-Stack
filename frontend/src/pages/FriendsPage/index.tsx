@@ -16,6 +16,7 @@ import { containerStyles } from '../../styles/commonStyles';
 import { friendsPageStyles } from './styles';
 import { SxProps } from '@mui/material';
 import { Theme } from '@mui/material/styles';
+import { getAvatarPath } from '../../utils/avatarUtils';
 
 
 const LIST_ALL_USER = 'http://localhost:8504/users/all';
@@ -32,7 +33,8 @@ interface User {
     }[];
     Time?: string;  
     Topic?: string;
-    Knowledge?: string; 
+    Knowledge?: string;
+    avatar?: string; 
 }
 
 export default function FriendsPage() {
@@ -41,6 +43,7 @@ export default function FriendsPage() {
     const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
     const [isMessagingOpen, setIsMessagingOpen] = useState(false);
     const [targetUserId, setTargetUserId] = useState<string | null>(null);
+    const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
     // Fetch all users
     useEffect(() => {
@@ -201,23 +204,6 @@ export default function FriendsPage() {
         return color;
     }
 
-    function stringAvatar(name: string) {
-        return {
-            sx: {
-                bgcolor: stringToColor(name),
-                width: 56,
-                height: 56,
-                marginBottom: 1
-            },
-            children: name
-                .split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)
-        };
-    }
-
     return (
         <Container sx={containerStyles.pageContainer}>
             <Typography variant="h4" gutterBottom>
@@ -233,7 +219,16 @@ export default function FriendsPage() {
                                 <Card sx={friendsPageStyles.userCard.card}>
                                     <CardContent sx={friendsPageStyles.userCard.content}>
 
-                                        <Avatar {...stringAvatar(otherUser.username)} />
+                                        <Avatar
+                                            src={getAvatarPath(otherUser.avatar)}
+                                            sx={{ 
+                                                width: 80, 
+                                                height: 80,
+                                                bgcolor: !otherUser.avatar ? stringToColor(otherUser.username) : undefined 
+                                            }}
+                                        >
+                                            {!otherUser.avatar && otherUser.username[0].toUpperCase()}
+                                        </Avatar>
                                         <Typography variant="h6">{otherUser.username}</Typography>
 
                                         <Box sx={friendsPageStyles.userCard.infoSection}>

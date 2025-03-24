@@ -151,6 +151,31 @@ class Neo4jDatabase:
         record = result.single()
         return record["u"] if record else None
 
+    def get_user_avatar(self, user_id: str) -> str:
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (u:User {id: $user_id})
+                RETURN u.avatar AS avatar
+                """,
+                user_id=user_id
+            )
+            record = result.single()
+            return record["avatar"] if record else None
+
+    def update_user_avatar(self, user_id: str, avatar: str) -> bool:
+        with self.driver.session() as session:
+            result = session.run(
+                """
+                MATCH (u:User {id: $user_id})
+                SET u.avatar = $avatar
+                RETURN u
+                """,
+                user_id=user_id, 
+                avatar=avatar
+            )
+            return bool(result.single()) 
+
     def create_user_relationship(self, from_user_id, to_user_id, relationship_type):
         with self.driver.session() as session:
             return session.write_transaction(
@@ -600,5 +625,7 @@ def create_constraints(driver):
     driver.query(
         "CREATE CONSTRAINT tag_name IF NOT EXISTS FOR (t:Tag) REQUIRE (t.name) IS UNIQUE"
     )
+
+
 
 
