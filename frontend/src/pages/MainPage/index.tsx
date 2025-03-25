@@ -29,7 +29,7 @@ const MainPage: React.FC<MainPageProps> = ({ children }) => {
                 }
 
                 const data = await response.json();
-                if (data.currentIndex <= 5) {
+                if (data.currentIndex < 5) {
                     navigate('/begin');
                 }
             } catch (error) {
