@@ -465,7 +465,7 @@ def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
         ]
     )
 
-    currentTopics = "Could you suggest the learning path for me?"
+    currentTopics = "Could you suggest the learning path for me? I want a clear, step-by-step guide to learning web development. You should also tell me about some of the tools on the 'WebGenie' website (the website i am using) that can help me, no url need to provided, such as custom web development quizzes, collaborative learning with friends, and reliable learning resources from WebGenie."
 
     llm_response = llm_chain(
         sid=session.get("session_id"),

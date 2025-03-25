@@ -453,6 +453,8 @@ async def submit_settings(task: Quiz_submission):
         neo4j_db.close()
         return HTTPException(status_code=404, detail=f"Student {task.user} not found")
 
+
+
 @app.get("/bgtask/{uid}/status")
 async def status_handler(uid: UUID):
     return jobs[uid]
@@ -753,6 +755,50 @@ async def delete_student(id: str):
         return Response(status_code=HTTPStatus.NO_CONTENT)
 
     raise HTTPException(status_code=404, detail=f"Student {id} not found")
+
+
+@app.post("/quiz-progress/{user_id}")
+async def save_quiz_progress(user_id: str, payload: dict):
+    current_index = payload.get("currentIndex")
+    if current_index is None:
+        raise HTTPException(status_code=400, detail="Current index is required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        success = neo4j_db.update_quiz_progress(user_id, current_index)
+        if not success:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"message": "Quiz progress updated"}
+    finally:
+        neo4j_db.close()
+
+@app.get("/quiz-progress/{user_id}")
+async def get_quiz_progress(user_id: str):
+    """Get the current quiz progress for a user."""
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required")
+
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        user = neo4j_db.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "currentIndex": user.get("landing_quiz_progress", 0),
+        }
+    finally:
+        neo4j_db.close()
+
+@app.get("/check_new_student/{user_id}")
+async def check_new_student(user_id: str):
+    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+    try:
+        progress = neo4j_db.get_quiz_progress(user_id)
+        total_questions = 6  # Set your total number of questions here
+        return {"is_new": progress < total_questions - 1}
+    finally:
+        neo4j_db.close()
 
 ####################
 

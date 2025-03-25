@@ -176,6 +176,28 @@ class Neo4jDatabase:
             )
             return bool(result.single()) 
 
+    def update_quiz_progress(self, user_id: str, current_index: int) -> bool:
+        """Updates the quiz progress for a user"""
+        query = """
+        MATCH (u:User {id: $user_id})
+        SET u.landing_quiz_progress = $current_index
+        RETURN u
+        """
+        with self.driver.session() as session:
+            result = session.run(query, user_id=user_id, current_index=current_index)
+            return bool(result.single())
+
+    def get_quiz_progress(self, user_id: str) -> int:
+        """Gets the current quiz progress for a user"""
+        query = """
+        MATCH (u:User {id: $user_id})
+        RETURN u.landing_quiz_progress AS progress
+        """
+        with self.driver.session() as session:
+            result = session.run(query, user_id=user_id)
+            record = result.single()
+            return record["progress"] if record and record["progress"] is not None else 0
+
     def create_user_relationship(self, from_user_id, to_user_id, relationship_type):
         with self.driver.session() as session:
             return session.write_transaction(

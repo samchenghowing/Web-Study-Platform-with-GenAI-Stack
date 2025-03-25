@@ -207,11 +207,11 @@ export default function FriendsPage() {
     return (
         <Container sx={containerStyles.pageContainer}>
             <Typography variant="h4" gutterBottom>
-                Users and friend page
+                User List
             </Typography>
             <Divider sx={{ marginBottom: 2 }} />
 
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
                 {users.length > 1 ? (
                     users.map(otherUser => (
                         user?._id !== otherUser.id && (

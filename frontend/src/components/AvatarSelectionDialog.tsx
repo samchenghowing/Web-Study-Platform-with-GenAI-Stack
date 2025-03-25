@@ -70,42 +70,52 @@ const AvatarSelectionDialog: React.FC<AvatarSelectionDialogProps> = ({
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Choose Your Avatar</DialogTitle>
+        <DialogTitle fontSize={30} align="center" color="primary" >Choose Your Avatar</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} >
+          <Grid container spacing={2}>
             {AVATAR_OPTIONS.map((avatar) => (
-              <Grid item xs={4} sm={4} key={avatar.id}>
+                <Grid item xs={4} sm={4} key={avatar.id}>
                 <Card
-                  sx={{
+                    sx={{
                     cursor: 'pointer',
                     border: selectedAvatar === avatar.id ? '2px solid #1976d2' : '1px solid #ccc',
                     transition: 'all 0.2s',
                     aspectRatio: '1/1',
+                    borderRadius: '50%', // Make card circular
+                    overflow: 'hidden',  // Ensure content stays within circle
                     '&:hover': {
-                      transform: 'scale(1.05)',
-                      boxShadow: 3,
+                        transform: 'scale(1.05)',
+                        boxShadow: 3,
                     },
-                  }}
-                  onClick={() => handleAvatarSelect(avatar.id)}
+                    }}
+                    onClick={() => handleAvatarSelect(avatar.id)}
                 >
-                  <Box sx={{ position: 'relative', width: '100%', paddingTop: '100%' }}>
+                    <Box 
+                    sx={{ 
+                        position: 'relative', 
+                        width: '100%', 
+                        paddingTop: '100%',
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                    }}
+                    >
                     <CardMedia
-                      component="img"
-                      image={avatar.src}
-                      alt={`Avatar ${avatar.id}`}
-                      sx={{
+                        component="img"
+                        image={avatar.src}
+                        alt={`Avatar ${avatar.id}`}
+                        sx={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
-                        p: 2,
-                      }}
+                        borderRadius: '50%',
+                        }}
                     />
-                  </Box>
+                    </Box>
                 </Card>
-              </Grid>
+                </Grid>
             ))}
           </Grid>
         </DialogContent>

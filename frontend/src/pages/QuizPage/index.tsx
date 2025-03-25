@@ -5,103 +5,126 @@ import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import CodingQuestion from './CodingQuestion';
-import AvatarChoice from './AvatarSelection';
-import { Typography, Container, Button, Stepper, Step, StepLabel, Card, CardContent } from '@mui/material';
-import { Link } from 'react-router-dom'; // Import Link
-import { useAuth } from '../../authentication/AuthContext';
+import AvatarChoice from './AvatarChoice';
+import DropdownQuestion from './DropdownQuestion';
 import { Question } from './utils';
+import { Typography, Container, Button, Stepper, Step, StepLabel, Card, CardContent, Box } from '@mui/material';
+import { Link, useNavigate } from 'react-router-dom'; // Import Link and useNavigate
+import { useAuth } from '../../authentication/AuthContext';
 import logoimg from '../src/title.png'; // Adjust the path as necessary
 import travelimg from '../src/travel.jpeg'
 import MarkdownRenderer from '../../components/MarkdownRenderer';
-import DropdownQuestion from './DropdownQuestion';
 
 const QUIZ_API_ENDPOINT = 'http://localhost:8504/quiz';
 const SESSION_API_ENDPOINT = 'http://localhost:8504/get_QUIZsession';
 const CHECK_NEWSTUDENT_API_ENDPOINT = 'http://localhost:8504/check_new_student';
+const QUIZ_PROGRESS_API = 'http://localhost:8504/quiz-progress';
 
 const QuizPage: React.FC = () => {
-    /**
-     * currentQuestionIndex: Tracks the current question index
-     * score: Tracks the user’s score
-     * isQuizCompleted: Indicates if the quiz is completed
-     * questions: Stores fetched questions
-     * user: Fetches authenticated user info from useAuth
-     */
+
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [isQuizCompleted, setIsQuizCompleted] = useState(false);
     const [questions, setQuestions] = React.useState<Question[]>([]);
+    const [hasSelectedAvatar, setHasSelectedAvatar] = useState(false);
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const [question, setQuestion] = React.useState('.');
+    const [isLoading, setIsLoading] = useState(true);
 
     const questionRef = React.useRef<HTMLDivElement>(null);
 
     // TODO: Generate questions by prompting user's answer and textbook content
     // Save the created session in db, real time generation
+    
 
-    /**
-     * Fetches user data from CHECK_NEWSTUDENT_API_ENDPOINT
-     * If is_new is true → Fetch new questions
-     * Else → Fetch session data
-     */
     React.useEffect(() => {
-        const abortController = new AbortController();
-        const fetchStudent = async () => {
-            try {
-                const response = await fetch(`${CHECK_NEWSTUDENT_API_ENDPOINT}/${user?._id}`, {
-                    signal: abortController.signal
-                });
-                const student = await response.json();
-                if (student.is_new) {
-                    // get user's login first, if login = 0, get landing quiz
-                    fetchQuestions();
-                }
-                else {
-                    fetchSession();
-                }
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error(error);
-                }
+        const fetchStudentAndProgress = async () => {
+            if (!user?._id) {
+                console.log('No user ID available');
+                return;
             }
-        };
 
-        const fetchQuestions = async () => {
             try {
-                const response = await fetch(`${QUIZ_API_ENDPOINT}/${user?._id}`, {
-                    signal: abortController.signal
-                });
-                const json = await response.json();
-                setQuestions(json.questions);
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error(error);
-                }
-            }
-        };
+                setIsLoading(true);
+                console.log('Fetching quiz progress for user:', user._id);
 
-        const fetchSession = async () => {
-            try {
-                const response = await fetch(`${SESSION_API_ENDPOINT}/${user?._id}`, {
+                // Fetch questions
+                console.log('Fetching questions...');
+                const questionsResponse = await fetch(`${QUIZ_API_ENDPOINT}/${user._id}`, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                     },
-                    signal: abortController.signal
                 });
-                const json = await response.json();
-                console.log(json)
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error(error);
+                const json = await questionsResponse.json();
+                console.log('Questions loaded:', json.questions.length);
+                setQuestions(json.questions);
+
+                // Fetch progress
+                console.log('Fetching quiz progress...');
+                const progressResponse = await fetch(`${QUIZ_PROGRESS_API}/${user._id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!progressResponse.ok) {
+                    throw new Error(`Progress fetch failed: ${progressResponse.status} ${progressResponse.statusText}`);
                 }
+
+                const progressData = await progressResponse.json();
+                console.log('Progress data:', progressData);
+
+                // Update currentQuestionIndex and check completion
+                const savedIndex = progressData.currentIndex || 0;
+                if (savedIndex >= 5 ) { // json.questions.length
+                    setIsQuizCompleted(true);
+                } else {
+                    setCurrentQuestionIndex(savedIndex); // Resume from saved index
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                if (error instanceof Error) {
+                    console.error('Error details:', error.message);
+                }
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        fetchStudent();
-        return () => abortController.abort();
-    }, []);
+        fetchStudentAndProgress();
+    }, [user?._id, navigate]);
+
+    const handleAnswer = async (isCorrect: boolean) => {
+        if (isCorrect) {
+            setScore(score + 1);
+        }
+        
+        const nextIndex = currentQuestionIndex + 1;
+        
+        try {
+            await fetch(`http://localhost:8504/quiz-progress/${user?._id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    currentIndex: nextIndex,
+                })
+            });
+
+            if (nextIndex < questions.length) {
+                setCurrentQuestionIndex(nextIndex);
+            } else {
+                setIsQuizCompleted(true);
+            }
+        } catch (error) {
+            console.error('Error saving progress:', error);
+        }
+    };
 
     const currentQuestion = questions[currentQuestionIndex];
 
@@ -116,24 +139,6 @@ const QuizPage: React.FC = () => {
             questionRef.current.scrollTop = questionRef.current.scrollHeight;
         }
     }, [question]);
-
-    /**
-     * If the answer is correct, increment the score
-     * Move to the next question (currentQuestionIndex + 1)
-     * If all questions are answered, mark the quiz as completed (isQuizCompleted)
-     */
-
-    const handleAnswer = async (isCorrect: boolean) => {
-        if (isCorrect) {
-            setScore(score + 1);
-        }
-        const nextIndex = currentQuestionIndex + 1;
-        if (nextIndex < questions.length) {
-            setCurrentQuestionIndex(nextIndex);
-        } else {
-            setIsQuizCompleted(true);
-        }
-    };
 
     /**
      * Displays a completion message
@@ -162,7 +167,7 @@ const QuizPage: React.FC = () => {
                     />
                 </div>
 
-                {/* GIF Animation */}
+                {/* GIF Animation
                 <div style={{ marginBottom: '20px' }}>
                     <img
                         src={travelimg}
@@ -174,7 +179,7 @@ const QuizPage: React.FC = () => {
                     />
                 </div>
 
-                {/* Start Your Journey Text */}
+                {/* Start Your Journey Text *
                 <Typography
                     variant="h4"
                     sx={{
@@ -184,9 +189,15 @@ const QuizPage: React.FC = () => {
                     }}
                 >
                     We are good to go!
-                </Typography>
+                </Typography> */}
 
-                {/* Start Button */}
+                {/* Avatar Selection */}
+                <Box sx={{ width: '100%', maxWidth: 600, mb: 4 }}>
+                    <AvatarChoice onComplete={() => setHasSelectedAvatar(true)} />
+                </Box>
+
+                {/* Start Button - Only show when avatar is selected */}
+                {hasSelectedAvatar && (
                 <Button
                     variant="contained"
                     color="primary"
@@ -194,19 +205,20 @@ const QuizPage: React.FC = () => {
                     to="/main/lib"
                     size="large"
                     sx={{
-                        background: '#ffffff',
-                        color: '#3b82f6',
-                        fontWeight: 'bold',
-                        textTransform: 'none',
-                        fontFamily: '"Roboto", sans-serif',
-                        padding: '10px 20px',
-                        '&:hover': {
-                            backgroundColor: '#f0f7ff',
-                        },
+                    background: '#ffffff',
+                    color: '#3b82f6',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    fontFamily: '"Roboto", sans-serif',
+                    padding: '10px 20px',
+                    '&:hover': {
+                        backgroundColor: '#f0f7ff',
+                    },
                     }}
                 >
                     Start your journey
                 </Button>
+                )}
             </Container>
         );
 
@@ -253,28 +265,15 @@ const QuizPage: React.FC = () => {
         }
     };
 
-    if (questions.length === 0) {
+    if (questions.length == 0) {
         return (
             <Container>
-                {/* Top-left Logo */}
                 <div style={{ position: 'absolute', top: 16, left: 16 }}>
-                    <img
-                        src={logoimg}
-                        alt="logo of WebGenie"
-                        style={{ width: '200px', height: 'auto', flexGrow: 2 }}
-                    />
+                    <img src={logoimg} alt="logo of WebGenie" style={{ width: '200px', height: 'auto' }} />
                 </div>
-                {/* Start Your Journey Text */}
-                <Typography
-                    variant="h4"
-                    sx={{
-                        fontWeight: 'bold',
-                        marginBottom: '20px',
-                        color: '#3b82f6',
-                    }}
-                >
-                    Loading questions...</Typography>
-
+                <Typography variant="h4" sx={{ fontWeight: 'bold', marginBottom: '20px', color: '#3b82f6' }}>
+                    No questions available. Quiz may be completed or not yet initialized.{currentQuestionIndex}
+                </Typography>
             </Container>
         );
     }
@@ -423,16 +422,13 @@ const QuizPage: React.FC = () => {
                             </Button>
                         </>
 
-                    ) : currentQuestion.type === 'AvatarChoice' ? (
-                        <>
-                            <AvatarChoice />
-                        </> 
-                        ) : null}
+                    ) : null}
                 </div>
             </div>
         </Container>
 
     );
 };
+
 
 export default QuizPage;

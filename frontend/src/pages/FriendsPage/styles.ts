@@ -34,8 +34,8 @@ export const friendsPageStyles: FriendsPageStyles = {
       height: '100%',
       transition: 'transform 0.2s',
       '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: 3,
+        transform: 'translateY(-1px)',
+        boxShadow: 2,
       },
       
     },
