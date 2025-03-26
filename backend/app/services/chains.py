@@ -221,42 +221,49 @@ def configure_qa_rag_chain(llm, url, username, password, embeddings):
     return generate_llm_output
 
 def configure_grader_chain(llm, url, username, password, embeddings):
-    # RAG response
-    general_system_template = """You are a grader assessing the attributes of a generated question. \n 
-    Evaluate the question based on the following criteria: difficulty, completeness, and experience points (XP)."""
+    general_system_template = """Extract the score of a generated question. You must use the GradeDocuments tools \n """
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        general_system_template, template_format="jinja2"
+    )
+    chat_prompt = ChatPromptTemplate.from_messages(
+        [
+            system_prompt,
+            HumanMessagePromptTemplate.from_template("{question}"),
+        ]
+    )
+    class GradeDocuments(BaseModel):
+        """Evaluation scores for the generated question."""
 
-    messages = [
-        SystemMessagePromptTemplate.from_template(general_system_template),
-        HumanMessagePromptTemplate.from_template("Generated question: \n\n {context} \n\n Evaluate the question."),
-    ]
-    qa_prompt = ChatPromptTemplate.from_messages(messages)
+        difficulty: float = Field(
+            description="Difficulty score between 0 and 100"
+        )
+        completeness: float = Field(
+            description="Completeness score between 0 and 100"
+        )
+        xp: float = Field(
+            description="Experience points (XP) score between 0 and 100"
+        )
+    tool_chain = (
+        {"question": RunnablePassthrough()}
+        | chat_prompt
+        | llm.bind_tools([GradeDocuments])
+        | StrOutputParser()
+    )
 
     def generate_llm_output(
-        sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
+        sid: str, question: str, callbacks: List[Any]
     ) -> str:
+        answer = tool_chain.invoke(question)
+        print(f"Grader chain response: {answer}")
         
-        class GradeDocuments(BaseModel):
-            """Evaluation scores for the generated question."""
-
-            difficulty: float = Field(
-                description="Difficulty score between 0 and 100"
-            )
-            completeness: float = Field(
-                description="Completeness score between 0 and 100"
-            )
-            xp: float = Field(
-                description="Experience points (XP) score between 0 and 100"
-            )
-        rag_chain = llm.bind_tools([GradeDocuments]) | StrOutputParser()
-        
-        logging.info(f"Invoking grader chain with question: {question}")
-        answer = rag_chain.invoke(question)
-        logging.info(f"Grader chain response: {answer}")
+        # Remove Markdown code block if present
+        if answer.startswith("```json") and answer.endswith("```"):
+            answer = answer[7:-3].strip()
         
         try:
             answer_dict = json.loads(answer)
-            logging.info(f"Parsed grader response: {answer_dict}")
-            return {"answer": answer_dict, "question_level": answer_dict["parameters"]}
+            print(f"Parsed grader response: {answer_dict}")
+            return {"answer": answer_dict, "question_level": answer_dict}
         except json.JSONDecodeError as e:
             logging.error(f"Error decoding grader response: {e}")
             return {"answer": "", "question_level": {"difficulty": 0, "completeness": 0, "xp": 0}}
@@ -287,6 +294,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
         ### **Requirements:**  
         - The question should be tailored to the student's preference:  
         {preferences}  
+        - The question should be related to the topics the student is learning
         - The generated code must be **syntactically incorrect or functionally flawed**.  
         - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).  
         - Do **not** include explanations or hints in your response.  
@@ -346,11 +354,12 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
     # Extract difficulty, completeness, and XP from the response
     response_parts = llm_response["answer"]
     question_id = str(uuid.uuid4())
+    question_to_grade = "Grade the following question: " + response_parts
 
     # Use the grader_chain to evaluate the generated question
     grader_response = grader_chain(
         sid=session.get("session_id"),
-        question=response_parts,
+        question=question_to_grade,
         callbacks=callbacks,
     )
 
