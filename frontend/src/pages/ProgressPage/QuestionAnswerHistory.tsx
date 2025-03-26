@@ -3,6 +3,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 import { useAuth } from '../../authentication/AuthContext';
 
 const CHAT_HISTORIES_API_ENDPOINT = 'http://localhost:8504/chat_histories/user';
@@ -60,7 +61,8 @@ const QuestionAnswerHistory = () => {
                                         <strong>Type:</strong> {item.type}
                                     </Typography>
                                     <Typography variant="body2">
-                                        <strong>Content:</strong> {item.data.content}
+                                        <strong>Content:</strong>
+                                        <MarkdownRenderer content={item.data.content} />
                                     </Typography>
                                     <Divider sx={{ margin: '10px 0' }} />
                                 </div>
