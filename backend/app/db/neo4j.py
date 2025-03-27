@@ -301,6 +301,7 @@ class Neo4jDatabase:
         with self.driver.session() as session:
             query = """
             MATCH (u:User {id: $user_id})-[:HAS_SESSION]->(s:Session)-[:LAST_MESSAGE]->(last_message)
+            
             WITH s, last_message
             MATCH p=(last_message)<-[:NEXT*0..]-(previous_messages)
             WITH s, p, length(p) AS path_length
