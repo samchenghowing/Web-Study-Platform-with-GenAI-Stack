@@ -119,6 +119,7 @@ export const editorPageStyles = {
     flexDirection: 'column',
     height: '100%', // Changed from 100vh
     // overflow: 'hidden',
+    flexGrow: 1,
   },
   editorContainer: {
     display: 'flex',
@@ -126,6 +127,7 @@ export const editorPageStyles = {
     flexGrow: 1,
     height: '100%',
     overflow: 'hidden',
+    position: 'relative',
   },
   questionCard: {
     display: 'flex',
@@ -150,7 +152,8 @@ export const editorPageStyles = {
       maxHeight: '100%',
     },
     '& .cm-scroller': {
-      overflow: 'auto'
+      overflow: 'auto',
+      maxHeight: '100%' // Ensure scroller doesn't exceed container
     },
     '& .cm-content': {
       fontFamily: 'monospace',
