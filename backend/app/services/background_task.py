@@ -90,21 +90,12 @@ def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict], user_id
                 embedding=embeddings,
                 index_name="pdf_bot",
                 node_label="PdfBotChunk",
-                pre_delete_collection=True  # Delete existing PDF data
+                pre_delete_collection=True,  # Delete existing PDF data
+                metadatas=[
+                    {"user_id": user_id, "filename": filename}
+                    for _ in range(len(chunks))
+                ],
             )
-
-            # If metadata is required, consider storing it separately in Neo4j
-            for chunk in chunks:
-                neo4j_graph.query(
-                    """
-                    CREATE (chunk:PdfBotChunk {content: $content, user_id: $user_id, filename: $filename})
-                    """,
-                    {
-                        "content": chunk,
-                        "user_id": user_id,
-                        "filename": filename
-                    }
-                )
             
         except Exception as error:
             jobs[task_id].status = f"Importing {filename} fails with error: {error}"
