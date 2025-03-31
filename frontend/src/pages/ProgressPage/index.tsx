@@ -18,24 +18,8 @@ export default function MainPage() {
 
             <Grid container spacing={3}>
                 {/* Encouragement/Achievement System Card */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                     <EncouragementAchievementSystem />
-                </Grid>
-
-                {/* Score / Correct Rate / Level Card */}
-                <Grid item xs={12} md={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                My Score / Correct Rate / Level
-                            </Typography>
-                            <Typography>
-                                Current Score: 85<br />
-                                Correct Rate: 90%<br />
-                                Level: Expert
-                            </Typography>
-                        </CardContent>
-                    </Card>
                 </Grid>
 
                 {/* Question and Answer History Card */}

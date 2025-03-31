@@ -97,9 +97,9 @@ export default function FileUploadAndDisplay() {
         formData.append("task_type", taskType);
         if (!user?._id) {
             console.log('No user ID available, using sample ID');
-            formData.append("user_id", "sample_user_id"); // Replace with actual user_id logic
+            formData.append("user_id", "sample_user_id");
         }
-        else formData.append("user_id", user._id); // Replace with actual user_id logic
+        else formData.append("user_id", user._id);
 
         try {
             const response = await fetch(`${FILEUPLOAD_API_ENDPOINT}/pdf`, {
