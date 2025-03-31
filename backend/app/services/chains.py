@@ -193,13 +193,13 @@ def get_user_preferences(neo4j_graph, user_id):
         return user_properties
     return None
 
-def get_user_references(neo4j_graph, user_id, embeddings):
+def get_user_references(neo4j_graph, user_id, currentTopics, embeddings):
     query = "MATCH (u:User {id: $user_id}) RETURN u"
     params = {'user_id': user_id}
     result = neo4j_graph.query(query, params)
 
     if result:
-        user_properties = retrieve_pdf_chunks_by_similarity(result[0]['u']['question'], embeddings, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, top_k=5)
+        user_properties = retrieve_pdf_chunks_by_similarity(currentTopics, embeddings, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, top_k=5)
         return user_properties
     return None
 
@@ -222,7 +222,9 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
     if not preferences:
         return "User preferences not found."
 
-    references = get_user_references(neo4j_graph, user_id, embeddings)
+    currentTopics = "I want to know more about these topics" + json.dumps(session.get("topics"))
+
+    references = get_user_references(neo4j_graph, user_id, currentTopics, embeddings)
     if not references:
         return "No references found."
 
@@ -280,8 +282,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
-
-    currentTopics = "I want to know more about these topics" , session.get("topics")
 
     llm_response = llm_chain(
         sid=session.get("session_id"),
