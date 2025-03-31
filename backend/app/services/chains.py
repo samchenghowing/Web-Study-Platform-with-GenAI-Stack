@@ -133,94 +133,7 @@ def configure_llm_history_chain(llm, url, username, password):
 
     return generate_llm_output
 
-def configure_qa_rag_chain(llm, url, username, password, embeddings):
-    # RAG response
-    general_system_template = """ 
-    Use the following pieces of context to answer the question at the end.
-    The context contains question-answer pairs and their links from Stackoverflow.
-    You should prefer information from accepted or more upvoted answers.
-    Make sure to rely on information from the answers and not on questions to provide accurate responses.
-    When you find particular answer in the context useful, make sure to cite it in the answer using the link.
-    If you don't know the answer, just say that you don't know, don't try to make up an answer.
-    ----
-    {summaries}
-    ----
-    Each answer you generate should contain a section at the end of links to 
-    Stackoverflow questions and answers you found useful, which are described under Source value.
-    You can only use links to StackOverflow questions that are present in the context and always
-    add links to the end of the answer in the style of citations.
-    Generate concise answers with references sources section of links to 
-    relevant StackOverflow questions only at the end of the answer.
-    """
-    general_user_template = "Question:```{question}```"
-    messages = [
-        SystemMessagePromptTemplate.from_template(general_system_template),
-        MessagesPlaceholder(variable_name="chat_history"),
-        HumanMessagePromptTemplate.from_template(general_user_template),
-    ]
-    qa_prompt = ChatPromptTemplate.from_messages(messages)
-
-    def generate_llm_output(
-        sid: str, question: str, callbacks: List[Any], prompt=qa_prompt
-    ) -> str:
-
-        qa_chain = create_stuff_documents_chain(llm, prompt)
-
-        neo4j_history = Neo4jChatMessageHistory(
-            session_id=sid,
-            url=url,
-            username=username,
-            password=password,
-        ),
-        conversational_memory = ConversationBufferMemory(
-            chat_memory=neo4j_history,
-            memory_key="chat_history",
-            return_messages=True,
-            output_key="answer"
-        )
-
-        # Vector + Knowledge Graph response
-        kg = Neo4jVector.from_existing_index(
-            embedding=embeddings,
-            url=url,
-            username=username,
-            password=password,
-            database="neo4j",  # neo4j by default
-            index_name="stackoverflow",  # vector by default
-            text_node_property="body",  # text by default
-            retrieval_query="""
-        WITH node AS question, score AS similarity
-        CALL  { with question
-            MATCH (question)<-[:ANSWERS]-(answer)
-            WITH answer
-            ORDER BY answer.is_accepted DESC, answer.score DESC
-            WITH collect(answer)[..2] as answers
-            RETURN reduce(str='', answer IN answers | str + 
-                    '\n### Answer (Accepted: '+ answer.is_accepted +
-                    ' Score: ' + answer.score+ '): '+  answer.body + '\n') as answerTexts
-        } 
-        RETURN '##Question: ' + question.title + '\n' + question.body + '\n' 
-            + answerTexts AS text, similarity as score, {source: question.link} AS metadata
-        ORDER BY similarity ASC // so that best answers are the last
-        """,
-        )
-
-        kg_qa = RetrievalQAWithSourcesChain(
-            combine_documents_chain=qa_chain,
-            memory=conversational_memory,
-            retriever=kg.as_retriever(search_kwargs={"k": 2}),
-            reduce_k_below_max_tokens=False,
-            max_tokens_limit=3375,
-        )
-        answer = kg_qa.invoke(
-            {"question": question}, 
-            config={"callbacks": callbacks, "configurable": {"session_id": sid}}
-        )
-        return {"answer": answer}
-
-    return generate_llm_output
-
-def configure_grader_chain(llm, url, username, password, embeddings):
+def configure_grader_chain(llm):
     general_system_template = """Extract the score of a generated question. You must use the GradeDocuments tools \n """
     system_prompt = SystemMessagePromptTemplate.from_template(
         general_system_template, template_format="jinja2"
@@ -280,20 +193,48 @@ def get_user_preferences(neo4j_graph, user_id):
         return user_properties
     return None
 
-#
+def get_user_references(neo4j_graph, user_id, embeddings):
+    query = "MATCH (u:User {id: $user_id}) RETURN u"
+    params = {'user_id': user_id}
+    result = neo4j_graph.query(query, params)
 
-def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callbacks=[]):
+    if result:
+        user_properties = retrieve_pdf_chunks_by_similarity(result[0]['u']['question'], embeddings, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, top_k=5)
+        return user_properties
+    return None
+
+def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username: str, password: str, top_k: int = 5):
+    vector_store = Neo4jVector(
+        embedding=embeddings,
+        url=url,
+        username=username,
+        password=password,
+        index_name="pdf_bot",
+        node_label="PdfBotChunk"
+    )
+    retriever = vector_store.as_retriever(search_kwargs={"k": top_k})
+    results = retriever.get_relevant_documents(query)
+    return results
+
+
+def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embeddings, callbacks=[]):
     preferences = get_user_preferences(neo4j_graph, user_id)
     if not preferences:
         return "User preferences not found."
+
+    references = get_user_references(neo4j_graph, user_id, embeddings)
+    if not references:
+        return "No references found."
 
     gen_system_template = f"""
         You are a programming teacher designing coding tasks for students.  
         Your task is to generate an HTML, CSS, or JavaScript code snippet **containing intentional errors** for students to fix.  
 
         ### **Requirements:**  
-        - The question should be tailored to the student's preference:  
+        - The question should be tailored to the student's preference (if available):  
         {preferences}  
+        - The question should be related to the reference provided by the student (if available):  
+        {references}  
         - The question should be related to the topics the student is learning
         - The generated code must be **syntactically incorrect or functionally flawed**.  
         - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).  
@@ -326,8 +267,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, callba
         
         console.log(add(3, 5);
         ```
-        
-
     """
     
     # we need jinja2 since the questions themselves contain curly braces
@@ -406,8 +345,6 @@ def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, call
         callbacks=callbacks,
         prompt=chat_prompt,
     )
-    # retrieve_pdf_chunks_by_similarity(answer, embeddings, url, username, password, top_k=5)
-
     return llm_response
 
 def convert_question_to_attribute(question, llm):
@@ -483,16 +420,3 @@ def generate_lp(user_id, neo4j_graph, llm_chain, session, callbacks=[]):
         prompt=chat_prompt,
     )
     return llm_response
-
-def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username: str, password: str, top_k: int = 5):
-    vector_store = Neo4jVector(
-        embedding=embeddings,
-        url=url,
-        username=username,
-        password=password,
-        index_name="pdf_bot",
-        node_label="PdfBotChunk"
-    )
-    retriever = vector_store.as_retriever(search_kwargs={"k": top_k})
-    results = retriever.get_relevant_documents(query)
-    return results

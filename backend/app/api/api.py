@@ -136,8 +136,7 @@ create_vector_index(neo4j_graph)
 llm = load_llm(settings.llm, logger=BaseLogger(), config={"ollama_base_url": settings.ollama_base_url})
 llm_chain = configure_llm_only_chain(llm)
 llm_history_chain = configure_llm_history_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password)
-rag_chain = configure_qa_rag_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
-grader_chain = configure_grader_chain(llm, url=settings.neo4j_uri, username=settings.neo4j_username, password=settings.neo4j_password, embeddings=embeddings)
+grader_chain = configure_grader_chain(llm)
 
 
 app = FastAPI()
@@ -226,6 +225,7 @@ async def generate_task_api(task: GenerateTask):
             neo4j_graph=neo4j_graph,
             llm_chain=llm_history_chain,
             grader_chain=grader_chain,
+            embeddings=embeddings,
             session=task.session,
             callbacks=[QueueCallback(q)],
         )
@@ -613,7 +613,6 @@ async def create_relationship(relationship: dict = Body(...)):
 
 @app.get("/users/{user_id}/relationships")
 async def get_user_relationships(user_id: str):
-    """获取用户的所有关系"""
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
     relationships = neo4j_db.get_user_relationships(user_id)
     neo4j_db.close()
@@ -622,7 +621,6 @@ async def get_user_relationships(user_id: str):
 
 @app.post("/users/relationship/delete")
 async def delete_relationship(relationship: dict = Body(...)):
-    """删除用户关系"""
     # Validate input
     required_fields = ["from_user_id", "to_user_id", "type"]
     for field in required_fields:
@@ -802,8 +800,8 @@ async def check_new_student(user_id: str):
 
 ####################
 
-@app.post( "/upload/pdf", status_code=HTTPStatus.ACCEPTED)
-async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
+@app.post("/upload/pdf", status_code=HTTPStatus.ACCEPTED)
+async def upload_pdf(background_tasks: BackgroundTasks, user_id: str = Body(...), files: List[UploadFile] = File(...)):
     new_task = Job()
     jobs[new_task.uid] = new_task
     byte_files = await get_file_content(files)
@@ -841,7 +839,7 @@ async def upload_pdf(background_tasks: BackgroundTasks, files: List[UploadFile] 
                 "thumbnail": f"data:image/png;base64,{img_base64}"
             })
 
-        background_tasks.add_task(save_pdf_to_neo4j, jobs, new_task.uid, byte_files)
+        background_tasks.add_task(save_pdf_to_neo4j, jobs, new_task.uid, byte_files, user_id)
         return {"task_id": new_task.uid, "files": response_data}
     except Exception as error:
         return f"Saving pdf fails with error: {error}"

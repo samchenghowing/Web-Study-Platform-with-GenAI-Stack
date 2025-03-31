@@ -9,6 +9,9 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
+import MenuItem from '@mui/material/MenuItem';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { useAuth } from '../../authentication/AuthContext';
 
 const FILEUPLOAD_API_ENDPOINT = "http://localhost:8504/upload";
 const BACKGROUND_TASK_STATUS_ENDPOINT = "http://localhost:8504/bgtask";
@@ -39,6 +42,8 @@ export default function FileUploadAndDisplay() {
     const [uploading, setUploading] = React.useState(false);
     const [checkingProgress, setCheckingProgress] = React.useState(false);
     const [cardContent, setCardContent] = React.useState<PDFData[]>([]); // Initialize as an array
+    const [taskType, setTaskType] = React.useState<string>("save");
+    const { user } = useAuth();
 
     const fetchPDFs = async () => {
         const abortController = new AbortController();
@@ -81,10 +86,20 @@ export default function FileUploadAndDisplay() {
         }
     };
 
+    const handleTaskTypeChange = (event: SelectChangeEvent) => {
+        setTaskType(event.target.value);
+    };
+
     const uploadFile = async (file: File) => {
         setUploading(true);
         const formData = new FormData();
         formData.append("files", file, file.name);
+        formData.append("task_type", taskType);
+        if (!user?._id) {
+            console.log('No user ID available, using sample ID');
+            formData.append("user_id", "sample_user_id"); // Replace with actual user_id logic
+        }
+        else formData.append("user_id", user._id); // Replace with actual user_id logic
 
         try {
             const response = await fetch(`${FILEUPLOAD_API_ENDPOINT}/pdf`, {
@@ -138,6 +153,15 @@ export default function FileUploadAndDisplay() {
 
     return (
         <>
+            <Select
+                value={taskType}
+                onChange={handleTaskTypeChange}
+                displayEmpty
+                inputProps={{ 'aria-label': 'Select task type' }}
+            >
+                <MenuItem value="save">Cosine similarity only</MenuItem>
+                <MenuItem value="graph">Graph RAG</MenuItem>
+            </Select>
             <Button
                 component="label"
                 variant="contained"

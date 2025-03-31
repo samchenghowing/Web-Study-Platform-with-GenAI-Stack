@@ -64,7 +64,7 @@ class Submission(BaseModel):
 
 
 # Background task for PDF processing
-def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict]):
+def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict], user_id: str):
     for filename, content in byte_files.items():
         try:
             # Create a file-like object from the content
@@ -90,8 +90,21 @@ def save_pdf_to_neo4j(jobs: dict, task_id: UUID, byte_files: List[dict]):
                 embedding=embeddings,
                 index_name="pdf_bot",
                 node_label="PdfBotChunk",
-                pre_delete_collection=True,  # Delete existing PDF data
+                pre_delete_collection=True  # Delete existing PDF data
             )
+
+            # If metadata is required, consider storing it separately in Neo4j
+            for chunk in chunks:
+                neo4j_graph.query(
+                    """
+                    CREATE (chunk:PdfBotChunk {content: $content, user_id: $user_id, filename: $filename})
+                    """,
+                    {
+                        "content": chunk,
+                        "user_id": user_id,
+                        "filename": filename
+                    }
+                )
             
         except Exception as error:
             jobs[task_id].status = f"Importing {filename} fails with error: {error}"
