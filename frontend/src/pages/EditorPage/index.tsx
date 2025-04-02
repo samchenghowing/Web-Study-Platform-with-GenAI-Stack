@@ -47,12 +47,14 @@ export default function MainComponent() {
         jsDoc: 'Goodbye world',
         htmlDoc: 'Hello world',
         cssDoc: '',
+        combinedDoc: 'Hello world\n<style>\n\n</style>\n<script>\nGoodbye world\n</script>',
     });
     const [question, setQuestion] = React.useState('Generating question...');
     const [task, setTask] = React.useState<EditorDocType>({
         jsDoc: 'console.log(\'You can learn anything\');',
         htmlDoc: 'Hello world',
         cssDoc: 'h1 {color: black;text-align: center;}',
+        combinedDoc: 'Hello world\n<style>\n\n</style>\n<script>\console.log(\'You can learn anything\')\n</script>',
     });
     const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
@@ -114,7 +116,7 @@ export default function MainComponent() {
                 console.error('Error fetching sessions:', error);
             }
         };
-        fetchSessions(); 
+        fetchSessions();
 
         // Listen for the custom event
         const handleCustomEvent = () => {
@@ -286,7 +288,7 @@ export default function MainComponent() {
 
     const handleNextQuestion = async () => {
         setDialogOpen(false);
-        if (currentQuestionNumber <= quiz?.question_count -1 ) {
+        if (currentQuestionNumber <= quiz?.question_count - 1) {
             const newQuestionNumber = currentQuestionNumber + 1;
             setCurrentQuestionNumber(newQuestionNumber);
             try {
@@ -297,8 +299,8 @@ export default function MainComponent() {
                 setCurrentQuestionNumber(currentQuestionNumber);
             }
         } else {
-            await updateQuestionCount(quiz?.question_count+1);
-            navigate('/main'); 
+            await updateQuestionCount(quiz?.question_count + 1);
+            navigate('/main');
         }
     };
 
@@ -310,7 +312,7 @@ export default function MainComponent() {
             console.log('Sending update:', { session_id: quiz.session_id, current_question_count: newQuestionNumber });
             const response = await fetch(UPDATE_QUESTION_COUNT_ENDPOINT, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     session_id: quiz.session_id,
                     current_question_count: newQuestionNumber,
@@ -348,7 +350,7 @@ export default function MainComponent() {
                         maxWidth={1000}
                     >
                         <Box sx={editorPageStyles.leftPanel}>
-                            <Alert  severity="info">
+                            <Alert severity="info">
                                 <AlertTitle><strong>Quiz: {quiz?.name}</strong></AlertTitle>
                                 <Typography variant="body1">
                                     Question Count: {currentQuestionNumber} of {quiz?.question_count}
@@ -362,13 +364,18 @@ export default function MainComponent() {
 
                             {tabIndex === 0 && (
                                 <Card variant="outlined" sx={editorPageStyles.questionCard}>
-                                    <Button 
-                                        size="small" 
+                                    <Button
+                                        size="small"
                                         variant="contained"
                                         sx={editorPageStyles.startButton}
                                         onClick={() => {
                                             const [jsCode, htmlCode, cssCode] = extract_task(question);
-                                            setTask({ jsDoc: jsCode, htmlDoc: htmlCode, cssDoc: cssCode });
+                                            setTask({
+                                                jsDoc: jsCode,
+                                                htmlDoc: htmlCode,
+                                                cssDoc: cssCode,
+                                                combinedDoc: `${htmlCode}\n<style>\n${cssCode}\n</style>\n<script>\n${jsCode}\n</script>`
+                                            });
                                         }}
                                     >
                                         Start Coding
@@ -377,14 +384,14 @@ export default function MainComponent() {
                                         <Typography gutterBottom sx={{ color: 'text.secondary', fontSize: 14 }}>
                                             Question number {currentQuestionNumber}
                                         </Typography>
-                                        <Typography sx={{ color: 'text.secondary', mb: 1.5, margin:'0px' }}>
+                                        <Typography sx={{ color: 'text.secondary', mb: 1.5, margin: '0px' }}>
                                             Topics:
                                             {quiz?.topics.map((topic: string, index: number) => (
-                                                <Chip 
-                                                    key={index} 
-                                                    label={topic} 
-                                                    size="small" 
-                                                    sx={{ mr: 0.5, mb: 0.5 }} 
+                                                <Chip
+                                                    key={index}
+                                                    label={topic}
+                                                    size="small"
+                                                    sx={{ mr: 0.5, mb: 0.5 }}
                                                 />
                                             ))}
                                         </Typography>
@@ -409,8 +416,8 @@ export default function MainComponent() {
                 </Grid>
 
                 {/* Right Panel */}
-                <Grid 
-                    item 
+                <Grid
+                    item
                     xs={true}
                     sx={editorPageStyles.rightPanel}
                 >
@@ -434,7 +441,7 @@ export default function MainComponent() {
             </Grid>
 
             {/* Keep your existing Snackbar and Dialog components */}
-            <Snackbar open={snackbarOpen} sx={{ left: '100px !important' }}  autoHideDuration={6000} onClose={handleClose}>
+            <Snackbar open={snackbarOpen} sx={{ left: '100px !important' }} autoHideDuration={6000} onClose={handleClose}>
                 <Alert
                     onClose={handleClose}
                     severity="warning"
@@ -445,13 +452,13 @@ export default function MainComponent() {
                 </Alert>
             </Snackbar>
 
-            <Dialog 
-                open={dialogOpen} 
-                onClose={() => { }} 
+            <Dialog
+                open={dialogOpen}
+                onClose={() => { }}
                 disableEscapeKeyDown
                 maxWidth={false}
                 PaperProps={{ sx: dialogStyles.paper }}
-                >
+            >
                 <DialogTitle>Submission Result</DialogTitle>
                 <DialogContent>
                     {isLoading ? (

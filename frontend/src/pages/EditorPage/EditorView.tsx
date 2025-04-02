@@ -7,8 +7,7 @@ import { css } from '@codemirror/lang-css';
 import { useTheme } from '@mui/material/styles';
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github';
 import { EditorConfigType, EditorDocType } from './utils';
-import { codeMirrorHeight } from './styles';
-import {  Box } from '@mui/material';
+import { Box } from '@mui/material';
 
 interface EditorViewProps {
     editorDoc: EditorDocType;
@@ -36,35 +35,24 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
     }, [editorConfig.language, editorDoc]);
 
     const handleChange = (value: string) => {
-        if (editorConfig.language === 'combined') {
-            const htmlMatch = value.match(/<body>([\s\S]*?)<\/body>/);
-            const cssMatch = value.match(/<style>([\s\S]*?)<\/style>/);
-            const jsMatch = value.match(/<script>([\s\S]*?)<\/script>/);
+        const updatedDoc = { ...editorDoc };
 
-            setEditorDoc({
-                htmlDoc: htmlMatch ? htmlMatch[1] : editorDoc.htmlDoc,
-                cssDoc: cssMatch ? cssMatch[1] : editorDoc.cssDoc,
-                jsDoc: jsMatch ? jsMatch[1] : editorDoc.jsDoc,
-            });
-        } else {
-            const updatedDoc = { ...editorDoc };
-
-            switch (editorConfig.language) {
-                case 'js':
-                    updatedDoc.jsDoc = value;
-                    break;
-                case 'html':
-                    updatedDoc.htmlDoc = value;
-                    break;
-                case 'css':
-                    updatedDoc.cssDoc = value;
-                    break;
-                default:
-                    break;
-            }
-
-            setEditorDoc(updatedDoc);
+        switch (editorConfig.language) {
+            case 'js':
+                updatedDoc.jsDoc = value;
+                break;
+            case 'html':
+                updatedDoc.htmlDoc = value;
+                break;
+            case 'css':
+                updatedDoc.cssDoc = value;
+                break;
+            default:
+                updatedDoc.combinedDoc = value;
+                break;
         }
+
+        setEditorDoc(updatedDoc);
     };
 
     return (
@@ -74,7 +62,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
                 value={getValue}
                 extensions={[javascript({ jsx: true }), html(), css()]}
                 onChange={handleChange}
-                style={{ height: '75vw', width: 'auto' , overflow: 'auto' }}
+                style={{ height: '75vw', width: 'auto', overflow: 'auto' }}
                 theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
             />
         </Box>

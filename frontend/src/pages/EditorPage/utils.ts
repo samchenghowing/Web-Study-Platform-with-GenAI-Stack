@@ -7,6 +7,7 @@ export type EditorDocType = {
     jsDoc: string;
     htmlDoc: string;
     cssDoc: string;
+    combinedDoc: string;
 };
 
 /**
