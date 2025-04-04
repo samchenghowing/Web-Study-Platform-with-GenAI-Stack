@@ -1,7 +1,6 @@
 // QuizPage.tsx
 import * as React from 'react';
 import { useState } from 'react';
-import TrueFalseQuestion from './TrueFalseQuestion';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
 import ShortAnswerQuestion from './ShortAnswerQuestion';
 import CodingQuestion from './CodingQuestion';
@@ -364,13 +363,7 @@ const QuizPage: React.FC = () => {
 
                 {/* Question Rendering */}
                 <div style={{ textAlign: 'left', width: '80%' }}> {/* Change text alignment */}
-                    {currentQuestion.type === 'true-false' ? (
-                        <TrueFalseQuestion
-                            question={currentQuestion.question}
-                            correctAnswer={currentQuestion.correctAnswer}
-                            onAnswer={handleAnswer}
-                        />
-                    ) : currentQuestion.type === 'multiple-choice' ? (
+                    {currentQuestion.type === 'multiple-choice' ? (
                         <MultipleChoiceQuestion
                             question={currentQuestion.question}
                             choices={currentQuestion.choices || []}
