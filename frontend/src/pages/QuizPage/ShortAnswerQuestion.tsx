@@ -61,17 +61,7 @@ const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({ question, cor
                     }
 
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    jsonStrings.forEach((jsonString) => {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            // Handle the jsonChunk as needed
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
-                        }
-                    });
-
+                    // Handle the jsonChunk as needed
                     await readStream();
                 };
 

@@ -159,7 +159,7 @@ export default function AIChat(props: AIChatProps) {
     const deleteChatHistory = async () => {
         try {
             try {
-                const response = await fetch(`${QUESTION_SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET'  });
+                const response = await fetch(`${QUESTION_SESSION_API_ENDPOINT}/${user?._id}`, { method: 'GET' });
                 const json = await response.json();
 
                 await fetch(`${CHAT_HISTORIES_API_ENDPOINT}/${json.session_id}`, { method: 'DELETE' });
@@ -212,24 +212,15 @@ export default function AIChat(props: AIChatProps) {
                     if (done) return;
 
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    jsonStrings.forEach(jsonString => {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            setCardContent(prev => prev.map(card => {
-                                if (card.id === newCardId + 1) {
-                                    return {
-                                        ...card,
-                                        question: card.question + jsonChunk.token,
-                                    };
-                                }
-                                return card;
-                            }));
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
+                    setCardContent(prev => prev.map(card => {
+                        if (card.id === newCardId + 1) {
+                            return {
+                                ...card,
+                                question: card.question + chunk,
+                            };
                         }
-                    });
+                        return card;
+                    }));
                     await readStream();
                 };
 

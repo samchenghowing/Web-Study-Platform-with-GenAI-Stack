@@ -162,17 +162,7 @@ export default function MainComponent() {
                 }
 
                 const chunk = new TextDecoder('utf-8').decode(value);
-                const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                jsonStrings.forEach(jsonString => {
-                    try {
-                        const jsonChunk = JSON.parse(jsonString);
-                        setQuestion(prev => prev + jsonChunk.token);
-
-                    } catch (error) {
-                        console.error('Error parsing JSON chunk', error);
-                    }
-                });
+                setQuestion(prev => prev + chunk);
                 await readStream();
             };
 
@@ -245,16 +235,7 @@ export default function MainComponent() {
                     }
 
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    for (const jsonString of jsonStrings) {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            fullMessage += jsonChunk.token; // Accumulate tokens
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
-                        }
-                    }
+                    fullMessage += chunk;
                 }
             };
 
@@ -369,12 +350,13 @@ export default function MainComponent() {
                                         variant="contained"
                                         sx={editorPageStyles.startButton}
                                         onClick={() => {
+                                            console.log('Start Coding button clicked' + question);
                                             const [jsCode, htmlCode, cssCode] = extract_task(question);
                                             setTask({
                                                 jsDoc: jsCode,
                                                 htmlDoc: htmlCode,
                                                 cssDoc: cssCode,
-                                                combinedDoc: `${htmlCode}\n<style>\n${cssCode}\n</style>\n<script>\n${jsCode}\n</script>`
+                                                combinedDoc: question
                                             });
                                         }}
                                     >

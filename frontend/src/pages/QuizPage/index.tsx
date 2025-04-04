@@ -244,16 +244,7 @@ const QuizPage: React.FC = () => {
                     if (done) return;
 
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    jsonStrings.forEach(jsonString => {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            setQuestion(prev => prev + jsonChunk.token);
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
-                        }
-                    });
+                    setQuestion(prev => prev + chunk);
                     await readStream();
                 };
 

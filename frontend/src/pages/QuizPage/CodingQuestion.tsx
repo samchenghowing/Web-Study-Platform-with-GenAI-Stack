@@ -34,14 +34,14 @@ interface CardContentType {
 export function InfoCard({ data, value, InfoCardProps }) {
     return (
         <CardContent>
-            <Typography 
-                component={'span'} 
-                variant="body2" 
-                sx={{ 
+            <Typography
+                component={'span'}
+                variant="body2"
+                sx={{
                     fontSize: '0.75rem', // Smaller font size for AI output
-                    textAlign: 'left', 
+                    textAlign: 'left',
                     lineHeight: 1.4,
-            }}>
+                }}>
                 <MarkdownRenderer content={data.question} />
             </Typography>
         </CardContent>
@@ -85,7 +85,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                     user: user ? user._id : 'test_user',
                     question: question,
                     answer: value,
-					session: JSON.stringify(newSession),
+                    session: JSON.stringify(newSession),
                 }),
             });
 
@@ -113,27 +113,16 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                 }
 
                 const chunk = new TextDecoder('utf-8').decode(value);
-                const jsonStrings = chunk.split('\n').filter(Boolean);
+                setCardContent((prev) =>
+                    prev.map((card) => {
+                        if (card.id === 1) {
+                            let updatedCard = { ...card }; updatedCard.question += chunk
 
-                jsonStrings.forEach((jsonString) => {
-                    try {
-                        const jsonChunk = JSON.parse(jsonString);
-                        const token = jsonChunk.token;
-
-                        setCardContent((prev) =>
-                            prev.map((card) => {
-                                if (card.id === 1) {
-                                    let updatedCard = { ...card };updatedCard.question += token
-
-                                    return updatedCard;
-                                }
-                                return card;
-                            })
-                        );
-                    } catch (error) {
-                        console.error('Error parsing JSON chunk', error);
-                    }
-                });
+                            return updatedCard;
+                        }
+                        return card;
+                    })
+                );
                 await readStream();
             };
 
@@ -156,12 +145,12 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
 
     return (
         <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-            <Typography 
-                variant="body2" 
-                sx={{ 
-                    textAlign: 'left', 
-                    margin: '0 auto', 
-                    fontSize: '0.875rem', 
+            <Typography
+                variant="body2"
+                sx={{
+                    textAlign: 'left',
+                    margin: '0 auto',
+                    fontSize: '0.875rem',
                     maxWidth: '90%'
                 }}
             >
@@ -177,7 +166,7 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
                         value={value}
                         onChange={handleChange}
                         extensions={[javascript({ jsx: true }), html(), css()]}
-                        
+
                     />
                     <Modified
                         value={cardContent[0].code}
@@ -195,11 +184,11 @@ const CodingQuestion: React.FC<CodingQuestionProps> = ({ question, codeEval, onA
             )}
 
             {cardContent.map((data) => (
-                <InfoCard 
-                    key={data.id} 
-                    data={data} 
-                    value={value} 
-                    InfoCardProps={codeEval} 
+                <InfoCard
+                    key={data.id}
+                    data={data}
+                    value={value}
+                    InfoCardProps={codeEval}
                 />
             ))}
 

@@ -209,9 +209,8 @@ async def qstream(question: Question):
             callbacks=[QueueCallback(q)],
         )
     def generate():
-        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
+            yield token
     return StreamingResponse(generate(), media_type="application/json")
 
 @app.post("/generate-task") 
@@ -231,9 +230,8 @@ async def generate_task_api(task: GenerateTask):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
+            yield token
 
     return StreamingResponse(generate(), media_type="application/json; charset=utf-8")
 
@@ -252,14 +250,11 @@ async def generate_lp_api(task: GenerateTask):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
+            yield token
 
     return StreamingResponse(generate(), media_type="application/json")
 
-# should this be a question sessioin for the AI chat? if it is AI CHAT (noramlly ask question to AI), could open mulit AI chat if needed like chatgpt
-# @app.get("/get_AIsession/{user_id}/{session_id}/{question_id}") 
 @app.get("/get_AIsession/{user_id}") 
 async def get_session(user_id: str):
     neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
@@ -291,9 +286,8 @@ async def tooltest(question: str):
             callbacks=[QueueCallback(q)],
         )
     def generate():
-        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
+            yield token
     return StreamingResponse(generate(), media_type="application/json")
 
 
@@ -431,9 +425,8 @@ async def submit_quiz(task: Quiz_submission):
         )
 
     def generate():
-        yield json.dumps({"init": True, "model": settings.llm, "token": ""})
         for token, _ in stream(cb, q):
-            yield json.dumps({"token": token})
+            yield token
 
     return StreamingResponse(generate(), media_type="application/json")
 

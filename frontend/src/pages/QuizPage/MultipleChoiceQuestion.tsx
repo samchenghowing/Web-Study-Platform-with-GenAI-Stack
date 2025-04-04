@@ -89,22 +89,10 @@ const MultipleChoiceQuestion: React.FC<MultipleChoiceQuestionProps> = ({ questio
                     }
 
                     const chunk = new TextDecoder('utf-8').decode(value);
-                    const jsonStrings = chunk.split('\n').filter(Boolean);
-
-                    jsonStrings.forEach((jsonString) => {
-                        try {
-                            const jsonChunk = JSON.parse(jsonString);
-                            const token = jsonChunk.token;
-
-                            setCurrentCard((prevCard) => ({
-                                ...prevCard,
-                                question: prevCard.question + token,
-                            }));
-                        } catch (error) {
-                            console.error('Error parsing JSON chunk', error);
-                        }
-                    });
-
+                    setCurrentCard((prevCard) => ({
+                        ...prevCard,
+                        question: prevCard.question + chunk,
+                    }));
                     await readStream();
                 };
 
