@@ -134,7 +134,7 @@ def configure_llm_history_chain(llm, url, username, password):
     return generate_llm_output
 
 def configure_grader_chain(llm):
-    general_system_template = """Extract the score of a generated question. You must use the GradeDocuments tools \n """
+    general_system_template = """Extract the score of a generated question. \n """
     system_prompt = SystemMessagePromptTemplate.from_template(
         general_system_template, template_format="jinja2"
     )
@@ -241,36 +241,28 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
         {preferences}  
         - The question should be related to the reference provided by the student (if available):  
         {references}  
-        - The question should be related to the topics the student is learning
         - The generated code must be **syntactically incorrect or functionally flawed**.  
         - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).  
         - Do **not** include explanations or hints in your response.  
-        - Do **not** add additional content of the response
 
-        ### **Response Format:**  
-        Provide the following details in your response:  
+        ### **Response Format:**   
         1. **Title:** A concise title describing the task.  
-        2. **Question:** A brief introduction to the task.  
-        3. **Code Snippet:** The faulty code enclosed in triple backticks (```) with proper syntax highlighting (e.g., ```html, ```css, ```javascript).  
-        4. **Difficulty:** easy / medium / hard.  
-        5. **Completeness:** A percentage indicating how much of the code is correct.  
-        6. **XP:** The experience points rewarded for completing the task.  
-        7. **Notice**: add note if needed, dont added after the code 
+        2. **Difficulty:** easy / medium / hard.  
+        3. **Completeness:** A percentage indicating how much of the code is correct.  
+        4. **XP:** The experience points rewarded for completing the task.  
+        5. **Question:** A brief introduction to the task.  
 
         ---
 
         ### **Example Output:**  
-
         **Title:** Fix the syntax error in the JavaScript function  
         **Difficulty:** easy 
         **Completeness:** 80 % 
         **XP:** 10 
         **Question:** The following JavaScript function has a syntax error. Identify and fix it.  
-        **Notice:"" Note code is missing a and the semantic the navigation menu.
         ```javascript
         function add(a, b) 
-        return a + b // Missing semicolon
-        
+        return a + b
         console.log(add(3, 5);
         ```
     """
