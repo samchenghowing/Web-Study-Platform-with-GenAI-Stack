@@ -68,7 +68,6 @@ export default function MainComponent() {
     const [isLoading, setIsLoading] = React.useState<boolean>(false); // New loading state.
     const [dialogOpen, setDialogOpen] = React.useState(false); // New state for dialog
     const [currentQuestionNumber, setCurrentQuestionNumber] = React.useState<number>(1); // New state for question counter
-    const [isQuestionLoading, setIsQuestionLoading] = React.useState<boolean>(false); // New state for question loading status
 
     const location = useLocation();
     const navigate = useNavigate(); // Hook for navigation
@@ -132,7 +131,6 @@ export default function MainComponent() {
 
     const generateQuestion = async () => {
         try {
-            setIsQuestionLoading(true); // Set loading status to true
             if (!quiz) {
                 throw new Error('Quiz object is not available');
             }
@@ -156,11 +154,6 @@ export default function MainComponent() {
 
             const readStream = async () => {
                 let { done, value } = await reader.read();
-                if (done) {
-                    setIsQuestionLoading(false); // Set loading status to false when done
-                    return;
-                }
-
                 const chunk = new TextDecoder('utf-8').decode(value);
                 setQuestion(prev => prev + chunk);
                 await readStream();
@@ -169,7 +162,6 @@ export default function MainComponent() {
             await readStream();
         } catch (error) {
             console.error('Error during stream', error);
-            setIsQuestionLoading(false); // Set loading status to false on error
         }
     };
 
@@ -184,12 +176,6 @@ export default function MainComponent() {
     };
 
     const handleCodeSubmit = async () => {
-        if (isQuestionLoading) {
-            // If the question is still loading, do not allow submission
-            setSnackbarText('Please wait until the question is fully loaded.');
-            setSnackbarOpen(true);
-            return;
-        }
 
         setIsLoading(true);
         setIsReadingComplete(false);
@@ -403,7 +389,7 @@ export default function MainComponent() {
                     xs={true}
                     sx={editorPageStyles.rightPanel}
                 >
-                    <Box sx={editorPageStyles.editorContainer}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                         <EditorConfig
                             editorConfig={editorConfig}
                             editorDoc={editorDoc}
@@ -411,7 +397,7 @@ export default function MainComponent() {
                             handleCodeSubmit={handleCodeSubmit}
                             checkSubmissionResult={checkSubmissionResult}
                         />
-                        <Box sx={editorPageStyles.codeMirror}>
+                        <Box sx={{ overflowY: 'auto', flexGrow: 1 }}>
                             <EditorView
                                 editorConfig={editorConfig}
                                 editorDoc={editorDoc}

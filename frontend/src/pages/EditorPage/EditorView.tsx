@@ -62,7 +62,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
                 value={getValue}
                 extensions={[javascript({ jsx: true }), html(), css()]}
                 onChange={handleChange}
-                style={{ height: '75vw', width: 'auto', overflow: 'auto' }}
+                style={{ width: 'auto', overflow: 'auto' }}
                 theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
             />
         </Box>
