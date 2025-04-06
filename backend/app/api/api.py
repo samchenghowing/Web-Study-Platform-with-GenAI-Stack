@@ -275,22 +275,6 @@ async def retrieve_by_similarity(query: str):
     return session
 
 
-@app.get("/tooltest/{question}") 
-async def tooltest(question: str):
-
-    q = Queue()
-    def cb():
-        grader_chain(
-            sid="test",
-            question=question,
-            callbacks=[QueueCallback(q)],
-        )
-    def generate():
-        for token, _ in stream(cb, q):
-            yield token
-    return StreamingResponse(generate(), media_type="application/json")
-
-
 @app.get("/graphtest/{question}") 
 async def graphtest(question: str):
 
@@ -417,7 +401,7 @@ async def submit_quiz(task: Quiz_submission):
     def cb():
         check_quiz_correctness(
             user_id=task.user,
-            llm_chain=llm_history_chain,
+            llm_chain=llm_chain,
             task=task.question,
             answer=task.answer,
             question_node=task.session,

@@ -9,6 +9,9 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langgraph.graph import START, END, StateGraph
+from typing_extensions import TypedDict
+from pprint import pprint
 
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_neo4j import Neo4jVector, Neo4jChatMessageHistory
@@ -86,11 +89,11 @@ def configure_llm_only_chain(llm):
     )
 
     def generate_llm_output(
-        user_input: str, callbacks: List[Any], prompt=chat_prompt
+        question: str, callbacks: List[Any], prompt=chat_prompt
     ) -> str:
         chain = prompt | llm
         answer = chain.invoke(
-            {"question": user_input}, config={"callbacks": callbacks}
+            {"question": question}, config={"callbacks": callbacks}
         ).content
         return {"answer": answer}
 
@@ -226,103 +229,198 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
     if not preferences:
         return "User preferences not found."
 
-    currentTopics = "I want to know more about these topics" + json.dumps(session.get("topics"))
-
+    currentTopics = "I want to know more about these topics " + json.dumps(session.get("topics"))
     references = get_user_references(neo4j_graph, user_id, currentTopics, embeddings)
     if not references:
         return "No references found."
 
     gen_system_template = f"""
-        You are a programming teacher designing coding tasks for students.  
-        Your task is to generate an HTML, CSS, or JavaScript code snippet **containing intentional errors** for students to fix.  
-
-        ### **Requirements:**  
-        - The question should be tailored to the student's preference (if available):  
-        {preferences}  
-        - The question should be related to the reference provided by the student (if available):  
-        {references}  
-        - The generated code must be **syntactically incorrect or functionally flawed**.  
-        - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).  
-        - Do **not** include explanations or hints in your response.  
-
-        ### **Response Format:**   
-        1. **Title:** A concise title describing the task.  
-        2. **Difficulty:** easy / medium / hard.  
-        3. **Completeness:** A percentage indicating how much of the code is correct.  
-        4. **XP:** The experience points rewarded for completing the task.  
-        5. **Question:** A brief introduction to the task.  
-
-        ---
-
-        ### **Example Output:**  
-        **Title:** Fix the syntax error in the JavaScript function  
-        **Difficulty:** easy 
-        **Completeness:** 80 % 
-        **XP:** 10 
-        **Question:** The following JavaScript function has a syntax error. Identify and fix it.  
-        ```javascript
-        function add(a, b) 
-        return a + b
-        console.log(add(3, 5);
-        ```
+    You are a programming teacher designing coding tasks for students.
+    Your task is to generate a code snippet **containing intentional errors** for students to fix.
+    ### Requirements:
+    - The question should be tailored to the student's preference: {preferences}
+    - The question should be related to the following reference: {references}
+    - The generated code must be **functionally flawed**.
+    - Ensure the error **aligns with the student's learning level** (beginner, intermediate, advanced).
+    - Do NOT include explanations, corrected codes, or hints in your response.
+    ### Response Format:
+    1. **Title:** A concise title describing the task.
+    2. **Difficulty:** easy / medium / hard.
+    3. **Completeness:** A percentage indicating how much of the code is correct.
+    4. **XP:** The experience points rewarded for completing the task.
+    5. **Question:** A brief introduction to the task.
+    ---
+    Example Output:
+    **Title:** Fix the syntax error in the JavaScript function
+    **Difficulty:** easy
+    **Completeness:** 80 %
+    **XP:** 10
+    **Question:** The following JavaScript function has a syntax error. Identify and fix it.
+    ```javascript
+    function add(a, b)
+    return a + b
+    console.log(add(3, 5);
+    ```
     """
-    
-    # we need jinja2 since the questions themselves contain curly braces
-    system_prompt = SystemMessagePromptTemplate.from_template(
-        gen_system_template, template_format="jinja2"
-    )
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [
-            system_prompt,
-            MessagesPlaceholder(variable_name="chat_history"),
-            HumanMessagePromptTemplate.from_template("{question}"),
-        ]
-    )
+    system_prompt = SystemMessagePromptTemplate.from_template(gen_system_template, template_format="jinja2")
+    chat_prompt = ChatPromptTemplate.from_messages([
+        system_prompt,
+        HumanMessagePromptTemplate.from_template("{question}")
+    ])
 
-    llm_response = llm_chain(
-        sid=session.get("session_id"),
-        question=currentTopics,
-        callbacks=callbacks,
-        prompt=chat_prompt,
-    )
+    verification_template = """
+    Verify that the following generated question meets all of these criteria:
+    1. It is tailored to the student's preference: {{preferences}}.
+    2. It is related to the following reference: {{references}}.
+    3. It contains a code snippet with intentional errors.
+    4. It follows the required response format (Title, Difficulty, Completeness, XP, Question).
+    Generated question:
+    {{generated_question}}
+    If the question meets all the criteria, respond with "PASS". Otherwise, respond with "FAIL".
+    """
+    verification_system_prompt = SystemMessagePromptTemplate.from_template(verification_template, template_format="jinja2")
+    verification_chat_prompt = ChatPromptTemplate.from_messages([
+        verification_system_prompt,
+        HumanMessagePromptTemplate.from_template("{question}")
+    ])
 
-    # Extract difficulty, completeness, and XP from the response
-    response_parts = llm_response["answer"]
-    question_id = str(uuid.uuid4())
-    question_to_grade = "Grade the following question: " + response_parts
+    def generate_candidate(state):
+        llm_response = state["llm_chain"](
+            sid=state["session"].get("session_id"),
+            question=state["currentTopics"],
+            callbacks=state["callbacks"],
+            prompt=state["chat_prompt"],
+        )
+        generated_question = llm_response.get("answer", "")
+        state["generated_question"] = generated_question
+        return state
 
-    # Use the grader_chain to evaluate the generated question
-    grader_response = grader_chain(
-        sid=session.get("session_id"),
-        question=question_to_grade,
-        callbacks=callbacks,
-    )
+    def verify_candidate(state):
+        verification_inputs = {
+            "preferences": state["preferences"],
+            "references": state["references"],
+            "generated_question": state["generated_question"],
+            "question": ""  # no extra human message required
+        }
+        ver_response = state["llm_chain"](
+            sid=state["session"].get("session_id"),
+            question=verification_inputs["question"],
+            callbacks=state["callbacks"],
+            prompt=state["verification_chat_prompt"],
+        )
+        verification_result = ver_response.get("answer", "").strip()  # Expect "PASS" or "FAIL"
+        state["verification_result"] = verification_result
+        return state
 
-    evaluated_difficulty = grader_response["question_level"]["difficulty"]
-    evaluated_completeness = grader_response["question_level"]["completeness"]
-    evaluated_xp = grader_response["question_level"]["xp"]
+    def decide_verification(state):
+        if "pass" in state.get("verification_result", "").lower():
+            return "grade"
+        else:
+            logging.error("Verification failed: " + state.get("verification_result", ""))
+            # Return "generate" to retry generation on verification failure.
+            return "generate"
 
-    neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
-    # Store the question in Neo4j
-    neo4j_db.create_question_node(
-        session_id=session.get("session_id"),
-        question_id=question_id,
-        question_text=response_parts,
-        difficulty=evaluated_difficulty,
-        completeness=evaluated_completeness,
-        xp=evaluated_xp
-    )
-    logging.info(f"Question node created for session: {session.get('session_id')} with question ID: {question_id}")
+    def grade_candidate(state):
+        question_to_grade = "Grade the following question: " + state["generated_question"]
+        grader_response = state["grader_chain"](
+            sid=state["session"].get("session_id"),
+            question=question_to_grade,
+            callbacks=state["callbacks"],
+        )
+        state["grader_details"] = grader_response
+        state["evaluated_difficulty"] = grader_response["question_level"]["difficulty"]
+        state["evaluated_completeness"] = grader_response["question_level"]["completeness"]
+        state["evaluated_xp"] = grader_response["question_level"]["xp"]
+        return state
 
-    return llm_response
+    def save_candidate(state):
+        question_id = str(uuid.uuid4())
+        neo4j_db = Neo4jDatabase(settings.neo4j_uri, settings.neo4j_username, settings.neo4j_password)
+        neo4j_db.create_question_node(
+            session_id=state["session"].get("session_id"),
+            question_id=question_id,
+            question_text=state["generated_question"],
+            difficulty=state["evaluated_difficulty"],
+            completeness=state["evaluated_completeness"],
+            xp=state["evaluated_xp"]
+        )
+        state["question_id"] = question_id
+        logging.info(f"Verified question node created for session: {state['session'].get('session_id')} with question ID: {question_id}")
+        return state
+
+    class GraphState(TypedDict):
+        preferences: str
+        references: str
+        currentTopics: str
+        session: dict
+        callbacks: list
+        llm_chain: object
+        grader_chain: object
+        chat_prompt: object
+        verification_chat_prompt: object
+        generated_question: str
+        verification_result: str
+        grader_details: dict
+        evaluated_difficulty: str
+        evaluated_completeness: str
+        evaluated_xp: (int)
+        question_id: str
+
+    # Build the workflow with the state schema.
+    workflow = StateGraph(GraphState)
+    workflow.add_node("generate", generate_candidate)
+    workflow.add_node("verify", verify_candidate)
+    workflow.add_node("grade", grade_candidate)
+    workflow.add_node("save", save_candidate)
+
+    workflow.add_edge(START, "generate")
+    workflow.add_edge("generate", "verify")
+    workflow.add_conditional_edges("verify", decide_verification, {
+        "generate": "generate",
+        "grade": "grade",
+    })
+    workflow.add_edge("grade", "save")
+    workflow.add_edge("save", END)
+
+    # Compile the workflow.
+    app = workflow.compile()
+
+    # Create the initial state.
+    initial_state = {
+        "preferences": preferences,
+        "references": references,
+        "currentTopics": currentTopics,
+        "session": session,
+        "callbacks": callbacks,
+        "llm_chain": llm_chain,
+        "grader_chain": grader_chain,
+        "chat_prompt": chat_prompt,
+        "verification_chat_prompt": verification_chat_prompt
+        # Other keys (generated_question, verification_result, etc.) will be set as the workflow runs.
+    }
+
+    # Run the workflow. It will loop (via conditional edges) until generation passes verification.
+    # final_state = app.stream(initial_state)
+    # print("Final state:", final_state)
+    for output in app.stream(initial_state):
+        for key, value in output.items():
+            # Node
+            pprint(f"Node '{key}':")
+            # Optional: print full state at each node
+            # pprint.pprint(value["keys"], indent=2, width=80, depth=None)
+        pprint("\n---\n")
 
 def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, callbacks=[]):
     gen_system_template = f"""
-    You're a programming teacher and you have created below question for student. 
-    {task}
+    You're a programming teacher and you have created a coding task for students.
+    The task is: {task}
+    The student's answer is: {answer}
+    Your task is to evaluate the student's answer and provide feedback.
     Your evulation should only follow the scope of your question.
+    If the student answer correctly, return a congratulation message.
+    If the student answer incorrectly, provide a corrected code to their answer.
     You must not include response which does not in the scope of your question.
-    Your coding hints should include all the original code from student.
+    Your correction should be in the same format as the question.
     """
     system_prompt = SystemMessagePromptTemplate.from_template(
         gen_system_template, template_format="jinja2"
@@ -330,14 +428,12 @@ def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, call
     chat_prompt = ChatPromptTemplate.from_messages(
         [
             system_prompt,
-            MessagesPlaceholder(variable_name="chat_history"),
             HumanMessagePromptTemplate.from_template("{question}"),
         ]
     )
 
     llm_response = llm_chain(
-        sid=question_node.get("session_id"),
-        question=answer, # student's answer send to llm
+        question="please check the correctness of the answer",
         callbacks=callbacks,
         prompt=chat_prompt,
     )
