@@ -18,7 +18,6 @@ interface EditorViewProps {
 const EditorView: React.FC<EditorViewProps> = (props) => {
     const { editorDoc, editorConfig, setEditorDoc } = props;
     const editorRef = React.useRef(null);
-
     const getValue = React.useMemo(() => {
         switch (editorConfig.language) {
             case 'js':
@@ -28,7 +27,7 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
             case 'css':
                 return editorDoc.cssDoc;
             case 'combined':
-                return `${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`;
+                return `---HTML---\n${editorDoc.htmlDoc}\n---CSS---\n${editorDoc.cssDoc}\n---JS---\n${editorDoc.jsDoc}`;
             default:
                 return '';
         }
@@ -37,19 +36,26 @@ const EditorView: React.FC<EditorViewProps> = (props) => {
     const handleChange = (value: string) => {
         const updatedDoc = { ...editorDoc };
 
-        switch (editorConfig.language) {
-            case 'js':
-                updatedDoc.jsDoc = value;
-                break;
-            case 'html':
-                updatedDoc.htmlDoc = value;
-                break;
-            case 'css':
-                updatedDoc.cssDoc = value;
-                break;
-            default:
-                updatedDoc.combinedDoc = value;
-                break;
+        if (editorConfig.language === 'combined') {
+            const parts = value.split(/---HTML---|---CSS---|---JS---/).map(part => part.trim());
+
+            updatedDoc.htmlDoc = parts[1] || ''; // HTML part
+            updatedDoc.cssDoc = parts[2] || '';  // CSS part
+            updatedDoc.jsDoc = parts[3] || '';   // JS part
+        } else {
+            switch (editorConfig.language) {
+                case 'js':
+                    updatedDoc.jsDoc = value;
+                    break;
+                case 'html':
+                    updatedDoc.htmlDoc = value;
+                    break;
+                case 'css':
+                    updatedDoc.cssDoc = value;
+                    break;
+                default:
+                    break;
+            }
         }
 
         setEditorDoc(updatedDoc);

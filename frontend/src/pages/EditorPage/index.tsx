@@ -47,14 +47,14 @@ export default function MainComponent() {
         jsDoc: 'Goodbye world',
         htmlDoc: 'Hello world',
         cssDoc: '',
-        combinedDoc: 'Hello world\n<style>\n\n</style>\n<script>\nGoodbye world\n</script>',
+        combinedDoc: `---HTML---\n'Hello world'\n---CSS---\n\n---JS---\n'Goodbye world'`,
     });
     const [question, setQuestion] = React.useState('Generating question...');
     const [task, setTask] = React.useState<EditorDocType>({
         jsDoc: 'console.log(\'You can learn anything\');',
         htmlDoc: 'Hello world',
         cssDoc: 'h1 {color: black;text-align: center;}',
-        combinedDoc: 'Hello world\n<style>\n\n</style>\n<script>\console.log(\'You can learn anything\')\n</script>',
+        combinedDoc: `---HTML---\n'Hello world'\n---CSS---\nh1 {color: black;text-align: center;}\n---JS---\nconsole.log(\'You can learn anything\');`,
     });
     const [aiChatWidth, setAiChatWidth] = React.useState<number>(600); // Initial width in pixels
     const [snackbarOpen, setSnackbarOpen] = React.useState(false);
@@ -440,21 +440,27 @@ export default function MainComponent() {
                                 <Typography variant="body1" gutterBottom>
                                     {card.question.split('```')[0]} {/* Display text explanation */}
                                 </Typography>
-                                <Box sx={mergeScrollerStyles}>
-                                    <CodeMirrorMerge
-                                        orientation="a-b"
-                                        theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
-                                    >
-                                        <Original
-                                            value={`${editorDoc.htmlDoc}\n<style>\n${editorDoc.cssDoc}\n</style>\n<script>\n${editorDoc.jsDoc}\n</script>`}
-                                            extensions={[javascript({ jsx: true }), html(), css()]}
-                                        />
-                                        <Modified
-                                            value={card.question.split('```')[1] || ''}
-                                            extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
-                                        />
-                                    </CodeMirrorMerge>
-                                </Box>
+                                {(card.question.split('```')[1] || '').length === 0 ? (
+                                    <Box sx={mergeScrollerStyles}>
+                                        <CodeMirrorMerge
+                                            orientation="a-b"
+                                            theme={useTheme().palette.mode === 'light' ? githubLight : githubDark}
+                                        >
+                                            <Original
+                                                value={`---HTML---\n${editorDoc.htmlDoc}\n---CSS---\n${editorDoc.cssDoc}\n---JS---\n${editorDoc.jsDoc}`}
+                                                extensions={[javascript({ jsx: true }), html(), css()]}
+                                            />
+                                            <Modified
+                                                value={card.question.split('```')[1] || ''}
+                                                extensions={[markdown({ base: markdownLanguage, codeLanguages: languages })]}
+                                            />
+                                        </CodeMirrorMerge>
+                                    </Box>
+                                ) :
+                                    (
+                                        <Typography>Good work!</Typography>
+                                    )
+                                }
                             </div>
                         ))
                     )}
@@ -465,11 +471,6 @@ export default function MainComponent() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Box >
     );
 }
-
-function useEffect(arg0: () => () => void, arg1: never[]) {
-    throw new Error('Function not implemented.');
-}
-
