@@ -192,7 +192,7 @@ export default function MainComponent() {
                     user: user ? user._id : 'test_user',
                     question: question,
                     session: JSON.stringify(quiz),
-                    answer: editorDoc.jsDoc,
+                    answer: editorDoc.combinedDoc,
                 }),
             });
 
