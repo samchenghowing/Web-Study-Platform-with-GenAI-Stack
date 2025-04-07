@@ -169,19 +169,16 @@ def configure_grader_chain(llm):
     def generate_llm_output(
         sid: str, question: str, callbacks: List[Any]
     ) -> str:
-        answer = tool_chain.invoke(question)
-        print(f"Grader chain response: {answer}")
-        
+        answer = tool_chain.invoke(question)        
         # Remove Markdown code block if present
         if answer.startswith("```json") and answer.endswith("```"):
             answer = answer[7:-3].strip()
         
         try:
             answer_dict = json.loads(answer)
-            print(f"Parsed grader response: {answer_dict}")
             return {"answer": answer_dict, "question_level": answer_dict}
         except json.JSONDecodeError as e:
-            logging.error(f"Error decoding grader response: {e}")
+            print(f"Error decoding grader response: {e}")
             return {"answer": "", "question_level": {"difficulty": 0, "completeness": 0, "xp": 0}}
 
     return generate_llm_output
@@ -220,7 +217,7 @@ def retrieve_pdf_chunks_by_similarity(query: str, embeddings, url: str, username
         results = retriever.invoke(query)
         return results
     except Exception as e:
-        logging.error(f"Error retrieving PDF chunks: {e}")
+        print(f"Error retrieving PDF chunks: {e}")
         return "No references found."
 
 
@@ -285,6 +282,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
     ])
 
     def generate_candidate(state):
+        print("---GENERATE---")
         llm_response = state["llm_chain"](
             sid=state["session"].get("session_id"),
             question=state["currentTopics"],
@@ -293,9 +291,11 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
         )
         generated_question = llm_response.get("answer", "")
         state["generated_question"] = generated_question
+        print("Generated question:", generated_question)
         return state
 
     def verify_candidate(state):
+        print("---VERIFY---")
         verification_inputs = {
             "preferences": state["preferences"],
             "references": state["references"],
@@ -310,17 +310,21 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
         )
         verification_result = ver_response.get("answer", "").strip()  # Expect "PASS" or "FAIL"
         state["verification_result"] = verification_result
+        print("Verification result:", verification_result)
         return state
 
     def decide_verification(state):
+        print("---DECIDE---")
         if "pass" in state.get("verification_result", "").lower():
+            print("Verification passed.")
             return "grade"
         else:
-            logging.error("Verification failed: " + state.get("verification_result", ""))
+            print("Verification failed: " + state.get("verification_result", ""))
             # Return "generate" to retry generation on verification failure.
             return "generate"
 
     def grade_candidate(state):
+        print("---GRADE---")
         question_to_grade = "Grade the following question: " + state["generated_question"]
         grader_response = state["grader_chain"](
             sid=state["session"].get("session_id"),
@@ -331,6 +335,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
         state["evaluated_difficulty"] = grader_response["question_level"]["difficulty"]
         state["evaluated_completeness"] = grader_response["question_level"]["completeness"]
         state["evaluated_xp"] = grader_response["question_level"]["xp"]
+        print("Grader response:", grader_response)
         return state
 
     def save_candidate(state):
@@ -345,7 +350,7 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
             xp=state["evaluated_xp"]
         )
         state["question_id"] = question_id
-        logging.info(f"Verified question node created for session: {state['session'].get('session_id')} with question ID: {question_id}")
+        print(f"Verified question node created for session: {state['session'].get('session_id')} with question ID: {question_id}")
         return state
 
     class GraphState(TypedDict):
@@ -400,8 +405,6 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
     }
 
     # Run the workflow. It will loop (via conditional edges) until generation passes verification.
-    # final_state = app.stream(initial_state)
-    # print("Final state:", final_state)
     for output in app.stream(initial_state):
         for key, value in output.items():
             # Node
