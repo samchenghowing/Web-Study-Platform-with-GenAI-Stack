@@ -438,9 +438,9 @@ export default function MainComponent() {
                         cardContent.map((card) => (
                             <div key={card.id}>
                                 <Typography variant="body1" gutterBottom>
-                                    {card.question.split('```')[0]} {/* Display text explanation */}
+                                    <MarkdownRenderer content={card.question.split('```')[0] || "Loading Question..."} />
                                 </Typography>
-                                {(card.question.split('```')[1] || '').length === 0 ? (
+                                {(card.question.split('```')[1] || '').length !== 0 ? (
                                     <Box sx={mergeScrollerStyles}>
                                         <CodeMirrorMerge
                                             orientation="a-b"

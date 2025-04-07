@@ -414,32 +414,30 @@ def generate_task(user_id, neo4j_graph, llm_chain, session, grader_chain, embedd
         pprint("\n---\n")
 
 def check_quiz_correctness(user_id, llm_chain, question_node, task, answer, callbacks=[]):
-    gen_system_template = f"""
-    You're a programming teacher and you have created a coding task for students.
-    The task is: {task}
-    The student's answer is: {answer}
-    Your task is to evaluate the student's answer and provide feedback.
-    Your evulation should only follow the scope of your question.
-    If the student answer correctly, return a congratulation message.
-    If the student answer incorrectly, provide a corrected code to their answer.
-    You must not include response which does not in the scope of your question.
-    Your correction should be in the same format as the question.
-    """
-    system_prompt = SystemMessagePromptTemplate.from_template(
-        gen_system_template, template_format="jinja2"
+    # Build a system prompt that includes all the context details.
+    system_template = (
+    "You're a programming teacher and you have created a coding task for students.\n"
+    "Task: {task}\n"
+    "Student's Answer: {answer}\n"
+    "Your task is to evaluate the student's answer and provide feedback. "
+    "If the answer is correct, return a congratulatory message. "
+    "If it is incorrect, provide a corrected version of the code in the same format as the question. "
+    "Be concise and stick to the scope of the task."
     )
-    chat_prompt = ChatPromptTemplate.from_messages(
-        [
-            system_prompt,
-            HumanMessagePromptTemplate.from_template("{question}"),
-        ]
+    system_message_text = system_template.format(task=task, answer=answer)
+
+    system_prompt = SystemMessagePromptTemplate.from_template(system_message_text, template_format="jinja2")
+    human_prompt = HumanMessagePromptTemplate.from_template(
+        "Please evaluate the student's answer based on the task above."
     )
+    chat_prompt = ChatPromptTemplate.from_messages([system_prompt, human_prompt])
 
     llm_response = llm_chain(
-        question="please check the correctness of the answer",
+        question="Evaluate the student's answer.",
         callbacks=callbacks,
         prompt=chat_prompt,
     )
+
     return llm_response
 
 def convert_question_to_attribute(question, llm):
